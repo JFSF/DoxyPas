@@ -8,6 +8,7 @@ set OPTS=-Q -B -W+ -NSSystem;System.Win;Winapi
 set SDK=%USERPROFILE%\Documents\Embarcadero\Studio\SDKs\ubuntu24.04.sdk
 
 if /i "%1"=="test" goto :tests
+if /i "%1"=="gen" goto :gen
 
 pushd "%ROOT%src"
 for %%P in (32 64) do (
@@ -28,3 +29,12 @@ for %%P in (32 64) do (
   "%ROOT%build\tests%%P\DoxyPasTests.exe" || exit /b 1
 )
 popd
+exit /b 0
+
+:gen
+rem Regenerates src\Config\DoxyPas.Config.Options.pas from resources\config\*.xml
+if not exist "%ROOT%build\tools\dcu" mkdir "%ROOT%build\tools\dcu"
+pushd "%ROOT%tools\GenConfig"
+"%BDS%\bin\dcc32.exe" %OPTS% -E"%ROOT%build\tools" -N0"%ROOT%build\tools\dcu" GenConfig.dpr || exit /b 1
+popd
+"%ROOT%build\tools\GenConfig.exe" "%ROOT%src\Config\DoxyPas.Config.Options.pas" "%ROOT%resources\config\config.xml" "%ROOT%resources\config\config_pascal.xml"

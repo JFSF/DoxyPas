@@ -1,0 +1,42 @@
+<doxygenconfig>
+  <!-- DoxyPas-specific options; merged after config.xml by tools\GenConfig (D-008). -->
+  <group name='Pascal' docs='Configuration options related to Object Pascal input'>
+    <option type='enum' id='PASCAL_DIALECT' defval='Delphi'>
+      <docs>
+<![CDATA[
+ The \c PASCAL_DIALECT tag selects the Object Pascal dialect used when parsing
+ the input files (compiler defines, language mode and keywords).
+]]>
+      </docs>
+      <value name='Delphi'/>
+      <value name='FPC'/>
+    </option>
+    <option type='bool' id='PASCAL_XMLDOC' defval='1'>
+      <docs>
+<![CDATA[
+ If the \c PASCAL_XMLDOC tag is set to \c YES then DoxyPas will also interpret
+ XML documentation comments (<code>///</code> with <code><summary></code>,
+ <code><param></code>, ...) as used by the Delphi Help Insight.
+]]>
+      </docs>
+    </option>
+    <option type='bool' id='PASCAL_PARSE_DFM' defval='1'>
+      <docs>
+<![CDATA[
+ If the \c PASCAL_PARSE_DFM tag is set to \c YES then DoxyPas will read
+ <code>.dfm</code> and <code>.fmx</code> files and document the component tree
+ of each form.
+]]>
+      </docs>
+    </option>
+    <option type='list' id='DELPHI_PROJECT' format='file'>
+      <docs>
+<![CDATA[
+ The \c DELPHI_PROJECT tag can be used to specify <code>.dpr</code>,
+ <code>.dpk</code> or <code>.dproj</code> files from which the source files,
+ search paths and conditional defines are taken.
+]]>
+      </docs>
+    </option>
+  </group>
+</doxygenconfig>

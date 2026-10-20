@@ -5,6 +5,12 @@ interface
 type
   TMessageKind = (mkWarning, mkError);
 
+  TLogSink = reference to procedure(const AText: string);
+
+var
+  /// <summary>Receives every formatted diagnostic; nil (default) writes to stderr.</summary>
+  LogSink: TLogSink;
+
 /// <summary>Formats a diagnostic like Doxygen does: "file:line: warning: text".</summary>
 function FormatMessage(AKind: TMessageKind; const AFileName: string; ALine: Integer;
   const AText: string): string;
@@ -28,14 +34,22 @@ begin
     Result := Format('%s:%d: %s: %s', [AFileName, ALine, KindText[AKind], AText]);
 end;
 
+procedure Emit(const AText: string);
+begin
+  if Assigned(LogSink) then
+    LogSink(AText)
+  else
+    Writeln(ErrOutput, AText);
+end;
+
 procedure Warn(const AFileName: string; ALine: Integer; const AText: string);
 begin
-  Writeln(ErrOutput, FormatMessage(mkWarning, AFileName, ALine, AText));
+  Emit(FormatMessage(mkWarning, AFileName, ALine, AText));
 end;
 
 procedure Error(const AFileName: string; ALine: Integer; const AText: string);
 begin
-  Writeln(ErrOutput, FormatMessage(mkError, AFileName, ALine, AText));
+  Emit(FormatMessage(mkError, AFileName, ALine, AText));
 end;
 
 end.

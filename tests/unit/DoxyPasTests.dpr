@@ -1,4 +1,4 @@
-program DoxyPasTests;
+﻿program DoxyPasTests;
 
 {$APPTYPE CONSOLE}
 
@@ -8,7 +8,12 @@ uses
   DUnitX.Loggers.Console,
   DoxyPas.Core.Version in '..\..\src\Core\DoxyPas.Core.Version.pas',
   DoxyPas.Core.Log in '..\..\src\Core\DoxyPas.Core.Log.pas',
-  DoxyPas.Tests.Core in 'DoxyPas.Tests.Core.pas';
+  DoxyPas.Config.Options in '..\..\src\Config\DoxyPas.Config.Options.pas',
+  DoxyPas.Config in '..\..\src\Config\DoxyPas.Config.pas',
+  DoxyPas.Config.Reader in '..\..\src\Config\DoxyPas.Config.Reader.pas',
+  DoxyPas.Config.Writer in '..\..\src\Config\DoxyPas.Config.Writer.pas',
+  DoxyPas.Tests.Core in 'DoxyPas.Tests.Core.pas',
+  DoxyPas.Tests.Config in 'DoxyPas.Tests.Config.pas';
 
 var
   Runner: ITestRunner;

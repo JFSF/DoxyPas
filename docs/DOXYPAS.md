@@ -206,13 +206,34 @@ Estados: ✅ Escolhido · 🔶 Candidato (a validar em *spike*) · ❌ Descartad
 
 | Opção | Licença | Prós | Contras | Estado |
 |---|---|---|---|---|
-| **A. Lexer + parser de contorno escritos à mão** | nossa | Controlo total da ligação comentário↔declaração, dialectos Delphi **e** FPC, tolerância a erros, só precisa de declarações (corpos saltados), sem dependências | Mais trabalho inicial | 🔶 **Recomendada** |
-| B. **DelphiAST** (RomanYankovsky) | MPL 1.1 (a confirmar) | Pronto; AST completa | Parse "uma unit de cada vez sem tabela de símbolos"; suporte a sintaxe recente (Delphi 12/13) e **comentários** a validar; FPC mal suportado; AST completa é mais pesada que o necessário | 🔶 *spike* de comparação |
+| **A. Lexer + parser de contorno escritos à mão** | nossa | Controlo total da ligação comentário↔declaração, dialectos Delphi **e** FPC, tolerância a erros, só precisa de declarações (corpos saltados), sem dependências | Mais trabalho inicial | ❌ Descartada após *spike* (reavaliar só para lexer/highlighter) |
+| B. **DelphiAST** (RomanYankovsky) | **MPL-2.0** (confirmado) | Pronto; AST completa | Parse "uma unit de cada vez sem tabela de símbolos"; suporte a sintaxe recente (Delphi 12/13) e **comentários** a validar; FPC mal suportado; AST completa é mais pesada que o necessário | ✅ **Escolhida (D-035)** — ver §6.2.1 |
 | C. **fcl-passrc** (FPC) | LGPL modificada | Muito completo p/ FPC | Código FPC (não compila em Delphi sem *port*); sem Delphi 13 | ❌ (só referência) |
 | D. mwPasLex / SynEdit Pascal highlighter | MPL | Bom lexer | Só lexer; |  🔶 pode servir de base ao *highlighter* |
 | E. **PasDoc** | **GPL** | Referência funcional (tags, saídas) | Código FPC; pretende-se algo diferente | ❌ (referência de funcionalidades) |
 
 **Nota:** PasDoc já existe e é maduro. O DoxyPas distingue-se por: compatibilidade com Doxyfile/comandos Doxygen, grafos (herança/uses/colaboração), pesquisa, Markdown, saídas HTML modernas/XML/LaTeX/SQLite, múltiplas fontes de linguagem e *tag files*.
+
+
+#### 6.2.1 Resultados do *spike* DelphiAST (2026-10-20)
+
+Harness em `tools\spikes\delphiast\` (Delphi 13, Win64, `TPasSyntaxTreeBuilder` com `InitDefinesDefinedByCompiler`).
+
+| Corpus | Ficheiros | OK | Falhas | Velocidade |
+|---|---|---|---|---|
+| `G:\CodeManager` (projecto de referência, D-028) | 111 | **111** | 0 | 3 MB/s (completo) · 10 MB/s (`InterfaceOnly`) |
+| Fonte do RAD Studio 13 completo (`rtl vcl fmx data indy soap…`) | 2 475 | **2 461 (99,4 %)** | 14 | 6,4 MB/s (137 MB em 21 s) |
+| Módulos Boss instalados | 143 | 143 | 0 | — |
+| DUnitX | 85 | 85 | 0 | — |
+| `modern.pas` (inline var, atributos, genéricos, *helpers*, `is not`, métodos anónimos) | 1 | 1 | 0 | — |
+| FPC (`fcl-base`, `fcl-json`, `fcl-passrc`; `*.pp`, só *interface*) | 79 | 75 (95 %) | 4 | 29 MB/s |
+
+- **Memória:** pico de 38 MB a processar `vcl` (árvore libertada por ficheiro).
+- **Linux64:** compila com `dcclinux64` sem alterações e corre em WSL (as 4 falhas no CodeManager vêm de `{$IFDEF MSWINDOWS}` — comportamento esperado).
+- **As 14 falhas do RAD:** 6 units iOS/Android (`library`/`external` com constantes e sintaxe de *bridge*), `System.Rtti`, `Vcl.Edge`/`FMX.WebBrowser.Win` (`stdcall` em declarações de interface), `iOSapi.CoreGraphics`, etc. — todas obscuras e corrigíveis por *patch*.
+- **Comentários:** lista plana com linha/coluna (`Builder.Comments`) — a associação a declarações (`///`, `//!`, `{** }`, XMLDoc) faz-se por posição no DoxyPas.
+- **Limitações a tratar no M2:** posições `end_line/end_col` das declarações imprecisas (apontam para o *token* seguinte) → texto da declaração obtido por intervalo de *tokens*/reconstrução; `class var` não marca o campo; um erro de sintaxe aborta a unit (a excepção traz a árvore parcial); FPC (modos `objfpc`, `deprecated 'msg'` em propriedades, `generic/specialize`) a ~95 % → *patches* conforme os corpora do M2.
+- **Fidelidade da AST:** visibilidade (`STRICTPRIVATE…PUBLISHED`), directivas (`virtual/override/abstract/stdcall/overload`), genéricos e restrições, atributos, GUID de interfaces, propriedades (`read/write`), parâmetros (`const/out/var`) — tudo presente.
 
 ### 6.3 Ferramentas externas (opcionais, via processo)
 
@@ -262,8 +283,9 @@ mORMot 2 completo (excessivo para o núcleo; manter como opção p/ SQLite/JSON 
 | D-032 | 2026-10-20 | Aceite | **Opções geradas (M1):** `tools\GenConfig` (Delphi, XML via `Xml.omnixmldom`) lê `resources\config\config.xml` (cópia do Doxygen 1.19.0, **não editar**) + `config_pascal.xml` (opções DoxyPas: `PASCAL_DIALECT`, `PASCAL_XMLDOC`, `PASCAL_PARSE_DFM`, `DELPHI_PROJECT`) e gera `src\Config\DoxyPas.Config.Options.pas` (356 opções, 19 grupos; **ficheiro gerado e versionado**, regenerar com `build.bat gen`). Port fiel de `transformDocs/prepCDocs` de `configgen.py` (texto dos comentários do template). Todas as opções C++ ficam aceites (D-008). | Fonte única de verdade; compila sem a ferramenta. |
 | D-033 | 2026-10-20 | Aceite | **Modelo/Leitura/Escrita de Doxyfile:** `DoxyPas.Config` (valores + `PostProcess`: `$(ENV)`, vazio→defeito, conversão bool/int/enum, como `Config::postProcess`), `Config.Reader` (port de `configimpl.l`: `=`, `+=`, `\` de continuação, aspas/escapes, `#`/`##`, `@INCLUDE`/`@INCLUDE_PATH` até profundidade 10, avisos com linha/ficheiro) e `Config.Writer` (template, `-s`, `-u` mantendo texto original, `-x` diferenças). Verificado: `-g` → `-x` vazio; `-u` byte-idêntico; `doc\Doxyfile` e `testing\Doxyfile` do Doxygen lidos sem avisos. | Compatibilidade total com Doxyfiles existentes (D-008). |
 | D-034 | 2026-10-20 | Aceite | **CLI (M1):** `doxypas [-g [f]] [-s] [-u [f]] [-x [f]] [-v] [-h] [f]` em `DoxyPas.Cli.RunCli` (testável); `-g` recusa sobrescrever (usar `-` para stdout); `-u` cria `.bak`. Diagnósticos via `Core.Log` com `LogSink` substituível (testes). **Atalhos conhecidos:** `DOXYFILE_ENCODING` aplicado a todo o ficheiro (Doxygen só a partir da tag); comentários `##` no início do ficheiro tratados como os do fim; `-x_noenv` não implementado; quebra de linhas dos comentários do template só por espaços (Doxygen também parte palavras longas). | Âmbito mínimo do M1. |
+| D-035 | 2026-10-20 | Aceite | **Parser Pascal = DelphiAST** (RomanYankovsky, **MPL-2.0**, compatível com GPL-2.0 — §3.3 do MPL lista a GPL-2.0 como *Secondary License*; os ficheiros do DelphiAST mantêm a licença MPL), atrás de uma interface própria (`DoxyPas.Lang.Pascal.Parser` → `Entry`), para poder trocar de motor. **Substitui D-006** (parser à mão). Cópia *vendored* em `third_party\DelphiAST\` (commit 3840253) com `PATCHES.md`; decidir mais tarde se se faz *fork* `JFSF/DelphiAST` consumido via Boss. Um lexer próprio (leve) só será escrito para o *highlighter* de código e para a associação precisa comentário↔declaração, se necessário. Resultados do *spike* em §6.2.1. | Cobertura e velocidade muito acima do esperado; um parser à mão custaria semanas só para igualar a cauda longa de sintaxe. |
 | D-022 | 2026-10-20 | Aceite (Q-004) | **Identificadores, comentários de código, mensagens de log/CLI base e nomes de ficheiros em inglês**; a documentação do projecto (`docs\`) em português europeu; textos de UI via ficheiros `.lang` (D-010). | Pedido do utilizador. |
-| D-006 | 2026-10-20 | Proposta (spike pendente) | **Front-end Pascal escrito à mão** (lexer + pré-processador + parser de contorno que salta corpos), em vez de DelphiAST/Flex. Executar um *spike* de 1–2 dias comparando com DelphiAST (comentários, Delphi 13, FPC, desempenho) antes de confirmar. | Controlo da associação comentário↔declaração e dos dialectos; só se precisam declarações. |
+| D-006 | 2026-10-20 | Revista → D-035 | **Front-end Pascal escrito à mão** (lexer + pré-processador + parser de contorno que salta corpos), em vez de DelphiAST/Flex. Executar um *spike* de 1–2 dias comparando com DelphiAST (comentários, Delphi 13, FPC, desempenho) antes de confirmar. | Controlo da associação comentário↔declaração e dos dialectos; só se precisam declarações. |
 | D-007 | 2026-10-20 | Proposta | **Dois níveis de entrada no pipeline:** `Parser → Entry (árvore)` → passos `Build/*` → `Definition (modelo)` → `Doc parser (AST)` → `Visitors` → `OutputGen`. Mantém-se a arquitectura do Doxygen (separação Entry/Definition, padrão Visitor, `OutputList` com vários geradores). | Reduz risco do port; facilita comparar comportamento com o original. |
 | D-008 | 2026-10-20 | Proposta | **Compatibilidade com Doxyfile:** ler o formato existente (352 opções), aceitar opções C++-only sem erro (ignorar com aviso opcional), e adicionar opções Pascal com prefixo próprio (`PASCAL_DIALECT`, `PASCAL_XMLDOC`, `PASCAL_PARSE_DFM`, `DELPHI_PROJECT`, …). Nome por defeito do ficheiro: `Doxyfile`. | Reaproveita documentação, scripts e conhecimento dos utilizadores. |
 | D-009 | 2026-10-20 | Proposta | **Opções geradas de `config.xml`:** ferramenta `tools\GenConfig` (Delphi) transforma `config.xml` (copiado/adaptado para `resources\config`) em `DoxyPas.Config.Options.pas` (+ texto de ajuda para a GUI). Substitui `configgen.py`. | Fonte única de verdade; sem Python no build. |
@@ -287,7 +309,7 @@ mORMot 2 completo (excessivo para o núcleo; manter como opção p/ SQLite/JSON 
 |---|---|---|
 | **M0 — Fundações** | Repositório (git), `.editorconfig`, Boss, projecto CLI vazio, `Core` (strings/log/threads), DUnitX a correr | `doxypas --version` e testes verdes |
 | **M1 — Config** | `GenConfig`, leitor de Doxyfile (352 opções), `--help`, `-g` (gerar Doxyfile) | Lê/escreve Doxyfiles do Doxygen sem perda |
-| **M2 — Front-end Pascal** | Lexer, pré-processador, parser de contorno, `Entry`, ligação comentário↔declaração; *spike* DelphiAST | Parse de RTL/FPC RTL sem erros em >99 % das units |
+| **M2 — Front-end Pascal** | Integração DelphiAST (*vendored* + `PATCHES.md`), adaptador AST → `Entry`, associação comentário↔declaração, defines por plataforma/`PREDEFINED`, `{$I}` | CodeManager 100 % e RAD Studio ≥ 99,4 % sem excepções; `Entry`s correctas nos testes *golden* |
 | **M3 — Comentários e docs** | `commentcnv/commentscan`, `doctokenizer`, `docparser`, Markdown, XMLDoc | Árvore de docs correcta p/ corpus de testes |
 | **M4 — Modelo e resolução** | `Definition`s, passos `Build/*`, relações de classes/membros, `uses`, links | XML de saída = esperado nos *golden tests* |
 | **M5 — Saída XML + Tag** | `xmlgen`, `tagreader/writer` | XML valida contra `compound.xsd` |
@@ -317,6 +339,7 @@ mORMot 2 completo (excessivo para o núcleo; manter como opção p/ SQLite/JSON 
 
 | Data | Alteração |
 |---|---|
+| 2026-10-20 | **Spike DelphiAST concluído:** adoptado como parser (D-035, substitui D-006). Resultados em §6.2.1; harness em `tools\spikes\delphiast`. |
 | 2026-10-20 | **M1 concluído:** GenConfig + Config (Options/Config/Reader/Writer) + CLI (`-g -s -u -x`); 19 testes DUnitX verdes em Win32/Win64; binário Linux64 verificado em WSL. Decisões D-032…D-034. |
 | 2026-10-20 | **M0 concluído:** `doxypas --version` → `0.1.0` em Win32, Win64 e Linux64 (testado em WSL); 3 testes DUnitX verdes em Win32/Win64. Unidades: `Core.Version`, `Core.Log`. Decisões D-029…D-031. Pendente do M0: threading utilitário, `LinkedMap` e `Strings` ficam para quando o M1/M2 os exigirem; CI não configurado. |
 | 2026-10-20 | Q-006 resolvida: Delphi 10+ (D-027), CodeManager como referência (D-028). Todas as questões Q-001…Q-008 fechadas. |

@@ -17,6 +17,9 @@ function GenerateHtml(AProject: TProject; AConfig: TConfig; const AOutDir: strin
 implementation
 
 uses
+{$IFDEF MSWINDOWS}
+  Winapi.Windows,
+{$ENDIF}
   System.SysUtils,
   System.Classes,
   System.IOUtils,
@@ -131,6 +134,7 @@ type
     procedure WriteStatic;
     procedure WriteMenuData;
     procedure BuildNav;
+    procedure WriteHtmlHelp;
     function NavJs(ANodes: TObjectList<TNavNode>; ALevel: Integer; const APath: string; var AFirst: Boolean): Boolean;
     procedure RegisterNav(ANodes: TObjectList<TNavNode>; const APath: string);
     procedure WriteNavTree;
@@ -156,6 +160,26 @@ const
     'Enumerations', 'Enumerator', 'Properties', 'Topics', 'Pages');
   CAll = 0; CClasses = 1; CUnits = 2; CFunctions = 3; CVariables = 4; CTypedefs = 5; CEnums = 6; CEnumValues = 7;
   CProperties = 8; CGroups = 9; CPages = 10;
+
+{$IFDEF MSWINDOWS}
+// Runs hhc.exe on index.hhp and waits for it (it exits with 1 when the CHM was built).
+procedure RunHhc(const AHhc, ADir: string);
+var
+  SI: TStartupInfo;
+  PI: TProcessInformation;
+  Cmd: string;
+begin
+  ZeroMemory(@SI, SizeOf(SI));
+  SI.cb := SizeOf(SI);
+  Cmd := '"' + AHhc + '" index.hhp';
+  if CreateProcess(nil, PChar(Cmd), nil, nil, False, CREATE_NO_WINDOW, nil, PChar(ADir), SI, PI) then
+  begin
+    WaitForSingleObject(PI.hProcess, 600000);
+    CloseHandle(PI.hProcess);
+    CloseHandle(PI.hThread);
+  end;
+end;
+{$ENDIF}
 
 { TNavNode }
 
@@ -1939,7 +1963,8 @@ var
 begin
   if not FTree then
     Exit;
-  BuildNav;
+  if FNav.Count = 0 then
+    BuildNav;
   FNavIndex.Clear;
   FNavIndex.Add(TPair<string, string>.Create('index' + FExt, ''));
   if FHasPages then
@@ -2015,6 +2040,133 @@ begin
   finally
     FPage.Free;
     FPage := Saved;
+  end;
+end;
+
+{ ------------------------------------------------------------------ HTML Help (CHM) }
+
+function HelpEscape(const S: string): string;
+begin
+  Result := S.Replace('&', '&amp;').Replace('<', '&lt;').Replace('>', '&gt;').Replace('"', '&quot;');
+end;
+
+procedure THtmlGenerator.WriteHtmlHelp;
+const
+  Head = '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">'#10'<HTML>'#10'<HEAD>'#10 +
+    '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'#10 +
+    '<meta name="GENERATOR" content="DoxyPas">'#10'<!-- Sitemap 1.0 -->'#10'</HEAD><BODY>'#10;
+var
+  Toc, Idx, Hhp: TStringBuilder;
+  Chm, Title, F, Rel, Hhc: string;
+  Files: TStringList;
+  Entries: TList<TPair<string, string>>;
+  Pair: TPair<string, string>;
+  C: TClassDef;
+  U: TUnitDef;
+  M: TMemberDef;
+
+  procedure Item(ASB: TStringBuilder; const AName, AUrl: string);
+  begin
+    ASB.Append('<LI><OBJECT type="text/sitemap"><param name="Name" value="' + HelpEscape(AName) + '">');
+    if AUrl <> '' then
+      ASB.Append('<param name="Local" value="' + AUrl + '">');
+    ASB.Append('</OBJECT>'#10);
+  end;
+
+  procedure Nodes(ANodes: TObjectList<TNavNode>);
+  var
+    N: TNavNode;
+  begin
+    if ANodes.Count = 0 then
+      Exit;
+    Toc.Append('<UL>'#10);
+    for N in ANodes do
+    begin
+      Item(Toc, N.Name, N.Url);
+      Nodes(N.Kids);
+    end;
+    Toc.Append('</UL>'#10);
+  end;
+
+begin
+  if FNav.Count = 0 then
+    BuildNav;
+  Title := FProjectName;
+  if Title = '' then
+    Title := 'Documentation';
+  Chm := FConfig.GetString('CHM_FILE');
+  if Chm = '' then
+    Chm := 'index.chm';
+  Toc := TStringBuilder.Create;
+  Idx := TStringBuilder.Create;
+  Hhp := TStringBuilder.Create;
+  Files := TStringList.Create;
+  Entries := TList<TPair<string, string>>.Create;
+  try
+    Toc.Append(Head).Append('<OBJECT type="text/site properties"><param name="FrameName" value="right"></OBJECT>'#10);
+    Toc.Append('<UL>'#10);
+    Item(Toc, 'Main Page', 'index' + FExt);
+    Nodes(FNav);
+    Toc.Append('</UL>'#10'</BODY></HTML>'#10);
+    for C in FProject.Classes do
+      if FLinks.IsLinkable(C) then
+      begin
+        Entries.Add(TPair<string, string>.Create(C.Name, FDoc.DefUrl(C)));
+        for M in C.Members do
+          if FProject.IsVisible(M) and FLinks.IsLinkable(M) then
+            Entries.Add(TPair<string, string>.Create(M.Name + ' (' + C.Name + ')', FDoc.DefUrl(M)));
+      end;
+    for U in FProject.Units do
+      if FLinks.IsLinkable(U) then
+      begin
+        Entries.Add(TPair<string, string>.Create(U.Name, FDoc.DefUrl(U)));
+        for M in U.Members do
+          if FProject.IsVisible(M) and FLinks.IsLinkable(M) then
+            Entries.Add(TPair<string, string>.Create(M.Name + ' (' + U.Name + ')', FDoc.DefUrl(M)));
+      end;
+    Entries.Sort(TComparer<TPair<string, string>>.Construct(
+      function(const A, B: TPair<string, string>): Integer
+      begin
+        Result := CompareText(A.Key, B.Key);
+      end));
+    Idx.Append(Head).Append('<UL>'#10);
+    for Pair in Entries do
+      Item(Idx, Pair.Key, Pair.Value);
+    Idx.Append('</UL>'#10'</BODY></HTML>'#10);
+    SaveText('index.hhc', Toc.ToString);
+    SaveText('index.hhk', Idx.ToString);
+    // every file of the output except the search data (it needs scripts that a CHM cannot run) and the help files
+    for F in TDirectory.GetFiles(FDir, '*', TSearchOption.soAllDirectories) do
+    begin
+      Rel := ExtractRelativePath(IncludeTrailingPathDelimiter(FDir), F).Replace('\', '/');
+      if Rel.StartsWith('search/') or SameText(ExtractFileExt(F), '.hhp') or SameText(ExtractFileExt(F), '.chm') then
+        Continue;
+      Files.Add(Rel);
+    end;
+    Hhp.Append('[OPTIONS]'#10'Compatibility=1.1'#10'Compiled file=' + Chm + #10'Contents file=index.hhc'#10 +
+      'Default Window=main'#10'Default topic=index' + FExt + #10'Display compile progress=No'#10 +
+      'Full-text search=Yes'#10'Index file=index.hhk'#10'Language=0x409 English (United States)'#10 +
+      'Title=' + Title + #10#10'[WINDOWS]'#10'main="' + Title + '","index.hhc","index.hhk","index' + FExt +
+      '","index' + FExt + '",,,,,0x23520,,0x387e,,,,,,,,0'#10#10'[FILES]'#10);
+    for F in Files do
+      Hhp.Append(F).Append(#10);
+    Hhp.Append(#10'[INFOTYPES]'#10);
+    SaveText('index.hhp', Hhp.ToString);
+{$IFDEF MSWINDOWS}
+    Hhc := FConfig.GetString('HHC_LOCATION');
+    if (Hhc <> '') and TFile.Exists(Hhc) then
+      RunHhc(Hhc, FDir);
+{$ELSE}
+    Hhc := FConfig.GetString('HHC_LOCATION');
+    if Hhc <> '' then
+      Writeln(ErrOutput, 'warning: the CHM compiler (hhc) runs on Windows only; compile index.hhp there');
+{$ENDIF}
+  finally
+    Entries.Free;
+    Files.Free;
+    Hhp.Free;
+    Idx.Free;
+    Toc.Free;
   end;
 end;
 
@@ -2326,6 +2478,8 @@ begin
   WriteMenuData;
   WriteNavTree;
   WriteSearchData;
+  if FConfig.GetBool('GENERATE_HTMLHELP') then
+    WriteHtmlHelp;
   Result := FFiles;
 end;
 

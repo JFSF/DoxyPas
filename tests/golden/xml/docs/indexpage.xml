@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="indexpage" kind="page">
+    <compoundname>index</compoundname>
+    <title>Docs Project</title>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      <para>See <ref refid="class_docs_1_1_t_base" kindref="compound">TBase</ref> and Missing and <ref refid="group__core" kindref="compound">core</ref>.</para>
+      </detaileddescription>
+    <location file="docs/Docs.pas" line="8" column="1" bodyfile="docs/Docs.pas" bodystart="8" bodyend="9"/>
+    </compounddef>
+  </doxygen>

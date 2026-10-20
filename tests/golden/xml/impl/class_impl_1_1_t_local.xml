@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="class_impl_1_1_t_local" kind="class" language="Pascal" prot="public">
+    <compoundname>Impl.TLocal</compoundname>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_impl_1_1_t_local_1a5633e95d23f9d7772d38c9d217e7ed5b" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure TLocal.Hidden</definition>
+        <argsstring></argsstring>
+        <name>Hidden</name>
+        <qualifiedname>Impl.TLocal.Hidden</qualifiedname>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="impl/Impl.pas" line="24" column="5" bodyfile="impl/Impl.pas" bodystart="55" bodyend="55"/>
+        </memberdef>
+      </sectiondef>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      </detaileddescription>
+    <location file="impl/Impl.pas" line="23" column="3" bodyfile="impl/Impl.pas" bodystart="23" bodyend="25"/>
+    <listofallmembers>
+      <member refid="class_impl_1_1_t_local_1a5633e95d23f9d7772d38c9d217e7ed5b" prot="public" virt="non-virtual"><scope>Impl.TLocal</scope><name>Hidden</name></member>
+      </listofallmembers>
+    </compounddef>
+  </doxygen>

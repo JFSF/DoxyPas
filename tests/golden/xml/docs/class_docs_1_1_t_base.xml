@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="class_docs_1_1_t_base" kind="class" language="Pascal" prot="public">
+    <compoundname>Docs.TBase</compoundname>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_docs_1_1_t_base_1a3451827278b178043fbb6ba49d2a3e8e" prot="public" static="no" inline="no" virt="virtual">
+        <type></type>
+        <definition>procedure TBase.Work</definition>
+        <argsstring>(A: Integer)</argsstring>
+        <name>Work</name>
+        <qualifiedname>Docs.TBase.Work</qualifiedname>
+        <reimplementedby refid="class_docs_1_1_t_derived_1adf9de637c4d86d4ff6f5199e3b58cff2">Work</reimplementedby>
+        <param><type>Integer</type><declname>A</declname></param>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Does the work. 
+            <parameterlist kind="param"><parameteritem><parameternamelist><parametername>A</parametername></parameternamelist><parameterdescription>
+                  <para>the first value</para></parameterdescription></parameteritem><parameteritem><parameternamelist><parametername>Wrong</parametername></parameternamelist><parameterdescription>
+                  <para>not an argument</para></parameterdescription></parameteritem></parameterlist></para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="docs/Docs.pas" line="20" column="5" bodyfile="docs/Docs.pas" bodystart="20" bodyend="20"/>
+        </memberdef>
+      <memberdef kind="function" id="class_docs_1_1_t_base_1ac3febc9880901994746b4cce63f904f8" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure TBase.Other</definition>
+        <argsstring></argsstring>
+        <name>Other</name>
+        <qualifiedname>Docs.TBase.Other</qualifiedname>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Brief of Other.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="docs/Docs.pas" line="22" column="5" bodyfile="docs/Docs.pas" bodystart="22" bodyend="22"/>
+        </memberdef>
+      </sectiondef>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      <para>Base with docs.</para>
+      </detaileddescription>
+    <location file="docs/Docs.pas" line="15" column="3" bodyfile="docs/Docs.pas" bodystart="15" bodyend="23"/>
+    <listofallmembers>
+      <member refid="class_docs_1_1_t_base_1a3451827278b178043fbb6ba49d2a3e8e" prot="public" virt="virtual"><scope>Docs.TBase</scope><name>Work</name></member>
+      <member refid="class_docs_1_1_t_base_1ac3febc9880901994746b4cce63f904f8" prot="public" virt="non-virtual"><scope>Docs.TBase</scope><name>Other</name></member>
+      </listofallmembers>
+    </compounddef>
+  </doxygen>

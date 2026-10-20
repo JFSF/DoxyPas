@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="class_shapes_1_1_t_shape" kind="class" language="Pascal" prot="public">
+    <compoundname>Shapes.TShape</compoundname>
+    <basecompoundref prot="public" virt="non-virtual">TObject</basecompoundref>
+    <derivedcompoundref refid="class_circles_1_1_t_circle" prot="public" virt="non-virtual">TCircle</derivedcompoundref>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_shapes_1_1_t_shape_1a156e77204918195e97a2eb4246d0170c" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>constructor TShape.Create</definition>
+        <argsstring>(const AName: string)</argsstring>
+        <name>Create</name>
+        <qualifiedname>Shapes.TShape.Create</qualifiedname>
+        <param><attributes>const</attributes><type>string</type><declname>AName</declname></param>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Creates a shape.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Shapes.pas" line="22" column="5" bodyfile="inherit/Shapes.pas" bodystart="22" bodyend="22"/>
+        </memberdef>
+      <memberdef kind="function" id="class_shapes_1_1_t_shape_1a99e2163448feecec2a9ef2a63de0eb98" prot="public" static="no" inline="no" virt="pure-virtual">
+        <type>Double</type>
+        <definition>function TShape.Area</definition>
+        <argsstring></argsstring>
+        <name>Area</name>
+        <qualifiedname>Shapes.TShape.Area</qualifiedname>
+        <reimplementedby refid="class_circles_1_1_t_circle_1a61d7cf46d76747f55df2c5ae175c9b3b">Area</reimplementedby>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Area of the shape.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Shapes.pas" line="24" column="5" bodyfile="inherit/Shapes.pas" bodystart="24" bodyend="24"/>
+        </memberdef>
+      <memberdef kind="function" id="class_shapes_1_1_t_shape_1aa331f485301023efc5bf44810f220caf" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure TShape.Move</definition>
+        <argsstring>(DX: Integer; DY: Integer)</argsstring>
+        <name>Move</name>
+        <qualifiedname>Shapes.TShape.Move</qualifiedname>
+        <param><type>Integer</type><declname>DX</declname></param>
+        <param><type>Integer</type><declname>DY</declname></param>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Shapes.pas" line="25" column="5" bodyfile="inherit/Shapes.pas" bodystart="25" bodyend="25"/>
+        </memberdef>
+      <memberdef kind="function" id="class_shapes_1_1_t_shape_1ae0d2f27131f91f3a02dedc33a0b3d96f" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure TShape.Move</definition>
+        <argsstring>(const P: TObject)</argsstring>
+        <name>Move</name>
+        <qualifiedname>Shapes.TShape.Move</qualifiedname>
+        <param><attributes>const</attributes><type>TObject</type><declname>P</declname></param>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Shapes.pas" line="26" column="5" bodyfile="inherit/Shapes.pas" bodystart="26" bodyend="26"/>
+        </memberdef>
+      </sectiondef>
+    <sectiondef kind="protected-func">
+      <memberdef kind="function" id="class_shapes_1_1_t_shape_1ab892695b93659d0b508bd220457f127f" prot="protected" static="no" inline="no" virt="virtual">
+        <type></type>
+        <definition>procedure TShape.Prepare</definition>
+        <argsstring></argsstring>
+        <name>Prepare</name>
+        <qualifiedname>Shapes.TShape.Prepare</qualifiedname>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Called before drawing.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Shapes.pas" line="19" column="5" bodyfile="inherit/Shapes.pas" bodystart="19" bodyend="19"/>
+        </memberdef>
+      </sectiondef>
+    <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="class_shapes_1_1_t_shape_1a9618dc88fe8569651e985a91e0d280e0" prot="private" static="no">
+        <type>string</type>
+        <definition>TShape.FName: string</definition>
+        <argsstring></argsstring>
+        <name>FName</name>
+        <qualifiedname>Shapes.TShape.FName</qualifiedname>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Shapes.pas" line="16" column="5" bodyfile="inherit/Shapes.pas" bodystart="16" bodyend="16"/>
+        </memberdef>
+      </sectiondef>
+    <sectiondef kind="property">
+      <memberdef kind="property" id="class_shapes_1_1_t_shape_1a664924cbaa40b07a9fe2078bb7a34c19" prot="public" static="no" readable="yes" writable="yes">
+        <type>string</type>
+        <definition>property TShape.Name</definition>
+        <argsstring></argsstring>
+        <name>Name</name>
+        <qualifiedname>Shapes.TShape.Name</qualifiedname>
+        <read>FName</read>
+        <write>FName</write>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>The shape name.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Shapes.pas" line="28" column="5" bodyfile="inherit/Shapes.pas" bodystart="28" bodyend="28"/>
+        </memberdef>
+      </sectiondef>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      <para>Base class of all shapes.</para>
+      </detaileddescription>
+    <location file="inherit/Shapes.pas" line="14" column="3" bodyfile="inherit/Shapes.pas" bodystart="14" bodyend="29"/>
+    <listofallmembers>
+      <member refid="class_shapes_1_1_t_shape_1a9618dc88fe8569651e985a91e0d280e0" prot="private" virt="non-virtual"><scope>Shapes.TShape</scope><name>FName</name></member>
+      <member refid="class_shapes_1_1_t_shape_1ab892695b93659d0b508bd220457f127f" prot="protected" virt="virtual"><scope>Shapes.TShape</scope><name>Prepare</name></member>
+      <member refid="class_shapes_1_1_t_shape_1a156e77204918195e97a2eb4246d0170c" prot="public" virt="non-virtual"><scope>Shapes.TShape</scope><name>Create</name></member>
+      <member refid="class_shapes_1_1_t_shape_1a99e2163448feecec2a9ef2a63de0eb98" prot="public" virt="pure-virtual"><scope>Shapes.TShape</scope><name>Area</name></member>
+      <member refid="class_shapes_1_1_t_shape_1aa331f485301023efc5bf44810f220caf" prot="public" virt="non-virtual"><scope>Shapes.TShape</scope><name>Move</name></member>
+      <member refid="class_shapes_1_1_t_shape_1ae0d2f27131f91f3a02dedc33a0b3d96f" prot="public" virt="non-virtual"><scope>Shapes.TShape</scope><name>Move</name></member>
+      <member refid="class_shapes_1_1_t_shape_1a664924cbaa40b07a9fe2078bb7a34c19" prot="public" virt="non-virtual"><scope>Shapes.TShape</scope><name>Name</name></member>
+      </listofallmembers>
+    </compounddef>
+  </doxygen>

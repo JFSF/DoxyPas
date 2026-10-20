@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="unit_circles" kind="namespace" language="Pascal" prot="public">
+    <compoundname>Circles</compoundname>
+    <includes refid="unit_shapes" local="no">Shapes</includes>
+    <innerclass refid="class_circles_1_1_t_circle" prot="public">Circles.TCircle</innerclass>
+    <innerclass refid="class_circles_1_1_t_unit_circle" prot="public">Circles.TUnitCircle</innerclass>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      </detaileddescription>
+    <location file="inherit/Circles.pas" line="1" column="1"/>
+    </compounddef>
+  </doxygen>

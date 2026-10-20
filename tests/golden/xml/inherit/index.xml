@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="0.1.0" xml:lang="en-US">
+  <compound refid="class_circles_1_1_t_circle" kind="class">
+    <name>Circles.TCircle</name>
+    <member refid="class_circles_1_1_t_circle_1aebfd3fcbae0aa98ee6e9a12bb5b66a73" kind="variable"><name>FRadius</name></member>
+    <member refid="class_circles_1_1_t_circle_1a7c324192416f65ce3c6685fc74c02389" kind="function"><name>GetDiameter</name></member>
+    <member refid="class_circles_1_1_t_circle_1a15dd01297c9a4ae3624338094bdc3d09" kind="function"><name>Create</name></member>
+    <member refid="class_circles_1_1_t_circle_1a61d7cf46d76747f55df2c5ae175c9b3b" kind="function"><name>Area</name></member>
+    <member refid="class_circles_1_1_t_circle_1a2fe88d29d1d8b958f8fba1c362e4f4f0" kind="function"><name>Draw</name></member>
+    <member refid="class_circles_1_1_t_circle_1af01ac54da7c53091e2bd202f9f5f1056" kind="function"><name>Move</name></member>
+    <member refid="class_circles_1_1_t_circle_1aac7f8225cbb61d649893a2ef7e6de67d" kind="property"><name>Radius</name></member>
+    <member refid="class_circles_1_1_t_circle_1a0078f2e6e8bf8826cf22c43147736c8f" kind="property"><name>Diameter</name></member>
+    </compound>
+  <compound refid="class_circles_1_1_t_unit_circle" kind="class">
+    <name>Circles.TUnitCircle</name>
+    <member refid="class_circles_1_1_t_unit_circle_1a74e50acb12c7358086fa2c8ae72be43f" kind="function"><name>Area</name></member>
+    </compound>
+  <compound refid="interface_shapes_1_1_i_drawable" kind="interface">
+    <name>Shapes.IDrawable</name>
+    <member refid="interface_shapes_1_1_i_drawable_1a9ebf14006d3ec27f5032de7d5c8273eb" kind="function"><name>Draw</name></member>
+    </compound>
+  <compound refid="class_shapes_1_1_t_shape" kind="class">
+    <name>Shapes.TShape</name>
+    <member refid="class_shapes_1_1_t_shape_1a9618dc88fe8569651e985a91e0d280e0" kind="variable"><name>FName</name></member>
+    <member refid="class_shapes_1_1_t_shape_1ab892695b93659d0b508bd220457f127f" kind="function"><name>Prepare</name></member>
+    <member refid="class_shapes_1_1_t_shape_1a156e77204918195e97a2eb4246d0170c" kind="function"><name>Create</name></member>
+    <member refid="class_shapes_1_1_t_shape_1a99e2163448feecec2a9ef2a63de0eb98" kind="function"><name>Area</name></member>
+    <member refid="class_shapes_1_1_t_shape_1aa331f485301023efc5bf44810f220caf" kind="function"><name>Move</name></member>
+    <member refid="class_shapes_1_1_t_shape_1ae0d2f27131f91f3a02dedc33a0b3d96f" kind="function"><name>Move</name></member>
+    <member refid="class_shapes_1_1_t_shape_1a664924cbaa40b07a9fe2078bb7a34c19" kind="property"><name>Name</name></member>
+    </compound>
+  <compound refid="unit_circles" kind="namespace">
+    <name>Circles</name>
+    </compound>
+  <compound refid="unit_shapes" kind="namespace">
+    <name>Shapes</name>
+    </compound>
+  </doxygenindex>

@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="class_circles_1_1_t_unit_circle" kind="class" language="Pascal" prot="public">
+    <compoundname>Circles.TUnitCircle</compoundname>
+    <basecompoundref refid="class_circles_1_1_t_circle" prot="public" virt="non-virtual">TCircle</basecompoundref>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_circles_1_1_t_unit_circle_1a74e50acb12c7358086fa2c8ae72be43f" prot="public" static="no" inline="no" virt="virtual">
+        <type>Double</type>
+        <definition>function TUnitCircle.Area</definition>
+        <argsstring></argsstring>
+        <name>Area</name>
+        <qualifiedname>Circles.TUnitCircle.Area</qualifiedname>
+        <reimplements refid="class_circles_1_1_t_circle_1a61d7cf46d76747f55df2c5ae175c9b3b">Area</reimplements>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Area of the shape.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Circles.pas" line="26" column="5" bodyfile="inherit/Circles.pas" bodystart="26" bodyend="26"/>
+        </memberdef>
+      </sectiondef>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      </detaileddescription>
+    <location file="inherit/Circles.pas" line="24" column="3" bodyfile="inherit/Circles.pas" bodystart="24" bodyend="27"/>
+    <listofallmembers>
+      <member refid="class_circles_1_1_t_unit_circle_1a74e50acb12c7358086fa2c8ae72be43f" prot="public" virt="virtual"><scope>Circles.TUnitCircle</scope><name>Area</name></member>
+      <member refid="class_circles_1_1_t_circle_1aebfd3fcbae0aa98ee6e9a12bb5b66a73" prot="private" virt="non-virtual"><scope>Circles.TCircle</scope><name>FRadius</name></member>
+      <member refid="class_circles_1_1_t_circle_1a7c324192416f65ce3c6685fc74c02389" prot="private" virt="non-virtual"><scope>Circles.TCircle</scope><name>GetDiameter</name></member>
+      <member refid="class_circles_1_1_t_circle_1a15dd01297c9a4ae3624338094bdc3d09" prot="public" virt="non-virtual"><scope>Circles.TCircle</scope><name>Create</name></member>
+      <member refid="class_circles_1_1_t_circle_1a2fe88d29d1d8b958f8fba1c362e4f4f0" prot="public" virt="non-virtual"><scope>Circles.TCircle</scope><name>Draw</name></member>
+      <member refid="class_circles_1_1_t_circle_1af01ac54da7c53091e2bd202f9f5f1056" prot="public" virt="non-virtual"><scope>Circles.TCircle</scope><name>Move</name></member>
+      <member refid="class_circles_1_1_t_circle_1aac7f8225cbb61d649893a2ef7e6de67d" prot="public" virt="non-virtual"><scope>Circles.TCircle</scope><name>Radius</name></member>
+      <member refid="class_circles_1_1_t_circle_1a0078f2e6e8bf8826cf22c43147736c8f" prot="public" virt="non-virtual"><scope>Circles.TCircle</scope><name>Diameter</name></member>
+      <member refid="class_shapes_1_1_t_shape_1ab892695b93659d0b508bd220457f127f" prot="protected" virt="virtual"><scope>Shapes.TShape</scope><name>Prepare</name></member>
+      <member refid="class_shapes_1_1_t_shape_1a664924cbaa40b07a9fe2078bb7a34c19" prot="public" virt="non-virtual"><scope>Shapes.TShape</scope><name>Name</name></member>
+      </listofallmembers>
+    </compounddef>
+  </doxygen>

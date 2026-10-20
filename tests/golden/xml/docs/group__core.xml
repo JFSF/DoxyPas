@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="group__core" kind="group">
+    <compoundname>core</compoundname>
+    <title>Core</title>
+    <sectiondef kind="func">
+      <member refid="class_docs_1_1_t_base_1ac3febc9880901994746b4cce63f904f8" kind="function"><name>Other</name></member>
+      </sectiondef>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      <para>Core routines.</para>
+      </detaileddescription>
+    <location file="docs/Docs.pas" line="5" column="1" bodyfile="docs/Docs.pas" bodystart="5" bodyend="6"/>
+    </compounddef>
+  </doxygen>

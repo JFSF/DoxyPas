@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="interface_shapes_1_1_i_drawable" kind="interface" language="Pascal" prot="public">
+    <compoundname>Shapes.IDrawable</compoundname>
+    <derivedcompoundref refid="class_circles_1_1_t_circle" prot="public" virt="non-virtual">TCircle</derivedcompoundref>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="interface_shapes_1_1_i_drawable_1a9ebf14006d3ec27f5032de7d5c8273eb" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure IDrawable.Draw</definition>
+        <argsstring></argsstring>
+        <name>Draw</name>
+        <qualifiedname>Shapes.IDrawable.Draw</qualifiedname>
+        <reimplementedby refid="class_circles_1_1_t_circle_1a2fe88d29d1d8b958f8fba1c362e4f4f0">Draw</reimplementedby>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Draws the object.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="inherit/Shapes.pas" line="10" column="5" bodyfile="inherit/Shapes.pas" bodystart="10" bodyend="10"/>
+        </memberdef>
+      </sectiondef>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      <para>Something that can be drawn.</para>
+      </detaileddescription>
+    <location file="inherit/Shapes.pas" line="7" column="3" bodyfile="inherit/Shapes.pas" bodystart="7" bodyend="11"/>
+    <listofallmembers>
+      <member refid="interface_shapes_1_1_i_drawable_1a9ebf14006d3ec27f5032de7d5c8273eb" prot="public" virt="non-virtual"><scope>Shapes.IDrawable</scope><name>Draw</name></member>
+      </listofallmembers>
+    </compounddef>
+  </doxygen>

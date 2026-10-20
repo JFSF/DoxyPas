@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="unit_shapes" kind="namespace" language="Pascal" prot="public">
+    <compoundname>Shapes</compoundname>
+    <includedby refid="unit_circles" local="no">Circles</includedby>
+    <innerclass refid="interface_shapes_1_1_i_drawable" prot="public">Shapes.IDrawable</innerclass>
+    <innerclass refid="class_shapes_1_1_t_shape" prot="public">Shapes.TShape</innerclass>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      </detaileddescription>
+    <location file="inherit/Shapes.pas" line="1" column="1"/>
+    </compounddef>
+  </doxygen>

@@ -26,6 +26,12 @@ uses
   DoxyPas.Model.Defs in 'Model\DoxyPas.Model.Defs.pas',
   DoxyPas.Model.Project in 'Model\DoxyPas.Model.Project.pas',
   DoxyPas.Model.ProjectDump in 'Model\DoxyPas.Model.ProjectDump.pas',
+  DoxyPas.Model.Links in 'Model\DoxyPas.Model.Links.pas',
+  DoxyPas.Output.XmlWriter in 'Output\DoxyPas.Output.XmlWriter.pas',
+  DoxyPas.Output.XmlDoc in 'Output\DoxyPas.Output.XmlDoc.pas',
+  DoxyPas.Output.XmlGen in 'Output\DoxyPas.Output.XmlGen.pas',
+  DoxyPas.Output.TagFile in 'Output\DoxyPas.Output.TagFile.pas',
+  DoxyPas.Resources.Xml in 'Resources\DoxyPas.Resources.Xml.pas',
   DoxyPas.Build.Passes in 'Build\DoxyPas.Build.Passes.pas',
   DoxyPas.Build.Pipeline in 'Build\DoxyPas.Build.Pipeline.pas',
   DoxyPas.Cli in 'Cli\DoxyPas.Cli.pas';

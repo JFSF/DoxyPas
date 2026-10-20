@@ -39,3 +39,8 @@ pushd "%ROOT%tools\GenConfig"
 "%BDS%\bin\dcc32.exe" %OPTS% -E"%ROOT%build\tools" -N0"%ROOT%build\tools\dcu" GenConfig.dpr || exit /b 1
 popd
 "%ROOT%build\tools\GenConfig.exe" "%ROOT%src\Config\DoxyPas.Config.Options.pas" "%ROOT%resources\config\config.xml" "%ROOT%resources\config\config_pascal.xml"
+rem Packs resources\xml\*.xsd into src\Resources\DoxyPas.Resources.Xml.pas
+pushd "%ROOT%tools\PackResources"
+"%BDS%\bin\dcc32.exe" %OPTS% -E"%ROOT%build\tools" -N0"%ROOT%build\tools\dcu" PackResources.dpr || exit /b 1
+popd
+"%ROOT%build\tools\PackResources.exe" "%ROOT%src\Resources\DoxyPas.Resources.Xml.pas" DoxyPas.Resources.Xml XmlResource "%ROOT%resources\xml\compound.xsd" "%ROOT%resources\xml\index.xsd" "%ROOT%resources\xml\xml.xsd"

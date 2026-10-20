@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="unit_impl" kind="namespace" language="Pascal" prot="public">
+    <compoundname>Impl</compoundname>
+    <innerclass refid="class_impl_1_1_t_worker" prot="public">Impl.TWorker</innerclass>
+    <innerclass refid="class_impl_1_1_t_local" prot="public">Impl.TLocal</innerclass>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="unit_impl_1a5bcc2542c09dd2ea4c2ca627530ea1d5" prot="public" static="no" inline="no" virt="non-virtual">
+        <type>Integer</type>
+        <definition>function Twice</definition>
+        <argsstring>(X: Integer)</argsstring>
+        <name>Twice</name>
+        <qualifiedname>Impl.Twice</qualifiedname>
+        <param><type>Integer</type><declname>X</declname></param>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Interface routine.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="impl/Impl.pas" line="16" column="1" bodyfile="impl/Impl.pas" bodystart="42" bodyend="42"/>
+        </memberdef>
+      <memberdef kind="function" id="unit_impl_1a2df07ce7bb02aa1278858b4678d84529" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure Undocumented</definition>
+        <argsstring></argsstring>
+        <name>Undocumented</name>
+        <qualifiedname>Impl.Undocumented</qualifiedname>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="impl/Impl.pas" line="18" column="1" bodyfile="impl/Impl.pas" bodystart="47" bodyend="47"/>
+        </memberdef>
+      <memberdef kind="function" id="unit_impl_1a0bf0f1957ed461721fe09530ce61c845" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure OnlyHere</definition>
+        <argsstring></argsstring>
+        <name>OnlyHere</name>
+        <qualifiedname>Impl.OnlyHere</qualifiedname>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="impl/Impl.pas" line="51" column="1" bodyfile="impl/Impl.pas" bodystart="51" bodyend="51"/>
+        </memberdef>
+      </sectiondef>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      </detaileddescription>
+    <location file="impl/Impl.pas" line="1" column="1"/>
+    </compounddef>
+  </doxygen>

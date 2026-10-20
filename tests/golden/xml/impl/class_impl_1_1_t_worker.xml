@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+  <compounddef id="class_impl_1_1_t_worker" kind="class" language="Pascal" prot="public">
+    <compoundname>Impl.TWorker</compoundname>
+    <sectiondef kind="public-func">
+      <memberdef kind="function" id="class_impl_1_1_t_worker_1a7a8a70aaf6131c01dcc2ec08c4a40c4e" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure TWorker.Run</definition>
+        <argsstring>(A: Integer)</argsstring>
+        <name>Run</name>
+        <qualifiedname>Impl.TWorker.Run</qualifiedname>
+        <param><type>Integer</type><declname>A</declname></param>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Declared doc.</para>
+          <para>Implementation doc for Run(Integer).</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="impl/Impl.pas" line="10" column="5" bodyfile="impl/Impl.pas" bodystart="28" bodyend="28"/>
+        </memberdef>
+      <memberdef kind="function" id="class_impl_1_1_t_worker_1ab6d926e31fe690fdc4b5bacdc9ef2594" prot="public" static="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>procedure TWorker.Run</definition>
+        <argsstring>(const S: string)</argsstring>
+        <name>Run</name>
+        <qualifiedname>Impl.TWorker.Run</qualifiedname>
+        <param><attributes>const</attributes><type>string</type><declname>S</declname></param>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="impl/Impl.pas" line="11" column="5" bodyfile="impl/Impl.pas" bodystart="32" bodyend="32"/>
+        </memberdef>
+      <memberdef kind="function" id="class_impl_1_1_t_worker_1a561d709925cea2fd7926ee1e97cd9258" prot="public" static="no" inline="no" virt="non-virtual">
+        <type>Integer</type>
+        <definition>function TWorker.Calc</definition>
+        <argsstring></argsstring>
+        <name>Calc</name>
+        <qualifiedname>Impl.TWorker.Calc</qualifiedname>
+        <briefdescription>
+          </briefdescription>
+        <detaileddescription>
+          <para>Doc only in the implementation.</para>
+          </detaileddescription>
+        <inbodydescription>
+          </inbodydescription>
+        <location file="impl/Impl.pas" line="12" column="5" bodyfile="impl/Impl.pas" bodystart="37" bodyend="37"/>
+        </memberdef>
+      </sectiondef>
+    <briefdescription>
+      </briefdescription>
+    <detaileddescription>
+      <para>A class whose methods are implemented below.</para>
+      </detaileddescription>
+    <location file="impl/Impl.pas" line="7" column="3" bodyfile="impl/Impl.pas" bodystart="7" bodyend="13"/>
+    <listofallmembers>
+      <member refid="class_impl_1_1_t_worker_1a7a8a70aaf6131c01dcc2ec08c4a40c4e" prot="public" virt="non-virtual"><scope>Impl.TWorker</scope><name>Run</name></member>
+      <member refid="class_impl_1_1_t_worker_1ab6d926e31fe690fdc4b5bacdc9ef2594" prot="public" virt="non-virtual"><scope>Impl.TWorker</scope><name>Run</name></member>
+      <member refid="class_impl_1_1_t_worker_1a561d709925cea2fd7926ee1e97cd9258" prot="public" virt="non-virtual"><scope>Impl.TWorker</scope><name>Calc</name></member>
+      </listofallmembers>
+    </compounddef>
+  </doxygen>

@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="0.1.0" xml:lang="en-US">
+  <compound refid="class_impl_1_1_t_worker" kind="class">
+    <name>Impl.TWorker</name>
+    <member refid="class_impl_1_1_t_worker_1a7a8a70aaf6131c01dcc2ec08c4a40c4e" kind="function"><name>Run</name></member>
+    <member refid="class_impl_1_1_t_worker_1ab6d926e31fe690fdc4b5bacdc9ef2594" kind="function"><name>Run</name></member>
+    <member refid="class_impl_1_1_t_worker_1a561d709925cea2fd7926ee1e97cd9258" kind="function"><name>Calc</name></member>
+    </compound>
+  <compound refid="class_impl_1_1_t_local" kind="class">
+    <name>Impl.TLocal</name>
+    <member refid="class_impl_1_1_t_local_1a5633e95d23f9d7772d38c9d217e7ed5b" kind="function"><name>Hidden</name></member>
+    </compound>
+  <compound refid="unit_impl" kind="namespace">
+    <name>Impl</name>
+    <member refid="unit_impl_1a5bcc2542c09dd2ea4c2ca627530ea1d5" kind="function"><name>Twice</name></member>
+    <member refid="unit_impl_1a2df07ce7bb02aa1278858b4678d84529" kind="function"><name>Undocumented</name></member>
+    <member refid="unit_impl_1a0bf0f1957ed461721fe09530ce61c845" kind="function"><name>OnlyHere</name></member>
+    </compound>
+  </doxygenindex>

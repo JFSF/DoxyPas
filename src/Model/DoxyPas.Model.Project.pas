@@ -27,13 +27,26 @@ type
     WarnNoParamDoc: Boolean;
     CaseSenseNames: Boolean;         // file names: keep case (Linux) or escape upper case (Windows)
     UnitScopes: TArray<string>;      // prefixes tried for unit names ("Classes" -> "System.Classes")
+    StripFromPath: TArray<string>;   // prefixes removed from file names in the output
+    AutolinkSupport: Boolean;        // link words that match a class or unit name
     class function Default: TProjectOptions; static;
     class function FromConfig(AConfig: TConfig): TProjectOptions; static;
+  end;
+
+  /// <summary>A compound or member of another project, read from a tag file (TAGFILES).</summary>
+  TExternalRef = record
+    Name: string;        // qualified name as in the tag file
+    Kind: string;        // class, struct, interface, namespace, group, page, function, variable, ...
+    Url: string;         // base location of the other documentation ("../other/html"), may be empty
+    FileName: string;    // e.g. "classTFoo.html"
+    Anchor: string;
+    TagName: string;
   end;
 
   TProject = class
   strict private
     FOwned: TObjectList<TDefinition>;
+    FExternals: TDictionary<string, TExternalRef>;
     FUnitByName: TDictionary<string, TUnitDef>;
     FGroupByName: TDictionary<string, TGroupDef>;
     function LookupSimple(const AName: string; AScope: TDefinition): TDefinition;
@@ -62,6 +75,11 @@ type
     function Lookup(const AName: string; AScope: TDefinition): TDefinition;
     function IsVisible(ADef: TDefinition): Boolean;
     procedure Warn(const AFile: string; ALine: Integer; const AMsg: string);
+    /// <summary>Registers a symbol of another project; it is found by its full name and by its last name part.</summary>
+    procedure AddExternal(const ARef: TExternalRef);
+    function FindExternal(const AName: string; out ARef: TExternalRef): Boolean;
+    /// <summary>File name as written in the output: relative to STRIP_FROM_PATH, '/' separators.</summary>
+    function OutputPath(const AFileName: string): string;
   end;
 
 /// <summary>"TList&lt;T&gt;.Add(X)" -> "TList.Add": generic arguments and call arguments removed.</summary>
@@ -116,6 +134,8 @@ begin
   Result.CaseSenseNames := True;
 {$ENDIF}
   Result.UnitScopes := ['System', 'System.Win', 'Winapi', 'Vcl', 'FMX', 'Data', 'Xml', 'Soap', 'Web', 'Posix'];
+  Result.StripFromPath := nil;
+  Result.AutolinkSupport := True;
 end;
 
 class function TProjectOptions.FromConfig(AConfig: TConfig): TProjectOptions;
@@ -139,6 +159,8 @@ begin
   else
     Result.CaseSenseNames := SameText(Cs, 'YES');
   Result.UnitScopes := AConfig.GetList('PASCAL_UNIT_SCOPES');
+  Result.StripFromPath := AConfig.GetList('STRIP_FROM_PATH');
+  Result.AutolinkSupport := AConfig.GetBool('AUTOLINK_SUPPORT');
 end;
 
 { TProject }
@@ -150,6 +172,7 @@ begin
   FOwned := TObjectList<TDefinition>.Create(True);
   FUnitByName := TDictionary<string, TUnitDef>.Create;
   FGroupByName := TDictionary<string, TGroupDef>.Create;
+  FExternals := TDictionary<string, TExternalRef>.Create;
   Roots := TObjectList<TEntry>.Create(True);
   Units := TList<TUnitDef>.Create;
   Classes := TList<TClassDef>.Create;
@@ -167,6 +190,7 @@ begin
   Members.Free;
   Classes.Free;
   Units.Free;
+  FExternals.Free;
   FGroupByName.Free;
   FUnitByName.Free;
   FOwned.Free;   // definitions refer to entries: free them first
@@ -241,6 +265,48 @@ begin
     Warnings.Add('warning: ' + AMsg)
   else
     Warnings.Add(Format('%s:%d: warning: %s', [AFile, ALine, AMsg]));
+end;
+
+procedure TProject.AddExternal(const ARef: TExternalRef);
+var
+  Plain: string;
+  P: Integer;
+begin
+  Plain := LowerCase(PlainName(ARef.Name)).Replace('::', '.');
+  FExternals.AddOrSetValue(Plain, ARef);
+  // every trailing part of the qualified name finds it too: "ns.foo.bar", "foo.bar", "bar"
+  P := Pos('.', Plain);
+  while P > 0 do
+  begin
+    Plain := Copy(Plain, P + 1, MaxInt);
+    if (Plain <> '') and not FExternals.ContainsKey(Plain) then
+      FExternals.Add(Plain, ARef);
+    P := Pos('.', Plain);
+  end;
+end;
+
+function TProject.FindExternal(const AName: string; out ARef: TExternalRef): Boolean;
+begin
+  Result := FExternals.TryGetValue(LowerCase(PlainName(AName)).Replace('::', '.'), ARef);
+end;
+
+function TProject.OutputPath(const AFileName: string): string;
+var
+  Prefix, Full, Norm: string;
+  Best: Integer;
+begin
+  Full := AFileName.Replace('\', '/');
+  Best := 0;
+  Result := Full;
+  for Prefix in Options.StripFromPath do
+  begin
+    Norm := Prefix.Replace('\', '/').TrimRight(['/']) + '/';
+    if (Length(Norm) > Best) and Full.StartsWith(Norm, True) then
+    begin
+      Best := Length(Norm);
+      Result := Copy(Full, Length(Norm) + 1, MaxInt);
+    end;
+  end;
 end;
 
 { A member of a class or of one of its ancestors. }

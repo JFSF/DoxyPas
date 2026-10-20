@@ -31,7 +31,9 @@ uses
   DoxyPas.Comments.EntryDocs,
   DoxyPas.Model.Project,
   DoxyPas.Model.ProjectDump,
-  DoxyPas.Build.Pipeline;
+  DoxyPas.Build.Pipeline,
+  DoxyPas.Output.XmlGen,
+  DoxyPas.Output.TagFile;
 
 type
   TCommand = (cmdRun, cmdGenerate, cmdUpdate, cmdDiff);
@@ -158,6 +160,61 @@ begin
     Result := 1
   else
     Result := 0;
+end;
+
+{ The normal run: read the input, build the model and write the enabled outputs. }
+function RunGenerate(AConfig: TConfig): Integer;
+var
+  Files: TArray<string>;
+  Project: TProject;
+  Out_, Xml, Tag, Msg: string;
+  Quiet: Boolean;
+  Count: Integer;
+begin
+  Quiet := AConfig.GetBool('QUIET');
+  Out_ := AConfig.GetString('OUTPUT_DIRECTORY');
+  if Out_ = '' then
+    Out_ := GetCurrentDir;
+  Out_ := TPath.GetFullPath(Out_);
+  if not Quiet then
+    Writeln('Searching for source files...');
+  Files := CollectInputFiles(AConfig);
+  if Length(Files) = 0 then
+  begin
+    Error('', 0, 'no input files found (check INPUT, FILE_PATTERNS and RECURSIVE)');
+    Exit(1);
+  end;
+  if not Quiet then
+    Writeln(Format('Parsing %d files...', [Length(Files)]));
+  Project := BuildProject(AConfig, Files);
+  try
+    if AConfig.GetBool('GENERATE_XML') then
+    begin
+      Xml := TPath.Combine(Out_, AConfig.GetString('XML_OUTPUT'));
+      if not Quiet then
+        Writeln('Generating XML output...');
+      Count := GenerateXml(Project, AConfig, Xml);
+      if not Quiet then
+        Writeln(Format('%d files written to %s', [Count, Xml]));
+    end;
+    Tag := AConfig.GetString('GENERATE_TAGFILE');
+    if Tag <> '' then
+    begin
+      if not Quiet then
+        Writeln('Generating tag file...');
+      if TPath.IsRelativePath(Tag) then
+        Tag := TPath.Combine(Out_, Tag);
+      WriteTagFile(Project, Tag);
+    end;
+    if AConfig.GetBool('GENERATE_HTML') and not Quiet then
+      Writeln('Note: HTML output is not implemented yet; set GENERATE_HTML = NO to silence this message.');
+    if AConfig.GetBool('WARNINGS') then
+      for Msg in Project.Warnings do
+        Writeln(ErrOutput, Msg);
+  finally
+    Project.Free;
+  end;
+  Result := 0;
 end;
 
 { Developer command: build the semantic model of AInput (file or folder, searched recursively) and dump it. }
@@ -362,7 +419,7 @@ begin
       else
         ReadDoxyfile(Config, Name);
         Config.PostProcess;
-        Writeln('Configuration ''', Name, ''' is valid. Documentation generation is not implemented yet.');
+        Exit(RunGenerate(Config));
       end;
       Result := 0;
     except

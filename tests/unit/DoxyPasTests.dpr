@@ -28,13 +28,20 @@ uses
   DoxyPas.Model.Defs in '..\..\src\Model\DoxyPas.Model.Defs.pas',
   DoxyPas.Model.Project in '..\..\src\Model\DoxyPas.Model.Project.pas',
   DoxyPas.Model.ProjectDump in '..\..\src\Model\DoxyPas.Model.ProjectDump.pas',
+  DoxyPas.Model.Links in '..\..\src\Model\DoxyPas.Model.Links.pas',
+  DoxyPas.Output.XmlWriter in '..\..\src\Output\DoxyPas.Output.XmlWriter.pas',
+  DoxyPas.Output.XmlDoc in '..\..\src\Output\DoxyPas.Output.XmlDoc.pas',
+  DoxyPas.Output.XmlGen in '..\..\src\Output\DoxyPas.Output.XmlGen.pas',
+  DoxyPas.Output.TagFile in '..\..\src\Output\DoxyPas.Output.TagFile.pas',
+  DoxyPas.Resources.Xml in '..\..\src\Resources\DoxyPas.Resources.Xml.pas',
   DoxyPas.Build.Passes in '..\..\src\Build\DoxyPas.Build.Passes.pas',
   DoxyPas.Build.Pipeline in '..\..\src\Build\DoxyPas.Build.Pipeline.pas',
   DoxyPas.Tests.Core in 'DoxyPas.Tests.Core.pas',
   DoxyPas.Tests.Config in 'DoxyPas.Tests.Config.pas',
   DoxyPas.Tests.Pascal in 'DoxyPas.Tests.Pascal.pas',
   DoxyPas.Tests.Doc in 'DoxyPas.Tests.Doc.pas',
-  DoxyPas.Tests.Model in 'DoxyPas.Tests.Model.pas';
+  DoxyPas.Tests.Model in 'DoxyPas.Tests.Model.pas',
+  DoxyPas.Tests.Output in 'DoxyPas.Tests.Output.pas';
 
 var
   Runner: ITestRunner;

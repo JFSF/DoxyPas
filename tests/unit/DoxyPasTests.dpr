@@ -25,10 +25,16 @@ uses
   DoxyPas.Comments.XmlDoc in '..\..\src\Comments\DoxyPas.Comments.XmlDoc.pas',
   DoxyPas.Comments.Scanner in '..\..\src\Comments\DoxyPas.Comments.Scanner.pas',
   DoxyPas.Comments.EntryDocs in '..\..\src\Comments\DoxyPas.Comments.EntryDocs.pas',
+  DoxyPas.Model.Defs in '..\..\src\Model\DoxyPas.Model.Defs.pas',
+  DoxyPas.Model.Project in '..\..\src\Model\DoxyPas.Model.Project.pas',
+  DoxyPas.Model.ProjectDump in '..\..\src\Model\DoxyPas.Model.ProjectDump.pas',
+  DoxyPas.Build.Passes in '..\..\src\Build\DoxyPas.Build.Passes.pas',
+  DoxyPas.Build.Pipeline in '..\..\src\Build\DoxyPas.Build.Pipeline.pas',
   DoxyPas.Tests.Core in 'DoxyPas.Tests.Core.pas',
   DoxyPas.Tests.Config in 'DoxyPas.Tests.Config.pas',
   DoxyPas.Tests.Pascal in 'DoxyPas.Tests.Pascal.pas',
-  DoxyPas.Tests.Doc in 'DoxyPas.Tests.Doc.pas';
+  DoxyPas.Tests.Doc in 'DoxyPas.Tests.Doc.pas',
+  DoxyPas.Tests.Model in 'DoxyPas.Tests.Model.pas';
 
 var
   Runner: ITestRunner;

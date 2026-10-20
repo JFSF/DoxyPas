@@ -1,0 +1,29 @@
+unit Docs {detailed} -> unit_docs
+  detailed: The unit documentation.
+  class TBase (class) {detailed} -> class_docs_1_1_t_base
+    derived: Docs.TDerived
+    detailed: Base with docs.
+    function Work(A: Integer) [public] {detailed}
+      reimplemented by: Docs.TDerived.Work
+      detailed: Does the work. | \param A the first value | \param Wrong not an argument
+    function Other() [public] {detailed}
+      detailed: Brief of Other.
+  class TDerived (class) : TBase -> class_docs_1_1_t_derived
+    function Work(A: Integer) [public] {detailed inherited}
+      reimplements: Docs.TBase.Work
+      detailed: Does the work. | \param A the first value | \param Wrong not an argument
+    function Copy1() [public] {detailed}
+      detailed: Brief of Other.
+    function Copy2() [public] hidden
+    function Copy3() [public] hidden
+    function Nothing() [public] hidden
+    all members: TDerived.Work TDerived.Copy1 TDerived.Copy2 TDerived.Copy3 TDerived.Nothing TBase.Other
+group core "Core" -> group__core
+  member Docs.TBase.Other
+page mainpage "Docs Project" -> index
+warnings:
+  Docs.pas:30: warning: \inheritdoc: no documented base member found
+  Docs.pas:25: warning: class Docs.TDerived is not documented.
+  Docs.pas:20: warning: argument 'Wrong' of command @param is not found in the argument list of Docs.TBase.Work(A: Integer)
+  Docs.pas:27: warning: argument 'Wrong' of command @param is not found in the argument list of Docs.TDerived.Work(A: Integer)
+  Docs.pas:8: warning: unable to resolve reference to 'Missing' for \ref command

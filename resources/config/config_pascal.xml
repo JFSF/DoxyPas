@@ -26,6 +26,25 @@
       <value name='iOS'/>
       <value name='Android'/>
     </option>
+    <option type='list' id='PASCAL_UNIT_SCOPES' format='string'>
+      <docs>
+<![CDATA[
+ The \c PASCAL_UNIT_SCOPES tag lists the unit scope names (the compiler's <code>UNITSCOPENAME</code>)
+ that are tried in front of a unit name, so that <code>Classes</code> can refer to <code>System.Classes</code>
+ in documentation links and <code>uses</code> clauses.
+]]>
+      </docs>
+      <value name='System'/>
+      <value name='System.Win'/>
+      <value name='Winapi'/>
+      <value name='Vcl'/>
+      <value name='FMX'/>
+      <value name='Data'/>
+      <value name='Xml'/>
+      <value name='Soap'/>
+      <value name='Web'/>
+      <value name='Posix'/>
+    </option>
     <option type='bool' id='PASCAL_XMLDOC' defval='1'>
       <docs>
 <![CDATA[

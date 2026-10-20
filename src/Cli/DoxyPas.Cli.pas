@@ -28,7 +28,10 @@ uses
   DoxyPas.Doc.Parser,
   DoxyPas.Doc.Dump,
   DoxyPas.Comments.Scanner,
-  DoxyPas.Comments.EntryDocs;
+  DoxyPas.Comments.EntryDocs,
+  DoxyPas.Model.Project,
+  DoxyPas.Model.ProjectDump,
+  DoxyPas.Build.Pipeline;
 
 type
   TCommand = (cmdRun, cmdGenerate, cmdUpdate, cmdDiff);
@@ -48,6 +51,8 @@ begin
   Writeln('  doxypas -x [configName]     show the options that differ from the defaults');
   Writeln('  doxypas --parse <path> [configName] [--docs] [--verbose] [--interface-only]');
   Writeln('                              developer: parse a Pascal file/folder and dump the entries');
+  Writeln('  doxypas --model <path> [configName] [--verbose]');
+  Writeln('                              developer: build and dump the semantic model (--verbose: single thread)');
   Writeln('  doxypas --doc <file>        developer: Markdown + documentation parser on a text file');
   Writeln('  doxypas -v | --version      print the version');
   Writeln('  doxypas -h | --help         print this help');
@@ -155,6 +160,36 @@ begin
     Result := 0;
 end;
 
+{ Developer command: build the semantic model of AInput (file or folder, searched recursively) and dump it. }
+function RunModel(const AInput, AConfigName: string; ASequential: Boolean): Integer;
+var
+  Config: TConfig;
+  Files: TArray<string>;
+  Project: TProject;
+  Opt: TConfigOption;
+begin
+  Config := TConfig.Create;
+  try
+    if AConfigName <> '' then
+      ReadDoxyfile(Config, AConfigName);
+    Opt := Config.Find('INPUT');
+    Opt.List.Clear;
+    Opt.List.Add(AInput);
+    Config.Find('RECURSIVE').Raw := 'YES';
+    Config.PostProcess;
+    Files := CollectInputFiles(Config);
+    Project := BuildProject(Config, Files, not ASequential);
+    try
+      Write(DumpProject(Project));
+    finally
+      Project.Free;
+    end;
+  finally
+    Config.Free;
+  end;
+  Result := 0;
+end;
+
 { Developer command: run a documentation text file through Markdown + parser and print the result. }
 function RunDocFile(const AFileName: string; AMarkdown: Boolean): Integer;
 var
@@ -203,7 +238,7 @@ function RunCli(const AArgs: TArray<string>): Integer;
 var
   Cmd: TCommand;
   Short, Verbose, IfaceOnly, ScanDocs: Boolean;
-  ParsePath, DocPath: string;
+  ParsePath, DocPath, ModelPath: string;
   Name, Arg: string;
   I: Integer;
   Config: TConfig;
@@ -220,6 +255,7 @@ begin
   ScanDocs := False;
   ParsePath := '';
   DocPath := '';
+  ModelPath := '';
   Name := '';
   I := 0;
   while I < Length(AArgs) do
@@ -245,6 +281,11 @@ begin
       ParsePath := AArgs[I];
       Inc(I);
     end
+    else if (Arg = '--model') and (I < Length(AArgs)) then
+    begin
+      ModelPath := AArgs[I];
+      Inc(I);
+    end
     else if (Arg = '--doc') and (I < Length(AArgs)) then
     begin
       DocPath := AArgs[I];
@@ -259,6 +300,18 @@ begin
     begin
       Error('', 0, Format('unknown option ''%s'' (try -h)', [Arg]));
       Exit(1);
+    end;
+  end;
+  if ModelPath <> '' then
+  begin
+    try
+      Exit(RunModel(ModelPath, Name, Verbose));
+    except
+      on E: EConfigError do
+      begin
+        Error('', 0, E.Message);
+        Exit(1);
+      end;
     end;
   end;
   if DocPath <> '' then

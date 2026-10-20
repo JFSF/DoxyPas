@@ -27,7 +27,7 @@ type
 
 const
   ConfigGroupCount = 19;
-  ConfigOptionCount = 357;
+  ConfigOptionCount = 358;
 
   ConfigHeader =
       'This file describes the settings to be used by the documentation system' + #10 +
@@ -3901,6 +3901,15 @@ const
       'can be defined with ef cfg_predefined "PREDEFINED".' + #10 +
       'Possible values are: Win32, Win64, Linux64, macOS, iOS and Android.' + #10 +
       'The default value is: Win64.'),
+    (Name: 'PASCAL_UNIT_SCOPES';
+     Kind: okList; OrgKind: okBool; Group: 18;
+     Format: 'string'; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: 'System|System.Win|Winapi|Vcl|FMX|Data|Xml|Soap|Web|Posix';
+     Doc: 'The PASCAL_UNIT_SCOPES tag lists the unit scope names (the compiler''s' + #10 +
+      'UNITSCOPENAME) that are tried in front of a unit name, so that Classes can' + #10 +
+      'refer to System.Classes in documentation links and uses clauses.System,' + #10 +
+      'System.Win, Winapi, Vcl, FMX, Data, Xml, Soap, Web and Posix.'),
     (Name: 'PASCAL_XMLDOC';
      Kind: okBool; OrgKind: okBool; Group: 18;
      Format: ''; Depends: '';

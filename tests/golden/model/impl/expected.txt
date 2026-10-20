@@ -1,0 +1,20 @@
+unit Impl -> unit_impl
+  class TWorker (class) {detailed} -> class_impl_1_1_t_worker
+    detailed: A class whose methods are implemented below.
+    function Run(A: Integer) [public] {detailed}
+      impl: Impl.pas:28
+      detailed: Declared doc. |  | Implementation doc for Run(Integer).
+    function Run(const S: string) [public]
+      impl: Impl.pas:32
+    function Calc(): Integer [public] {detailed}
+      impl: Impl.pas:37
+      detailed: Doc only in the implementation.
+  class TLocal (class) {impl-only} -> class_impl_1_1_t_local
+    function Hidden() [public]
+      impl: Impl.pas:55
+  function Twice(X: Integer): Integer [public] {detailed}
+    impl: Impl.pas:42
+    detailed: Interface routine.
+  function Undocumented() [public]
+    impl: Impl.pas:47
+  function OnlyHere() [public] {impl-only}

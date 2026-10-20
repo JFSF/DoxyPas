@@ -23,6 +23,11 @@ uses
   DoxyPas.Comments.XmlDoc in 'Comments\DoxyPas.Comments.XmlDoc.pas',
   DoxyPas.Comments.Scanner in 'Comments\DoxyPas.Comments.Scanner.pas',
   DoxyPas.Comments.EntryDocs in 'Comments\DoxyPas.Comments.EntryDocs.pas',
+  DoxyPas.Model.Defs in 'Model\DoxyPas.Model.Defs.pas',
+  DoxyPas.Model.Project in 'Model\DoxyPas.Model.Project.pas',
+  DoxyPas.Model.ProjectDump in 'Model\DoxyPas.Model.ProjectDump.pas',
+  DoxyPas.Build.Passes in 'Build\DoxyPas.Build.Passes.pas',
+  DoxyPas.Build.Pipeline in 'Build\DoxyPas.Build.Pipeline.pas',
   DoxyPas.Cli in 'Cli\DoxyPas.Cli.pas';
 
 var

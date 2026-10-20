@@ -1,0 +1,53 @@
+unit Circles -> unit_circles
+  uses (project): Shapes
+  class TCircle (class) : TShape, IDrawable(i) {detailed} -> class_circles_1_1_t_circle
+    derived: Circles.TUnitCircle
+    detailed: A circle.
+    variable FRadius: Double [private]
+    function GetDiameter(): Double [private]
+    function Create(const AName: string; ARadius: Double) [public]
+    function Area(): Double [public] {detailed inherited}
+      reimplements: Shapes.TShape.Area
+      reimplemented by: Circles.TUnitCircle.Area
+      detailed: Area of the shape.
+    function Draw() [public] {detailed inherited}
+      reimplements: Shapes.IDrawable.Draw
+      detailed: Draws the object.
+    function Move(DX: Integer; DY: Integer) [public]
+    property Radius: Double [public]
+      read: FRadius
+      write: FRadius
+    property Diameter: Double [public] {detailed}
+      read: GetDiameter
+      detailed: Twice the radius.
+    all members: TCircle.FRadius TCircle.GetDiameter TCircle.Create TCircle.Area TCircle.Draw TCircle.Move TCircle.Radius TCircle.Diameter TShape.Prepare TShape.Name
+  class TUnitCircle (class) : TCircle -> class_circles_1_1_t_unit_circle
+    function Area(): Double [public] {detailed inherited}
+      reimplements: Circles.TCircle.Area
+      detailed: Area of the shape.
+    all members: TUnitCircle.Area TCircle.FRadius TCircle.GetDiameter TCircle.Create TCircle.Draw TCircle.Move TCircle.Radius TCircle.Diameter TShape.Prepare TShape.Name
+unit Shapes -> unit_shapes
+  used by: Circles
+  class IDrawable (interface) {detailed} -> interface_shapes_1_1_i_drawable
+    derived: Circles.TCircle
+    detailed: Something that can be drawn.
+    function Draw() [public] {detailed}
+      reimplemented by: Circles.TCircle.Draw
+      detailed: Draws the object.
+  class TShape (class) : TObject* {detailed} -> class_shapes_1_1_t_shape
+    derived: Circles.TCircle
+    detailed: Base class of all shapes.
+    variable FName: string [private]
+    function Prepare() [protected] {detailed}
+      detailed: Called before drawing.
+    function Create(const AName: string) [public] {detailed}
+      detailed: Creates a shape.
+    function Area(): Double [public] {detailed}
+      reimplemented by: Circles.TCircle.Area
+      detailed: Area of the shape.
+    function Move(DX: Integer; DY: Integer) [public]
+    function Move(const P: TObject) [public]
+    property Name: string [public] {detailed}
+      read: FName
+      write: FName
+      detailed: The shape name.

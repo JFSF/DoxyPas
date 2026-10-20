@@ -12,12 +12,15 @@ function PascalOptionsFromConfig(AConfig: TConfig): TPascalParseOptions;
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils,
+  System.IOUtils,
+  DoxyPas.Lang.Project;
 
 function PascalOptionsFromConfig(AConfig: TConfig): TPascalParseOptions;
 var
-  Item: string;
+  Item, Define: string;
   P: Integer;
+  Project: TDelphiProject;
 begin
   Result := TPascalParseOptions.Default;
   Result.Defines := DefaultPascalDefines(AConfig.GetString('PASCAL_DIALECT'), AConfig.GetString('PASCAL_PLATFORM'));
@@ -31,6 +34,15 @@ begin
       Result.Defines := Result.Defines + [Item];
   end;
   Result.IncludePaths := AConfig.GetList('INCLUDE_PATH');
+  // the defines and unit search paths of the Delphi projects
+  for Item in AConfig.GetList('DELPHI_PROJECT') do
+    if TFile.Exists(Item) then
+    begin
+      Project := ReadDelphiProject(Item);
+      for Define in Project.Defines do
+        Result.Defines := Result.Defines + [Define];
+      Result.IncludePaths := Result.IncludePaths + Project.SearchPaths;
+    end;
 end;
 
 end.

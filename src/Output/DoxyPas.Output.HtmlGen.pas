@@ -1301,6 +1301,16 @@ begin
     end;
     if Uses_ <> '' then
       W('<p>Uses: ' + Uses_ + '</p>'#10);
+    Uses_ := '';
+    for T in U.UsedBy do
+      if FLinks.IsLinkable(T) then
+      begin
+        if Uses_ <> '' then
+          Uses_ := Uses_ + ', ';
+        Uses_ := Uses_ + FDoc.Link(T, T.Name);
+      end;
+    if Uses_ <> '' then
+      W('<p>Used by: ' + Uses_ + '</p>'#10);
     if Rows.Length > 0 then
       W('<table class="memberdecls">'#10 + Rows.ToString + '</table>'#10);
     W(Detail);

@@ -27,6 +27,14 @@ type
   end;
 
   [TestFixture]
+  TDelphiExtrasTests = class
+  public
+    [Test] procedure FormBecomesComponentTreePage;
+    [Test] procedure BinaryFormIsRejected;
+    [Test] procedure DprojGivesSourcesAndDefines;
+  end;
+
+  [TestFixture]
   TTagFileTests = class
   public
     [Test] procedure RoundTripResolvesExternalReferences;
@@ -36,6 +44,9 @@ type
 implementation
 
 uses
+  DoxyPas.Model.Entry,
+  DoxyPas.Lang.Pascal.Dfm,
+  DoxyPas.Lang.Project,
   System.Generics.Collections,
   DoxyPas.Output.HtmlTemplate,
   System.Classes,
@@ -343,9 +354,68 @@ begin
   Assert.AreEqual('color:#ffffff;', ReplaceColorMarkers('color:##FF;', C));
 end;
 
+{ TDelphiExtrasTests }
+
+procedure TDelphiExtrasTests.FormBecomesComponentTreePage;
+var
+  F, Err: string;
+  E: TEntry;
+begin
+  F := TPath.Combine(TPath.GetTempPath, 'dp_t1.dfm');
+  TFile.WriteAllText(F, 'object F: TF'#13#10'  Caption = ''Hi'''#13#10'  object B: TButton'#13#10 +
+    '    OnClick = BClick'#13#10'    Items = ('#13#10'      ''a'')'#13#10'  end'#13#10'end'#13#10);
+  try
+    E := ParseDfmFile(F, Err);
+    try
+      Assert.IsNotNull(E, Err);
+      Assert.AreEqual('form_dp_t1', E.Name);
+      Assert.IsTrue(E.Doc.Contains('<b>B</b>: TButton'));
+      Assert.IsTrue(E.Doc.Contains('OnClick = BClick'));
+    finally
+      E.Free;
+    end;
+  finally
+    TFile.Delete(F);
+  end;
+end;
+
+procedure TDelphiExtrasTests.BinaryFormIsRejected;
+var
+  F, Err: string;
+begin
+  F := TPath.Combine(TPath.GetTempPath, 'dp_t2.dfm');
+  TFile.WriteAllText(F, 'TPF0'#0'junk');
+  try
+    Assert.IsNull(ParseDfmFile(F, Err));
+    Assert.AreNotEqual('', Err);
+  finally
+    TFile.Delete(F);
+  end;
+end;
+
+procedure TDelphiExtrasTests.DprojGivesSourcesAndDefines;
+var
+  F: string;
+  P: TDelphiProject;
+begin
+  F := TPath.Combine(TPath.GetTempPath, 'dp_t3.dproj');
+  TFile.WriteAllText(F, '<Project><PropertyGroup Condition="''$(Base)''!=''''"><DCC_Define>FOO;$(DCC_Define)</DCC_Define>' +
+    '</PropertyGroup><PropertyGroup Condition="''$(Cfg_1)''!=''''"><DCC_Define>DEBUGONLY</DCC_Define></PropertyGroup>' +
+    '<ItemGroup><DCCReference Include="a.pas"/><DCCReference Include="b.res"/></ItemGroup></Project>');
+  try
+    P := ReadDelphiProject(F);
+    Assert.AreEqual(1, Integer(Length(P.Sources)));
+    Assert.AreEqual(1, Integer(Length(P.Defines)));
+    Assert.AreEqual('FOO', P.Defines[0]);
+  finally
+    TFile.Delete(F);
+  end;
+end;
+
 initialization
   TDUnitX.RegisterTestFixture(TXmlOutputTests);
   TDUnitX.RegisterTestFixture(TTagFileTests);
   TDUnitX.RegisterTestFixture(THtmlTemplateTests);
+  TDUnitX.RegisterTestFixture(TDelphiExtrasTests);
 
 end.

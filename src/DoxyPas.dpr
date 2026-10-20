@@ -15,6 +15,8 @@ uses
   DoxyPas.Lang.Pascal.Source in 'Lang\Pascal\DoxyPas.Lang.Pascal.Source.pas',
   DoxyPas.Lang.Pascal.DocBlocks in 'Lang\Pascal\DoxyPas.Lang.Pascal.DocBlocks.pas',
   DoxyPas.Lang.Pascal.Parser in 'Lang\Pascal\DoxyPas.Lang.Pascal.Parser.pas',
+  DoxyPas.Lang.Pascal.Dfm in 'Lang\Pascal\DoxyPas.Lang.Pascal.Dfm.pas',
+  DoxyPas.Lang.Project in 'Lang\Project\DoxyPas.Lang.Project.pas',
   DoxyPas.Lang.Pascal.Options in 'Lang\Pascal\DoxyPas.Lang.Pascal.Options.pas',
   DoxyPas.Doc.Nodes in 'Doc\DoxyPas.Doc.Nodes.pas',
   DoxyPas.Doc.Dump in 'Doc\DoxyPas.Doc.Dump.pas',

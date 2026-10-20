@@ -44,3 +44,7 @@ pushd "%ROOT%tools\PackResources"
 "%BDS%\bin\dcc32.exe" %OPTS% -E"%ROOT%build\tools" -N0"%ROOT%build\tools\dcu" PackResources.dpr || exit /b 1
 popd
 "%ROOT%build\tools\PackResources.exe" "%ROOT%src\Resources\DoxyPas.Resources.Xml.pas" DoxyPas.Resources.Xml XmlResource "%ROOT%resources\xml\compound.xsd" "%ROOT%resources\xml\index.xsd" "%ROOT%resources\xml\xml.xsd"
+rem Packs resources\html\* (templates, css, js) into src\Resources\DoxyPas.Resources.Html.pas
+set HTMLRES=
+for %%F in ("%ROOT%resources\html\*") do call set HTMLRES=%%HTMLRES%% "%%F"
+"%ROOT%build\tools\PackResources.exe" -b64 "%ROOT%src\Resources\DoxyPas.Resources.Html.pas" DoxyPas.Resources.Html HtmlResource %HTMLRES%

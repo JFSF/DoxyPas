@@ -1,0 +1,17 @@
+/*---------------- Search Box */
+
+.titlearea table {
+    width: 100%;
+}
+
+dark-mode-toggle {
+    position: absolute;
+    right: 15px;
+    padding-top: 5px;
+}
+
+#MSearchBox {
+    position: absolute;
+    right: 34px;
+}
+

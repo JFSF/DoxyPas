@@ -19,6 +19,14 @@ type
   end;
 
   [TestFixture]
+  THtmlTemplateTests = class
+  public
+    [Test] procedure SelectsBlocks;
+    [Test] procedure SubstitutesLongestKeyword;
+    [Test] procedure ReplacesColorMarkers;
+  end;
+
+  [TestFixture]
   TTagFileTests = class
   public
     [Test] procedure RoundTripResolvesExternalReferences;
@@ -28,6 +36,8 @@ type
 implementation
 
 uses
+  System.Generics.Collections,
+  DoxyPas.Output.HtmlTemplate,
   System.Classes,
   System.IOUtils,
   Xml.XMLIntf,
@@ -294,8 +304,48 @@ begin
   end;
 end;
 
+{ THtmlTemplateTests }
+
+procedure THtmlTemplateTests.SelectsBlocks;
+var
+  B: TDictionary<string, Boolean>;
+begin
+  B := TDictionary<string, Boolean>.Create;
+  try
+    B.Add('A', True);
+    B.Add('B', False);
+    Assert.AreEqual('1 3 4',
+      SelectBlocks('1<!--BEGIN A--> 3<!--END A--><!--BEGIN B-->X<!--END B--><!--BEGIN !B--> 4<!--END !B-->', B));
+  finally
+    B.Free;
+  end;
+end;
+
+procedure THtmlTemplateTests.SubstitutesLongestKeyword;
+var
+  K: TDictionary<string, string>;
+begin
+  K := TDictionary<string, string>.Create;
+  try
+    K.Add('$search', 'S');
+    K.Add('$searchbox', 'SB');
+    Assert.AreEqual('SB S', SubstituteKeywords('$searchbox $search', K));
+  finally
+    K.Free;
+  end;
+end;
+
+procedure THtmlTemplateTests.ReplacesColorMarkers;
+var
+  C: THtmlColors;
+begin
+  C := THtmlColors.Parse('LIGHT', 220, 100, 80);
+  Assert.AreEqual('color:#ffffff;', ReplaceColorMarkers('color:##FF;', C));
+end;
+
 initialization
   TDUnitX.RegisterTestFixture(TXmlOutputTests);
   TDUnitX.RegisterTestFixture(TTagFileTests);
+  TDUnitX.RegisterTestFixture(THtmlTemplateTests);
 
 end.

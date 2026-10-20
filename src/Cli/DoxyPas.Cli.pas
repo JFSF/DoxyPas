@@ -33,6 +33,7 @@ uses
   DoxyPas.Model.ProjectDump,
   DoxyPas.Build.Pipeline,
   DoxyPas.Output.XmlGen,
+  DoxyPas.Output.HtmlGen,
   DoxyPas.Output.TagFile;
 
 type
@@ -206,8 +207,15 @@ begin
         Tag := TPath.Combine(Out_, Tag);
       WriteTagFile(Project, Tag);
     end;
-    if AConfig.GetBool('GENERATE_HTML') and not Quiet then
-      Writeln('Note: HTML output is not implemented yet; set GENERATE_HTML = NO to silence this message.');
+    if AConfig.GetBool('GENERATE_HTML') then
+    begin
+      Xml := TPath.Combine(Out_, AConfig.GetString('HTML_OUTPUT'));
+      if not Quiet then
+        Writeln('Generating HTML output...');
+      Count := GenerateHtml(Project, AConfig, Xml);
+      if not Quiet then
+        Writeln(Format('%d files written to %s', [Count, Xml]));
+    end;
     if AConfig.GetBool('WARNINGS') then
       for Msg in Project.Warnings do
         Writeln(ErrOutput, Msg);

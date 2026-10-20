@@ -26,6 +26,7 @@ type
     [Test] procedure ReplacesColorMarkers;
     [Test] procedure HighlightsPascalKeywords;
     [Test] procedure EscapesLatex;
+    [Test] procedure QuotesSql;
   end;
 
   [TestFixture]
@@ -46,6 +47,7 @@ type
 implementation
 
 uses
+  DoxyPas.Output.SqliteGen,
   DoxyPas.Output.HtmlCode,
   DoxyPas.Output.LatexGen,
   DoxyPas.Model.Entry,
@@ -368,6 +370,12 @@ end;
 procedure THtmlTemplateTests.EscapesLatex;
 begin
   Assert.AreEqual('a\_b \& 50\%', LatexEscape('a_b & 50%'));
+end;
+
+procedure THtmlTemplateTests.QuotesSql;
+begin
+  Assert.AreEqual('NULL', SqlText(''));
+  Assert.AreEqual('''it''''s''', SqlText('it''s'));
 end;
 
 { TDelphiExtrasTests }

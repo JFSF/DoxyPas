@@ -35,6 +35,7 @@ uses
   DoxyPas.Output.XmlGen,
   DoxyPas.Output.HtmlGen,
   DoxyPas.Output.LatexGen,
+  DoxyPas.Output.SqliteGen,
   DoxyPas.Output.TagFile;
 
 type
@@ -223,6 +224,15 @@ begin
       if not Quiet then
         Writeln('Generating LaTeX output...');
       Count := GenerateLatex(Project, AConfig, Xml);
+      if not Quiet then
+        Writeln(Format('%d files written to %s', [Count, Xml]));
+    end;
+    if AConfig.GetBool('GENERATE_SQLITE3') then
+    begin
+      Xml := TPath.Combine(Out_, AConfig.GetString('SQLITE3_OUTPUT'));
+      if not Quiet then
+        Writeln('Generating SQLite script...');
+      Count := GenerateSqlite(Project, AConfig, Xml);
       if not Quiet then
         Writeln(Format('%d files written to %s', [Count, Xml]));
     end;

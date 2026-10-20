@@ -33,6 +33,7 @@ uses
   DoxyPas.Output.XmlDoc in 'Output\DoxyPas.Output.XmlDoc.pas',
   DoxyPas.Output.XmlGen in 'Output\DoxyPas.Output.XmlGen.pas',
   DoxyPas.Output.HtmlTemplate in 'Output\DoxyPas.Output.HtmlTemplate.pas',
+  DoxyPas.Output.SqliteGen in 'Output\DoxyPas.Output.SqliteGen.pas',
   DoxyPas.Output.LatexGen in 'Output\DoxyPas.Output.LatexGen.pas',
   DoxyPas.Output.HtmlCode in 'Output\DoxyPas.Output.HtmlCode.pas',
   DoxyPas.Output.HtmlDoc in 'Output\DoxyPas.Output.HtmlDoc.pas',

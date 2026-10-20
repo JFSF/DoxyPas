@@ -77,6 +77,15 @@ begin
   Add('Inherits', 'Herda de', '', 'Hereda de', 'Hérite de', 'Erbt von');
   Add('Inheritance diagram for %s:', 'Diagrama de heranças para %s:', '', 'Diagrama de herencia para %s:',
     'Graphe d''héritage de %s :', 'Klassendiagramm für %s:');
+  Add('Collaboration diagram for %s:', 'Diagrama de colaboração para %s:', '', 'Diagrama de colaboración para %s:',
+    'Graphe de collaboration de %s :', 'Zusammenarbeitsdiagramm für %s:');
+  Add('Dependency graph for %s:', 'Grafo de dependências para %s:', '', 'Gráfico de dependencias para %s:',
+    'Graphe des dépendances de %s :', 'Abhängigkeitsdiagramm für %s:');
+  Add('This graph shows which units directly use this unit (%s):',
+    'Este grafo mostra que unidades usam diretamente esta unidade (%s):', '',
+    'Este gráfico muestra qué unidades usan directamente esta unidad (%s):',
+    'Ce graphe montre quelles unités utilisent directement cette unité (%s) :',
+    'Dieser Graph zeigt, welche Units diese Unit (%s) direkt verwenden:');
   Add('Inherited by','Herdado por', '', 'Heredado por', 'Hérité par', 'Vererbt an');
   Add('Class', 'Classe', '', 'Clase', 'Classe', 'Klasse');
   Add('Record', 'Record', 'Record', 'Registro', 'Enregistrement', 'Record');

@@ -16,6 +16,13 @@ for %%P in (32 64) do (
   if not exist "%ROOT%build\Win%%P\dcu" mkdir "%ROOT%build\Win%%P\dcu"
   "%BDS%\bin\dcc%%P.exe" %OPTS% -E"%ROOT%build\Win%%P" -N0"%ROOT%build\Win%%P\dcu" DoxyPas.dpr || exit /b 1
 )
+rem GUI (VCL, Windows only), next to DoxyPas.exe
+pushd "%ROOT%src\Gui"
+for %%P in (32 64) do (
+  if not exist "%ROOT%build\Win%%P\dcu_gui" mkdir "%ROOT%build\Win%%P\dcu_gui"
+  "%BDS%\bin\dcc%%P.exe" -Q -B -W+ -NSSystem;System.Win;Winapi;Vcl;Vcl.Imaging -E"%ROOT%build\Win%%P" -N0"%ROOT%build\Win%%P\dcu_gui" DoxyPasGui.dpr || exit /b 1
+)
+popd
 rem Linux64 needs the SDK registered in the IDE (ubuntu24.04.sdk).
 if not exist "%ROOT%build\Linux64\dcu" mkdir "%ROOT%build\Linux64\dcu"
 "%BDS%\bin\dcclinux64.exe" -Q -B --syslibroot:"%SDK%" -U"%DAST%" -I"%ROOT%third_party\DelphiAST\Source\SimpleParser" -NSSystem;System.Win --libpath:"%SDK%\usr\lib\gcc\x86_64-linux-gnu\13;%SDK%\usr\lib\x86_64-linux-gnu;%BDS%\lib\linux64\release" -E"%ROOT%build\Linux64" -N0"%ROOT%build\Linux64\dcu" DoxyPas.dpr

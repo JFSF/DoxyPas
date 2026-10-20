@@ -55,6 +55,7 @@ uses
   System.Classes,
   System.Generics.Collections,
   DoxyPas.Doc.Parser,
+  DoxyPas.Output.HtmlCode,
   DoxyPas.Output.HtmlTemplate;
 
 constructor THtmlDocWriter.Create(ALinks: TLinkResolver; const AExt: string);
@@ -260,23 +261,9 @@ begin
 end;
 
 function THtmlDocWriter.Fragment(ANode: TDocNode): string;
-var
-  SB: TStringBuilder;
-  Line: string;
 begin
   if ANode.Name = 'code' then
-  begin
-    SB := TStringBuilder.Create;
-    try
-      SB.Append('<div class="fragment">');
-      for Line in ANode.Text.Replace(#13#10, #10).Split([#10]) do
-        SB.Append('<div class="line">').Append(HtmlEscape(Line).Replace('  ', '&#160; ')).Append('</div>');
-      SB.Append('</div><!-- fragment -->'#10);
-      Result := SB.ToString;
-    finally
-      SB.Free;
-    end;
-  end
+    Result := '<div class="fragment">' + HighlightPascal(ANode.Text) + '</div><!-- fragment -->'#10
   else if (ANode.Name = 'verbatim') or (ANode.Name = 'pre') then
     Result := '<pre class="fragment">' + HtmlEscape(ANode.Text) + '</pre>'#10
   else

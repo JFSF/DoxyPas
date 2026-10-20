@@ -34,6 +34,7 @@ uses
   DoxyPas.Build.Pipeline,
   DoxyPas.Output.XmlGen,
   DoxyPas.Output.HtmlGen,
+  DoxyPas.Output.LatexGen,
   DoxyPas.Output.TagFile;
 
 type
@@ -213,6 +214,15 @@ begin
       if not Quiet then
         Writeln('Generating HTML output...');
       Count := GenerateHtml(Project, AConfig, Xml);
+      if not Quiet then
+        Writeln(Format('%d files written to %s', [Count, Xml]));
+    end;
+    if AConfig.GetBool('GENERATE_LATEX') then
+    begin
+      Xml := TPath.Combine(Out_, AConfig.GetString('LATEX_OUTPUT'));
+      if not Quiet then
+        Writeln('Generating LaTeX output...');
+      Count := GenerateLatex(Project, AConfig, Xml);
       if not Quiet then
         Writeln(Format('%d files written to %s', [Count, Xml]));
     end;

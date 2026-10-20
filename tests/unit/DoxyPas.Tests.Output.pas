@@ -24,6 +24,8 @@ type
     [Test] procedure SelectsBlocks;
     [Test] procedure SubstitutesLongestKeyword;
     [Test] procedure ReplacesColorMarkers;
+    [Test] procedure HighlightsPascalKeywords;
+    [Test] procedure EscapesLatex;
   end;
 
   [TestFixture]
@@ -44,6 +46,8 @@ type
 implementation
 
 uses
+  DoxyPas.Output.HtmlCode,
+  DoxyPas.Output.LatexGen,
   DoxyPas.Model.Entry,
   DoxyPas.Lang.Pascal.Dfm,
   DoxyPas.Lang.Project,
@@ -352,6 +356,18 @@ var
 begin
   C := THtmlColors.Parse('LIGHT', 220, 100, 80);
   Assert.AreEqual('color:#ffffff;', ReplaceColorMarkers('color:##FF;', C));
+end;
+
+procedure THtmlTemplateTests.HighlightsPascalKeywords;
+begin
+  Assert.AreEqual('<div class="line"><span class="keywordflow">if</span> X <span class="keywordflow">then</span> ' +
+    '<span class="stringliteral">''a''</span> <span class="comment">// c</span></div>',
+    HighlightPascal('if X then ''a'' // c'));
+end;
+
+procedure THtmlTemplateTests.EscapesLatex;
+begin
+  Assert.AreEqual('a\_b \& 50\%', LatexEscape('a_b & 50%'));
 end;
 
 { TDelphiExtrasTests }

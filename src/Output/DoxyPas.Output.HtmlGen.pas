@@ -29,6 +29,7 @@ uses
   DoxyPas.Model.Links,
   DoxyPas.Output.HtmlTemplate,
   DoxyPas.Output.HtmlDoc,
+  DoxyPas.Output.HtmlCode,
   DoxyPas.Resources.Html;
 
 type
@@ -678,7 +679,7 @@ begin
       L.Add(S);
     Result := '';
     for S in L do
-      Result := Result + '; ' + HtmlEscape(S);
+      Result := Result + '; ' + KeywordSpan(S);
   finally
     L.Free;
   end;
@@ -713,7 +714,7 @@ begin
   if Result = '' then
     Result := '&#160;'
   else
-    Result := Result + '&#160;';
+    Result := KeywordSpan(Result) + '&#160;';
 end;
 
 function THtmlGenerator.RightHtml(M: TMemberDef): string;
@@ -785,26 +786,26 @@ begin
   case M.Kind of
     memFunction:
       begin
-        Result := RoutineWord(M) + ' ' + Name + ' ' + ArgsHtml(M, True);
+        Result := KeywordSpan(RoutineWord(M)) + ' ' + Name + ' ' + ArgsHtml(M, True);
         if E.TypeText <> '' then
           Result := Result + ': ' + FDoc.LinkedText(E.TypeText, M);
         Result := Result + DirectivesText(M);
       end;
     memProperty:
       begin
-        Result := 'property ' + Name;
+        Result := KeywordSpan('property') + ' ' + Name;
         if E.Args.Count > 0 then
           Result := Result + '[' + ArgsHtml(M, False).Trim(['(', ')']) + ']';
         if E.TypeText <> '' then
           Result := Result + ': ' + FDoc.LinkedText(E.TypeText, M);
         if E.ReadAccessor <> '' then
-          Result := Result + ' read ' + HtmlEscape(E.ReadAccessor);
+          Result := Result + ' ' + KeywordSpan('read') + ' ' + HtmlEscape(E.ReadAccessor);
         if E.WriteAccessor <> '' then
-          Result := Result + ' write ' + HtmlEscape(E.WriteAccessor);
+          Result := Result + ' ' + KeywordSpan('write') + ' ' + HtmlEscape(E.WriteAccessor);
       end;
     memConstant:
       begin
-        Result := 'const ' + Name;
+        Result := KeywordSpan('const') + ' ' + Name;
         if E.TypeText <> '' then
           Result := Result + ': ' + FDoc.LinkedText(E.TypeText, M);
         if E.InitText <> '' then
@@ -812,11 +813,11 @@ begin
       end;
     memTypedef:
       begin
-        Result := 'type ' + Name;
+        Result := KeywordSpan('type') + ' ' + Name;
         if E.TypeText <> '' then
           Result := Result + ' = ' + FDoc.LinkedText(E.TypeText, M);
       end;
-    memEnumeration: Result := 'enum ' + Name;
+    memEnumeration: Result := KeywordSpan('enum') + ' ' + Name;
   else
     begin
       Result := Name;

@@ -35,6 +35,8 @@ uses
   DoxyPas.Output.XmlDoc in '..\..\src\Output\DoxyPas.Output.XmlDoc.pas',
   DoxyPas.Output.XmlGen in '..\..\src\Output\DoxyPas.Output.XmlGen.pas',
   DoxyPas.Output.HtmlTemplate in '..\..\src\Output\DoxyPas.Output.HtmlTemplate.pas',
+  DoxyPas.Output.LatexGen in '..\..\src\Output\DoxyPas.Output.LatexGen.pas',
+  DoxyPas.Output.HtmlCode in '..\..\src\Output\DoxyPas.Output.HtmlCode.pas',
   DoxyPas.Output.HtmlDoc in '..\..\src\Output\DoxyPas.Output.HtmlDoc.pas',
   DoxyPas.Output.HtmlGen in '..\..\src\Output\DoxyPas.Output.HtmlGen.pas',
   DoxyPas.Resources.Html in '..\..\src\Resources\DoxyPas.Resources.Html.pas',

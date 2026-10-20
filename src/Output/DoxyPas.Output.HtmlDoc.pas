@@ -56,6 +56,7 @@ uses
   System.Generics.Collections,
   DoxyPas.Doc.Parser,
   DoxyPas.Output.HtmlCode,
+  DoxyPas.Output.Translator,
   DoxyPas.Output.HtmlTemplate;
 
 constructor THtmlDocWriter.Create(ALinks: TLinkResolver; const AExt: string);
@@ -285,9 +286,9 @@ begin
   Title := '';
   for I := 0 to High(SectionTitles) do
     if SectionTitles[I, 0] = ANode.Name then
-      Title := SectionTitles[I, 1];
+      Title := Tr(SectionTitles[I, 1]);
   if ANode.Name = 'deprecated' then
-    Title := 'Deprecated';
+    Title := Tr('Deprecated');
   if ANode.Name = 'par' then
     Result := '<dl class="section user"><dt>' + HtmlEscape(ANode.Text) + '</dt><dd>' + Paras(ANode, True) +
       '</dd></dl>'#10
@@ -303,10 +304,10 @@ var
   Cls, Title, N, Dir: string;
   AnyDir: Boolean;
 begin
-  if ANode.Name = 'retval' then begin Cls := 'retval'; Title := 'Return Values'; end
-  else if ANode.Name = 'exception' then begin Cls := 'exception'; Title := 'Exceptions'; end
-  else if ANode.Name = 'templateparam' then begin Cls := 'tparams'; Title := 'Template Parameters'; end
-  else begin Cls := 'params'; Title := 'Parameters'; end;
+  if ANode.Name = 'retval' then begin Cls := 'retval'; Title := Tr('Return Values'); end
+  else if ANode.Name = 'exception' then begin Cls := 'exception'; Title := Tr('Exceptions'); end
+  else if ANode.Name = 'templateparam' then begin Cls := 'tparams'; Title := Tr('Template Parameters'); end
+  else begin Cls := 'params'; Title := Tr('Parameters'); end;
   AnyDir := False;
   for Item in ANode.Children do
     if Item.Extra <> '' then

@@ -27,6 +27,7 @@ type
     [Test] procedure HighlightsPascalKeywords;
     [Test] procedure EscapesLatex;
     [Test] procedure QuotesSql;
+    [Test] procedure TranslatesTexts;
   end;
 
   [TestFixture]
@@ -47,6 +48,7 @@ type
 implementation
 
 uses
+  DoxyPas.Output.Translator,
   DoxyPas.Output.SqliteGen,
   DoxyPas.Output.HtmlCode,
   DoxyPas.Output.LatexGen,
@@ -376,6 +378,22 @@ procedure THtmlTemplateTests.QuotesSql;
 begin
   Assert.AreEqual('NULL', SqlText(''));
   Assert.AreEqual('''it''''s''', SqlText('it''s'));
+end;
+
+procedure THtmlTemplateTests.TranslatesTexts;
+begin
+  SetOutputLanguage('English');
+  Assert.AreEqual('Public Member Functions', TrSection('Public', 'Member Functions'));
+  Assert.AreEqual('Static Private Attributes', TrSection('Private', 'Static Attributes'));
+  SetOutputLanguage('Portuguese');
+  try
+    Assert.AreEqual('Página Principal', Tr('Main Page'));
+    Assert.AreEqual('Atributos (visibilidade privada)', TrSection('Private', 'Attributes'));
+    Assert.AreEqual('untranslated text', Tr('untranslated text'));
+    Assert.AreEqual('pt', LanguageIso);
+  finally
+    SetOutputLanguage('English');
+  end;
 end;
 
 { TDelphiExtrasTests }

@@ -31,6 +31,7 @@ uses
   DoxyPas.Model.Defs,
   DoxyPas.Model.Links,
   DoxyPas.Output.HtmlTemplate,
+  DoxyPas.Output.Translator,
   DoxyPas.Output.HtmlDoc,
   DoxyPas.Output.HtmlCode,
   DoxyPas.Resources.Html;
@@ -91,6 +92,8 @@ type
     function IconSpan(const ALetter: string): string;
     function ClassIcon(C: TClassDef): string;
     function ClassKindText(C: TClassDef): string;
+    function ClassTitle(C: TClassDef): string;
+    function UnitTitle(U: TUnitDef): string;
     function BriefOf(ADef: TDefinition): string;
     function DefinedAt(ADef: TDefinition): string;
     function VisibleMembers(AList: TList<TMemberDef>): TList<TMemberDef>;
@@ -214,6 +217,7 @@ begin
   FConfig := AConfig;
   FDir := ADir;
   FLinks := TLinkResolver.Create(AProject);
+  SetOutputLanguage(AConfig.GetString('OUTPUT_LANGUAGE'));
   FExt := AConfig.GetString('HTML_FILE_EXTENSION');
   if FExt = '' then
     FExt := '.html';
@@ -302,7 +306,7 @@ begin
     '        <div id="MSearchBox" class="MSearchBoxInactive">'#10 +
     '        <span class="left">'#10 +
     '          <span id="MSearchSelect" class="search-icon"><span class="search-icon-dropdown"></span></span>'#10 +
-    '          <input type="text" id="MSearchField" value="" placeholder="Search" accesskey="S"/>'#10 +
+    '          <input type="text" id="MSearchField" value="" placeholder="' + Tr('Search') + '" accesskey="S"/>'#10 +
     '          </span><span class="right">'#10 +
     '            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><div id="MSearchCloseImg" class="close-icon"></div></a>'#10 +
     '          </span>'#10 +
@@ -359,7 +363,7 @@ begin
     Keys.Add('$projectlogo', Logo);
     Keys.Add('$logosize', '');
     Keys.Add('$projecticon', Icon);
-    Keys.Add('$langISO', 'en');
+    Keys.Add('$langISO', LanguageIso);
     Keys.Add('$datetime', '<span class="datetime"></span>');
     Keys.Add('$date', '<span class="date"></span>');
     Keys.Add('$time', '<span class="time"></span>');
@@ -427,7 +431,7 @@ begin
   if FSearch and not FSidebar then
     W('<div class="sm sm-dox"><input id="main-menu-state" type="checkbox"/>'#10 +
       '<label class="main-menu-btn" for="main-menu-state">'#10 +
-      '<span class="main-menu-btn-icon"></span> Toggle main menu visibility</label>'#10 +
+      '<span class="main-menu-btn-icon"></span> ' + Tr('Toggle main menu visibility') + '</label>'#10 +
       '<span id="searchBoxPos1"></span>'#10'</div>'#10);
   W('</div><!-- main-nav-mobile -->'#10);
   W('<div id="main-nav">'#10'  <ul class="sm sm-dox" id="main-menu">'#10'    <li id="searchBoxPos2">'#10);
@@ -479,9 +483,9 @@ begin
     W('<!-- window showing the filter options -->'#10'<div id="MSearchSelectWindow">'#10'</div>'#10#10 +
       '<!-- iframe showing the search results (closed by default) -->'#10'<div id="MSearchResultsWindow">'#10 +
       '<div id="MSearchResults">'#10'<div class="SRPage">'#10'<div id="SRIndex">'#10 +
-      '<div id="SRResults"></div>'#10'<div class="SRStatus" id="Loading">Loading...</div>'#10 +
-      '<div class="SRStatus" id="Searching">Searching...</div>'#10 +
-      '<div class="SRStatus" id="NoMatches">No Matches</div>'#10'</div>'#10'</div>'#10'</div>'#10'</div>'#10#10);
+      '<div id="SRResults"></div>'#10'<div class="SRStatus" id="Loading">' + Tr('Loading...') + '</div>'#10 +
+      '<div class="SRStatus" id="Searching">' + Tr('Searching...') + '</div>'#10 +
+      '<div class="SRStatus" id="NoMatches">' + Tr('No Matches') + '</div>'#10'</div>'#10'</div>'#10'</div>'#10'</div>'#10#10);
 end;
 
 procedure THtmlGenerator.EndPage(const ANavPath: string);
@@ -520,10 +524,20 @@ begin
   end;
 end;
 
+function THtmlGenerator.ClassTitle(C: TClassDef): string;
+begin
+  Result := Format(Tr('%0:s %1:s Reference'), [C.QualifiedName, Tr(ClassKindText(C))]);
+end;
+
+function THtmlGenerator.UnitTitle(U: TUnitDef): string;
+begin
+  Result := Format(Tr('%0:s %1:s Reference'), [U.Name, Tr('Unit')]);
+end;
+
 function THtmlGenerator.ClassKindText(C: TClassDef): string;
 begin
   case C.ClassKind of
-    ckRecord, ckRecordHelper: Result := 'Record';
+    ckRecord, ckRecordHelper: Result := Tr('Record');
     ckInterface, ckDispInterface: Result := 'Interface';
     ckObject: Result := 'Object';
     ckClassHelper, ckTypeHelper: Result := 'Helper';
@@ -544,8 +558,8 @@ begin
   E := ADef.Entry;
   if (E = nil) or (E.FileName = '') then
     Exit('');
-  Result := '<p class="definition">Definition at line ' + E.Line.ToString + ' of file ' +
-    HtmlEscape(ExtractFileName(FProject.OutputPath(E.FileName))) + '.</p>'#10;
+  Result := '<p class="definition">' + HtmlEscape(Format(Tr('Definition at line %d of file %s.'),
+    [E.Line, ExtractFileName(FProject.OutputPath(E.FileName))])) + '</p>'#10;
 end;
 
 function THtmlGenerator.VisibleMembers(AList: TList<TMemberDef>): TList<TMemberDef>;
@@ -638,20 +652,20 @@ function THtmlGenerator.SectionTitle(const AKey: string): string;
 var
   P, What: string;
 begin
-  if AKey = 'properties' then Exit('Properties');
-  if AKey = 'typedef-members' then Exit('Typedefs');
-  if AKey = 'enum-members' then Exit('Enumerations');
-  if AKey = 'func-members' then Exit('Functions');
-  if AKey = 'var-members' then Exit('Variables');
+  if AKey = 'properties' then Exit(Tr('Properties'));
+  if AKey = 'typedef-members' then Exit(Tr('Typedefs'));
+  if AKey = 'enum-members' then Exit(Tr('Enumerations'));
+  if AKey = 'func-members' then Exit(Tr('Functions'));
+  if AKey = 'var-members' then Exit(Tr('Variables'));
   if AKey.StartsWith('pub-') then P := 'Public'
   else if AKey.StartsWith('pro-') then P := 'Protected'
   else P := 'Private';
   What := Copy(AKey, 5, MaxInt);
-  if What = 'types' then Result := P + ' Types'
-  else if What = 'methods' then Result := P + ' Member Functions'
-  else if What = 'static-methods' then Result := 'Static ' + P + ' Member Functions'
-  else if What = 'attribs' then Result := P + ' Attributes'
-  else Result := 'Static ' + P + ' Attributes';
+  if What = 'types' then Result := TrSection(P, 'Types')
+  else if What = 'methods' then Result := TrSection(P, 'Member Functions')
+  else if What = 'static-methods' then Result := TrSection(P, 'Static Member Functions')
+  else if What = 'attribs' then Result := TrSection(P, 'Attributes')
+  else Result := TrSection(P, 'Static Attributes');
 end;
 
 function THtmlGenerator.ArgsHtml(M: TMemberDef; ADefaults: Boolean): string;
@@ -968,7 +982,7 @@ begin
           begin
             if not Any then
               ARows.Append('<tr class="inherit_header ' + Key + '_' + F.DiskName + '"><td colspan="2">' +
-                SectionTitle(Key) + ' inherited from <a class="el" href="' + HtmlEscape(FDoc.DefUrl(F)) + '">' +
+                SectionTitle(Key) + ' ' + Tr('inherited from') + ' <a class="el" href="' + HtmlEscape(FDoc.DefUrl(F)) + '">' +
                 HtmlEscape(F.Name) + '</a></td></tr>'#10);
             Any := True;
             ARows.Append(MemberRows(IM.Member, Key + '_' + F.DiskName));
@@ -995,7 +1009,7 @@ begin
   Body := FDoc.Render(M.Brief + #10#10 + M.Detailed, M);
   Tail := '';
   if M.Reimplements <> nil then
-    Tail := Tail + '<p>Reimplemented from ' + FDoc.Link(M.Reimplements.Scope, M.Reimplements.Scope.Name) + '.</p>'#10;
+    Tail := Tail + '<p>' + Tr('Reimplemented from') + ' ' + FDoc.Link(M.Reimplements.Scope, M.Reimplements.Scope.Name) + '.</p>'#10;
   if M.ReimplementedBy.Count > 0 then
   begin
     Rows := '';
@@ -1007,7 +1021,7 @@ begin
         Rows := Rows + FDoc.Link(O.Scope, O.Scope.Name);
       end;
     if Rows <> '' then
-      Tail := Tail + '<p>Reimplemented in ' + Rows + '.</p>'#10;
+      Tail := Tail + '<p>' + Tr('Reimplemented in') + ' ' + Rows + '.</p>'#10;
   end;
   if M.Kind = memEnumeration then
   begin
@@ -1021,7 +1035,7 @@ begin
       begin
         SB.Append('<table class="fieldtable">'#10'<tr><th colspan="');
         if AnyInit then SB.Append('3') else SB.Append('2');
-        SB.Append('">Enumerator</th></tr>');
+        SB.Append('">' + Tr('Enumerator') + '</th></tr>');
         for V in M.EnumValues do
         begin
           SB.Append('<tr><td class="fieldname"><a id="' + V.DiskName + '" name="' + V.DiskName + '"></a>' +
@@ -1094,9 +1108,9 @@ begin
           begin
             Result := CompareText(A.Name, B.Name);
           end));
-      if AInUnit then Title := UnitGroups[G] else Title := ClassGroups[G];
+      if AInUnit then Title := Tr(UnitGroups[G]) else Title := Tr(ClassGroups[G]);
       if (Title = '') and AInUnit then
-        Title := UnitGroups[3];
+        Title := Tr(UnitGroups[3]);
       Result := Result + '<h2 class="groupheader">' + HtmlEscape(Title) + '</h2>'#10;
       for M in Docs do
         Result := Result + MemberDoc(M);
@@ -1139,7 +1153,7 @@ begin
     Body := '';
   end;
   if Title = '' then
-    Title := 'Main Page';
+    Title := Tr('Main Page');
   BeginPage('index', Title);
   W('<div class="header">'#10'  <div class="headertitle"><div class="title">' + HtmlEscape(Title) +
     '</div></div>'#10'</div><!--header-->'#10'<div class="contents">'#10);
@@ -1167,7 +1181,7 @@ begin
     for N in C.NestedClasses do
       if FLinks.IsLinkable(N) then
         List := List + '<tr class="memitem:' + N.DiskName + '"><td class="memItemLeft" align="right" valign="top">' +
-          LowerCase(ClassKindText(N)) + '&#160;</td><td class="memItemRight" valign="bottom">' + FDoc.Link(N, N.Name) +
+          LowerCase(Tr(ClassKindText(N))) + '&#160;</td><td class="memItemRight" valign="bottom">' + FDoc.Link(N, N.Name) +
           '</td></tr>'#10'<tr class="separator:' + N.DiskName +
           '"><td class="memSeparator" colspan="2">&#160;</td></tr>'#10;
     if List <> '' then
@@ -1184,8 +1198,8 @@ begin
         Summary.Append(' &#124;'#10);
       Summary.Append('<a href="#details">Detailed Description</a>');
     end;
-    BeginPage(C.DiskName, C.QualifiedName + ' ' + ClassKindText(C) + ' Reference', C.DiskName + '-members' + FExt);
-    PageHeader(C.QualifiedName + ' ' + ClassKindText(C) + ' Reference', Summary.ToString);
+    BeginPage(C.DiskName, ClassTitle(C), C.DiskName + '-members' + FExt);
+    PageHeader(ClassTitle(C), Summary.ToString);
     HasDetail := Trim(C.Detailed) <> '';
     if Brief <> '' then
     begin
@@ -1201,7 +1215,7 @@ begin
       else
         Text := Text + ', ' + FDoc.LinkedText(B.Text, C);
     if Text <> '' then
-      W('<p>Inherits ' + Text + '.</p>'#10);
+      W('<p>' + Tr('Inherits') + ' ' + Text + '.</p>'#10);
     Text := '';
     for D in C.Derived do
       if FLinks.IsLinkable(D) then
@@ -1211,7 +1225,7 @@ begin
         Text := Text + FDoc.Link(D, D.Name);
       end;
     if Text <> '' then
-      W('<p>Inherited by ' + Text + '.</p>'#10);
+      W('<p>' + Tr('Inherited by') + ' ' + Text + '.</p>'#10);
     W('<p><a href="' + C.DiskName + '-members' + FExt + '">List of all members</a></p>'#10);
     if Rows.Length > 0 then
       W('<table class="memberdecls">'#10 + Rows.ToString + '</table>'#10);
@@ -1246,15 +1260,15 @@ begin
       Inc(Row);
       Label_ := '';
       if (IM.Member.Entry <> nil) and (IM.Member.Entry.Virtualness <> vtNormal) then
-        Label_ := 'virtual';
+        Label_ := Tr('virtual');
       SB.Append('<tr class="' + Cls + '"><td class="entry">' + FDoc.Link(IM.Member, IM.Member.Name) + '</td>' +
         '<td class="entry">' + FDoc.Link(IM.From, IM.From.Name) + '</td><td class="entry">' + Label_ +
         '</td></tr>'#10);
     end;
-    BeginPage(C.DiskName + '-members', C.QualifiedName + ' Member List', C.DiskName + '-members' + FExt);
-    PageHeader(C.QualifiedName + ' Member List');
-    W('<p>This is the complete list of members for ' + FDoc.Link(C, C.QualifiedName) +
-      ', including all inherited members.</p>'#10);
+    BeginPage(C.DiskName + '-members', Format(Tr('%s Member List'), [C.QualifiedName]), C.DiskName + '-members' + FExt);
+    PageHeader(Format(Tr('%s Member List'), [C.QualifiedName]));
+    W('<p>' + Tr('This is the complete list of members for') + ' ' + FDoc.Link(C, C.QualifiedName) +
+      ', ' + Tr('including all inherited members.') + '</p>'#10);
     W('<table class="directory">'#10 + SB.ToString + '</table>'#10);
     EndPage(NavPathOf(C));
   finally
@@ -1287,7 +1301,7 @@ begin
           HasClasses := True;
         end;
         Rows.Append('<tr class="memitem:' + C.DiskName + '"><td class="memItemLeft" align="right" valign="top">' +
-          LowerCase(ClassKindText(C)) + '&#160;</td><td class="memItemRight" valign="bottom">' + FDoc.Link(C, C.Name) +
+          LowerCase(Tr(ClassKindText(C))) + '&#160;</td><td class="memItemRight" valign="bottom">' + FDoc.Link(C, C.Name) +
           '</td></tr>'#10);
         Brief := BriefOf(C);
         if Brief <> '' then
@@ -1303,8 +1317,8 @@ begin
         Summary.Append(' &#124;'#10);
       Summary.Append('<a href="#details">Detailed Description</a>');
     end;
-    BeginPage(U.DiskName, U.Name + ' ' + 'Unit Reference');
-    PageHeader(U.Name + ' Unit Reference', Summary.ToString);
+    BeginPage(U.DiskName, UnitTitle(U));
+    PageHeader(UnitTitle(U), Summary.ToString);
     Brief := BriefOf(U);
     if Brief <> '' then
     begin
@@ -1325,7 +1339,7 @@ begin
         Uses_ := Uses_ + HtmlEscape(S);
     end;
     if Uses_ <> '' then
-      W('<p>Uses: ' + Uses_ + '</p>'#10);
+      W('<p>' + Tr('Uses') + ': ' + Uses_ + '</p>'#10);
     Uses_ := '';
     for T in U.UsedBy do
       if FLinks.IsLinkable(T) then
@@ -1335,7 +1349,7 @@ begin
         Uses_ := Uses_ + FDoc.Link(T, T.Name);
       end;
     if Uses_ <> '' then
-      W('<p>Used by: ' + Uses_ + '</p>'#10);
+      W('<p>' + Tr('Used by') + ': ' + Uses_ + '</p>'#10);
     if Rows.Length > 0 then
       W('<table class="memberdecls">'#10 + Rows.ToString + '</table>'#10);
     W(Detail);
@@ -1480,8 +1494,8 @@ var
 begin
   SB := TStringBuilder.Create;
   try
-    BeginPage('annotated', 'Class List');
-    PageHeader('Class List');
+    BeginPage('annotated', Tr('Class List'));
+    PageHeader(Tr('Class List'));
     W('<div class="textblock">Here are the classes, records and interfaces with brief descriptions:</div><div class="directory">'#10 +
       '<table class="directory">'#10);
     Row := 0;
@@ -1519,8 +1533,8 @@ begin
         if Result = 0 then
           Result := CompareText(A.QualifiedName, B.QualifiedName);
       end));
-    BeginPage('classes', 'Class Index');
-    PageHeader('Class Index');
+    BeginPage('classes', Tr('Class Index'));
+    PageHeader(Tr('Class Index'));
     W('<div class="classindex">'#10);
     Cur := '';
     Row := 0;
@@ -1561,8 +1575,8 @@ var
 begin
   SB := TStringBuilder.Create;
   try
-    BeginPage('hierarchy', 'Class Hierarchy');
-    PageHeader('Class Hierarchy');
+    BeginPage('hierarchy', Tr('Class Hierarchy'));
+    PageHeader(Tr('Class Hierarchy'));
     W('<div class="textblock">This inheritance list is sorted roughly, but not completely, alphabetically:</div>'#10 +
       '<div class="directory">'#10'<table class="directory">'#10);
     Row := 0;
@@ -1588,8 +1602,8 @@ var
   U: TUnitDef;
   Row: Integer;
 begin
-  BeginPage('namespaces', 'Unit List');
-  PageHeader('Unit List');
+  BeginPage('namespaces', Tr('Unit List'));
+  PageHeader(Tr('Unit List'));
   W('<div class="textblock">Here is a list of all documented units with brief descriptions:</div>'#10 +
     '<div class="directory">'#10'<table class="directory">'#10);
   Row := 0;
@@ -1608,8 +1622,8 @@ var
 begin
   SB := TStringBuilder.Create;
   try
-    BeginPage('topics', 'Topics');
-    PageHeader('Topics');
+    BeginPage('topics', Tr('Topics'));
+    PageHeader(Tr('Topics'));
     W('<div class="textblock">Here is a list of all topics with brief descriptions:</div>'#10 +
       '<div class="directory">'#10'<table class="directory">'#10);
     Row := 0;
@@ -1628,8 +1642,8 @@ var
   P: TPageDef;
   Row: Integer;
 begin
-  BeginPage('pages', 'Related Pages');
-  PageHeader('Related Pages');
+  BeginPage('pages', Tr('Related Pages'));
+  PageHeader(Tr('Related Pages'));
   W('<div class="textblock">Here is a list of all related documentation pages:</div>'#10 +
     '<div class="directory">'#10'<table class="directory">'#10);
   Row := 0;
@@ -1670,8 +1684,8 @@ begin
       if Letters.IndexOf(Letter) < 0 then
         Letters.Add(Letter);
     end;
-    BeginPage('functions', 'Class Members');
-    PageHeader('Class Members');
+    BeginPage('functions', Tr('Class Members'));
+    PageHeader(Tr('Class Members'));
     W('<div class="textblock">Here is a list of all documented class members with links to the class documentation for each member:</div>'#10);
     S := '';
     for Letter in Letters do
@@ -1732,7 +1746,7 @@ begin
   if not FNoIndex then
     SaveText('menu.js', HtmlResourceText('menu.js'));
   if FClip then
-    SaveText('clipboard.js', HtmlResourceText('clipboard.js').Replace('$copy_to_clipboard_text', 'Copy to clipboard'));
+    SaveText('clipboard.js', HtmlResourceText('clipboard.js').Replace('$copy_to_clipboard_text', Tr('Copy to clipboard')));
   if FTree or FSearch or (FColors.Style = csToggle) then
     SaveText('cookie.js', HtmlResourceText('cookie.js'));
   if FColors.Style = csToggle then
@@ -1783,29 +1797,29 @@ begin
   try
     SB.Append(LicenseText).Append('var menudata={children:['#10);
     First := True;
-    Item('Main Page', 'index' + FExt, False);
+    Item(Tr('Main Page'), 'index' + FExt, False);
     if FHasPages then
-      Item('Related Pages', 'pages' + FExt, False);
+      Item(Tr('Related Pages'), 'pages' + FExt, False);
     if FHasGroups then
-      Item('Topics', 'topics' + FExt, False);
+      Item(Tr('Topics'), 'topics' + FExt, False);
     if FHasUnits then
     begin
-      Item('Units', 'namespaces' + FExt, True);
+      Item(Tr('Units'), 'namespaces' + FExt, True);
       SB.Append(',children:['#10);
       First := True;
-      Item('Unit List', 'namespaces' + FExt, False);
+      Item(Tr('Unit List'), 'namespaces' + FExt, False);
       SB.Append(']}');
       First := False;
     end;
     if FHasClasses then
     begin
-      Item('Classes', 'annotated' + FExt, True);
+      Item(Tr('Classes'), 'annotated' + FExt, True);
       SB.Append(',children:['#10);
       First := True;
-      Item('Class List', 'annotated' + FExt, False);
-      Item('Class Index', 'classes' + FExt, False);
-      Item('Class Hierarchy', 'hierarchy' + FExt, False);
-      Item('Class Members', 'functions' + FExt, False);
+      Item(Tr('Class List'), 'annotated' + FExt, False);
+      Item(Tr('Class Index'), 'classes' + FExt, False);
+      Item(Tr('Class Hierarchy'), 'hierarchy' + FExt, False);
+      Item(Tr('Class Members'), 'functions' + FExt, False);
       SB.Append(']}');
     end;
     SB.Append(']}'#10);
@@ -1852,7 +1866,7 @@ begin
       FNav.Add(TNavNode.Create(P.Title, Url(P.DiskName)));
   if FHasGroups then
   begin
-    Topics := TNavNode.Create('Topics', Url('topics'));
+    Topics := TNavNode.Create(Tr('Topics'), Url('topics'));
     FNav.Add(Topics);
     for G in FProject.Groups do
       if G.Parent = nil then
@@ -1860,7 +1874,7 @@ begin
   end;
   if FHasUnits then
   begin
-    Units := TNavNode.Create('Units', Url('namespaces'));
+    Units := TNavNode.Create(Tr('Units'), Url('namespaces'));
     FNav.Add(Units);
     for U in FProject.Units do
       if FLinks.IsLinkable(U) then
@@ -1868,7 +1882,7 @@ begin
   end;
   if FHasClasses then
   begin
-    Classes := TNavNode.Create('Classes', Url('annotated'));
+    Classes := TNavNode.Create(Tr('Classes'), Url('annotated'));
     FNav.Add(Classes);
     List := Classes.Add('Class List', Url('annotated'));
     for U in FProject.Units do
@@ -2033,9 +2047,9 @@ begin
       Index.Free;
       Heads.Free;
     end;
-    W(#10'const SYNCONMSG = ''click to disable panel synchronisation'';');
-    W(#10'const SYNCOFFMSG = ''click to enable panel synchronisation'';');
-    W(#10'const LISTOFALLMEMBERS = ''List of all members'';');
+    W(#10'const SYNCONMSG = ''' + JsString(Tr('click to disable panel synchronisation')) + ''';');
+    W(#10'const SYNCOFFMSG = ''' + JsString(Tr('click to enable panel synchronisation')) + ''';');
+    W(#10'const LISTOFALLMEMBERS = ''' + JsString(Tr('List of all members')) + ''';');
     SaveText('navtreedata.js', FPage.ToString);
   finally
     FPage.Free;
@@ -2105,7 +2119,7 @@ begin
   try
     Toc.Append(Head).Append('<OBJECT type="text/site properties"><param name="FrameName" value="right"></OBJECT>'#10);
     Toc.Append('<UL>'#10);
-    Item(Toc, 'Main Page', 'index' + FExt);
+    Item(Toc, Tr('Main Page'), 'index' + FExt);
     Nodes(FNav);
     Toc.Append('</UL>'#10'</BODY></HTML>'#10);
     for C in FProject.Classes do
@@ -2358,7 +2372,7 @@ begin
         end;
         Sections.Append('"');
         Names.Append('  ' + J.ToString + ': "' + SearchNames[Cat] + '"');
-        Labels.Append('  ' + J.ToString + ': "' + SearchLabels[Cat] + '"');
+        Labels.Append('  ' + J.ToString + ': "' + JsString(Tr(SearchLabels[Cat])) + '"');
         Inc(J);
         // one file per first letter
         for P := 0 to Letters.Count - 1 do

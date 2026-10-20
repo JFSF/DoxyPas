@@ -27,7 +27,7 @@ type
 
 const
   ConfigGroupCount = 19;
-  ConfigOptionCount = 356;
+  ConfigOptionCount = 357;
 
   ConfigHeader =
       'This file describes the settings to be used by the documentation system' + #10 +
@@ -3891,6 +3891,16 @@ const
       'input files (compiler defines, language mode and keywords).' + #10 +
       'Possible values are: Delphi and FPC.' + #10 +
       'The default value is: Delphi.'),
+    (Name: 'PASCAL_PLATFORM';
+     Kind: okEnum; OrgKind: okBool; Group: 18;
+     Format: ''; Depends: '';
+     Default: 'Win64'; MinVal: 0; MaxVal: 0;
+     Values: 'Win32|Win64|Linux64|macOS|iOS|Android';
+     Doc: 'The PASCAL_PLATFORM tag selects the target platform whose conditional symbols' + #10 +
+      '(MSWINDOWS, LINUX, CPUX64, ...) are defined while parsing. Additional symbols' + #10 +
+      'can be defined with ef cfg_predefined "PREDEFINED".' + #10 +
+      'Possible values are: Win32, Win64, Linux64, macOS, iOS and Android.' + #10 +
+      'The default value is: Win64.'),
     (Name: 'PASCAL_XMLDOC';
      Kind: okBool; OrgKind: okBool; Group: 18;
      Format: ''; Depends: '';

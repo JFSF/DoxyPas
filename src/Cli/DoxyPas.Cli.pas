@@ -8,13 +8,20 @@ function RunCli(const AArgs: TArray<string>): Integer;
 implementation
 
 uses
+{$IFDEF MSWINDOWS}
+  Winapi.Windows,
+{$ENDIF}
   System.SysUtils,
   System.IOUtils,
   DoxyPas.Core.Version,
   DoxyPas.Core.Log,
   DoxyPas.Config,
   DoxyPas.Config.Reader,
-  DoxyPas.Config.Writer;
+  DoxyPas.Config.Writer,
+  DoxyPas.Model.Entry,
+  DoxyPas.Model.EntryDump,
+  DoxyPas.Lang.Pascal.Parser,
+  DoxyPas.Lang.Pascal.Options;
 
 type
   TCommand = (cmdRun, cmdGenerate, cmdUpdate, cmdDiff);
@@ -32,8 +39,71 @@ begin
   Writeln('  doxypas -s -g [configName]  same, without explanatory comments');
   Writeln('  doxypas -u [configName]     update a configuration file to this version (-s: strip comments)');
   Writeln('  doxypas -x [configName]     show the options that differ from the defaults');
+  Writeln('  doxypas --parse <path> [configName] [--verbose] [--interface-only]');
+  Writeln('                              developer: parse a Pascal file/folder and dump the entries');
   Writeln('  doxypas -v | --version      print the version');
   Writeln('  doxypas -h | --help         print this help');
+end;
+
+{ Developer command: parse one Pascal file (dump the entries) or a folder (summary; -V dumps every file). }
+function RunParse(const APath, AConfigName: string; AVerbose, AInterfaceOnly: Boolean): Integer;
+var
+  Opts: TPascalParseOptions;
+  Files: TArray<string>;
+  F: string;
+  R: TPascalParseResult;
+  Ok, Failed: Integer;
+  Config: TConfig;
+begin
+  Opts := TPascalParseOptions.Default;
+  if AConfigName <> '' then
+  begin
+    Config := TConfig.Create;
+    try
+      ReadDoxyfile(Config, AConfigName);
+      Config.PostProcess;
+      Opts := PascalOptionsFromConfig(Config);
+    finally
+      Config.Free;
+    end;
+  end;
+  Opts.InterfaceOnly := AInterfaceOnly;
+  if TDirectory.Exists(APath) then
+    Files := TDirectory.GetFiles(APath, '*.pas', TSearchOption.soAllDirectories) +
+      TDirectory.GetFiles(APath, '*.dpr', TSearchOption.soAllDirectories) +
+      TDirectory.GetFiles(APath, '*.dpk', TSearchOption.soAllDirectories)
+  else if TFile.Exists(APath) then
+    Files := [APath]
+  else
+  begin
+    Error('', 0, Format('''%s'' not found', [APath]));
+    Exit(1);
+  end;
+  Ok := 0;
+  Failed := 0;
+  for F in Files do
+  begin
+    R := ParsePascalFile(F, Opts);
+    try
+      if R.ErrorMessage = '' then
+        Inc(Ok)
+      else
+      begin
+        Inc(Failed);
+        Error(F, R.ErrorLine, R.ErrorMessage);
+      end;
+      if (R.Root <> nil) and (AVerbose or (Length(Files) = 1)) then
+        Write(DumpEntry(R.Root));
+    finally
+      R.Root.Free;
+    end;
+  end;
+  if Length(Files) > 1 then
+    Writeln(Format('%d files: %d parsed, %d with syntax errors', [Length(Files), Ok, Failed]));
+  if Failed > 0 then
+    Result := 1
+  else
+    Result := 0;
 end;
 
 procedure WriteText(const AFileName, AText: string);
@@ -47,13 +117,22 @@ end;
 function RunCli(const AArgs: TArray<string>): Integer;
 var
   Cmd: TCommand;
-  Short: Boolean;
+  Short, Verbose, IfaceOnly: Boolean;
+  ParsePath: string;
   Name, Arg: string;
   I: Integer;
   Config: TConfig;
 begin
+{$IFDEF MSWINDOWS}
+  SetConsoleOutputCP(CP_UTF8); // source text may contain characters outside the console's ANSI code page
+{$ENDIF}
+  SetTextCodePage(Output, 65001);
+  SetTextCodePage(ErrOutput, 65001);
   Cmd := cmdRun;
   Short := False;
+  Verbose := False;
+  IfaceOnly := False;
+  ParsePath := '';
   Name := '';
   I := 0;
   while I < Length(AArgs) do
@@ -74,12 +153,31 @@ begin
     else if Arg = '-u' then Cmd := cmdUpdate
     else if Arg = '-x' then Cmd := cmdDiff
     else if Arg = '-s' then Short := True
+    else if (Arg = '--parse') and (I < Length(AArgs)) then
+    begin
+      ParsePath := AArgs[I];
+      Inc(I);
+    end
+    else if Arg = '--verbose' then Verbose := True
+    else if Arg = '--interface-only' then IfaceOnly := True
     else if (Arg = '-') or ((Arg <> '') and (Arg[1] <> '-')) then
       Name := Arg
     else
     begin
       Error('', 0, Format('unknown option ''%s'' (try -h)', [Arg]));
       Exit(1);
+    end;
+  end;
+  if ParsePath <> '' then
+  begin
+    try
+      Exit(RunParse(ParsePath, Name, Verbose, IfaceOnly));
+    except
+      on E: EConfigError do
+      begin
+        Error('', 0, E.Message);
+        Exit(1);
+      end;
     end;
   end;
   if Name = '' then

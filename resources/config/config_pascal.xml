@@ -11,6 +11,21 @@
       <value name='Delphi'/>
       <value name='FPC'/>
     </option>
+    <option type='enum' id='PASCAL_PLATFORM' defval='Win64'>
+      <docs>
+<![CDATA[
+ The \c PASCAL_PLATFORM tag selects the target platform whose conditional symbols
+ (<code>MSWINDOWS</code>, <code>LINUX</code>, <code>CPUX64</code>, ...) are defined while parsing.
+ Additional symbols can be defined with ef cfg_predefined "PREDEFINED".
+]]>
+      </docs>
+      <value name='Win32'/>
+      <value name='Win64'/>
+      <value name='Linux64'/>
+      <value name='macOS'/>
+      <value name='iOS'/>
+      <value name='Android'/>
+    </option>
     <option type='bool' id='PASCAL_XMLDOC' defval='1'>
       <docs>
 <![CDATA[

@@ -10,6 +10,12 @@ uses
   DoxyPas.Config in 'Config\DoxyPas.Config.pas',
   DoxyPas.Config.Reader in 'Config\DoxyPas.Config.Reader.pas',
   DoxyPas.Config.Writer in 'Config\DoxyPas.Config.Writer.pas',
+  DoxyPas.Model.Entry in 'Model\DoxyPas.Model.Entry.pas',
+  DoxyPas.Model.EntryDump in 'Model\DoxyPas.Model.EntryDump.pas',
+  DoxyPas.Lang.Pascal.Source in 'Lang\Pascal\DoxyPas.Lang.Pascal.Source.pas',
+  DoxyPas.Lang.Pascal.DocBlocks in 'Lang\Pascal\DoxyPas.Lang.Pascal.DocBlocks.pas',
+  DoxyPas.Lang.Pascal.Parser in 'Lang\Pascal\DoxyPas.Lang.Pascal.Parser.pas',
+  DoxyPas.Lang.Pascal.Options in 'Lang\Pascal\DoxyPas.Lang.Pascal.Options.pas',
   DoxyPas.Cli in 'Cli\DoxyPas.Cli.pas';
 
 var

@@ -1,4 +1,4 @@
-unit DoxyPas.Tests.Core;
+﻿unit DoxyPas.Tests.Core;
 
 interface
 

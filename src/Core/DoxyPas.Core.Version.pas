@@ -1,4 +1,4 @@
-unit DoxyPas.Core.Version;
+﻿unit DoxyPas.Core.Version;
 
 interface
 

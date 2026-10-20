@@ -1,0 +1,37 @@
+unit Modern  @1:1
+  uses interface: System.SysUtils, System.Generics.Collections
+  [AttributeUsage(1)]
+  class TMyAttr : TCustomAttribute  @13:3-14:7
+    doc: <summary>Attribute with doc.</summary>
+  type TGuid1 = type string  @16:3-16:24
+  interface IShape guid {11111111-2222-3333-4444-555555555555}  @18:3-23:7
+    [public] function Area(): Double  @21:5-21:27
+      doc: <summary>Area.</summary>
+    [public] property Name: string read GetName write SetName  @22:5-22:54
+  record TPoint3<T: record>  @25:3-29:7
+    [public] field X: T  @26:5-26:16
+    [public] field Y: T  @26:8-26:16
+    [public] field Z: T  @26:11-26:16
+    [public] operator Add(const A: TPoint3<T>; const B: TPoint3<T>): TPoint3<T> {class}  @27:5-27:60
+    [public] operator Implicit(const A: Integer): TPoint3<T> {class}  @28:5-28:59
+  recordhelper TIntHelper helper for Integer  @31:3-33:7
+    [public] function Twice(): Integer {inline}  @32:5-32:37
+  class TBox<T: class, constructor> : TObject, IShape  @35:3-53:7
+    [strict private] field FItems: TList<T>  @37:5-37:22
+    [strict private] field FCount: Integer {class}  @38:15-38:31
+    record TInner  @40:10-40:42
+      [public] field A: Integer  @40:26-40:37
+    [protected] function GetName(): string {virtual abstract}  @42:5-42:49
+    [public] constructor Create() {overload}  @45:5-45:34
+      doc: Brief doc
+    [public] destructor Destroy() {override}  @46:5-46:34
+    [MyAttr]
+    [public] procedure Run(const AProc: TProc<Integer>; out AResult: string) {stdcall}  @48:5-48:78
+    [public] function Make<U>(const A: U): TBox<T> {class static}  @49:5-49:57
+    [public] property Items[Index: Integer]: T read GetItem write SetItem {default}  @50:5-50:75
+    [published] property OnDone: TNotifyEvent read FOnDone write FOnDone  @52:5-52:62
+  type TRef = reference to function(A: Integer): Integer  @55:3-55:53
+  constant Pi2 = 6.28  @58:3-58:14
+  constant Names: array[0..1] of string = ('a', 'b') {typedconst}  @59:3-59:45
+  field GCount: Integer = 0  @62:3-62:23
+  procedure Test() {impl}  @66:1-66:16

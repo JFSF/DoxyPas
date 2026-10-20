@@ -1,0 +1,34 @@
+unit Docs  @1:1
+  enum TColor  @9:3-14:5
+    doc: Brief of TColor, block style.
+    value clRed  @10:5-10:11
+      doc<: red (after)
+    value clGreen  @11:5-11:13
+      doc<: green (after, doxygen style)
+    value clBlue  @13:5-13:11
+      doc: blue (before)
+  function Max(A: Integer; B: Integer): Integer  @18:1-18:38
+    doc: Unit-level routine. | Second line of the same block.
+  procedure Qt()  @21:1-21:14
+    doc: Qt-style before
+  procedure Pas()  @25:1-25:15
+    doc: Pascal-style block comment | with a second line.
+  procedure Pas2()  @28:1-28:16
+    doc: Another variant
+  procedure Plain()  @31:1-31:17
+  procedure Plain2()  @34:1-34:18
+  class TFoo  @39:3-50:7
+    doc: <summary>XML documentation of a class.</summary> | <remarks>Second line.</remarks> |  | trailing doc of TFoo
+    [private] field FValue: Integer  @41:5-41:21
+      doc<: field, after
+    [public] constructor Create()  @44:5-44:24
+      doc: Constructor doc. |  | trailing doc of Create
+    [Weak]
+    [public] procedure Bar() {virtual}  @47:5-47:28
+      doc: Doc placed between an attribute and its member.
+    [public] property Value: Integer read FValue write FValue  @49:5-49:54
+      doc: Property doc.
+  field GFoo: TFoo  @54:3-54:14
+    doc: Global variable doc.
+  procedure Hidden() {impl}  @59:1-59:18
+    doc: Implementation-only helper.

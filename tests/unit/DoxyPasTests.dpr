@@ -12,8 +12,15 @@ uses
   DoxyPas.Config in '..\..\src\Config\DoxyPas.Config.pas',
   DoxyPas.Config.Reader in '..\..\src\Config\DoxyPas.Config.Reader.pas',
   DoxyPas.Config.Writer in '..\..\src\Config\DoxyPas.Config.Writer.pas',
+  DoxyPas.Model.Entry in '..\..\src\Model\DoxyPas.Model.Entry.pas',
+  DoxyPas.Model.EntryDump in '..\..\src\Model\DoxyPas.Model.EntryDump.pas',
+  DoxyPas.Lang.Pascal.Source in '..\..\src\Lang\Pascal\DoxyPas.Lang.Pascal.Source.pas',
+  DoxyPas.Lang.Pascal.DocBlocks in '..\..\src\Lang\Pascal\DoxyPas.Lang.Pascal.DocBlocks.pas',
+  DoxyPas.Lang.Pascal.Parser in '..\..\src\Lang\Pascal\DoxyPas.Lang.Pascal.Parser.pas',
+  DoxyPas.Lang.Pascal.Options in '..\..\src\Lang\Pascal\DoxyPas.Lang.Pascal.Options.pas',
   DoxyPas.Tests.Core in 'DoxyPas.Tests.Core.pas',
-  DoxyPas.Tests.Config in 'DoxyPas.Tests.Config.pas';
+  DoxyPas.Tests.Config in 'DoxyPas.Tests.Config.pas',
+  DoxyPas.Tests.Pascal in 'DoxyPas.Tests.Pascal.pas';
 
 var
   Runner: ITestRunner;

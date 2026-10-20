@@ -1,0 +1,47 @@
+unit Types1  @1:1
+  uses interface: SysUtils
+  constant Max = 10  @9:3-9:12
+  constant Typed: Integer = 5 {typedconst}  @10:3-10:22
+  constant Names: array[0..1] of string = ('a', 'b') {typedconst}  @11:3-11:45
+  constant SHello = 'Hello' {resourcestring}  @14:3-14:20
+  enum TColor  @17:3-17:41
+    value clRed  @17:13-17:19
+    value clGreen = 5  @17:20-17:32
+    value clBlue  @17:33-17:39
+  type TRange = 1..10  @18:3-18:18
+  type TColors = set of TColor  @19:3-19:27
+  type TArr = array[0..9] of Integer  @20:3-20:33
+  type TDyn = array of string  @21:3-21:26
+  type PInt = ^Integer  @22:3-22:19
+  type TProcA = procedure(A: Integer; const B: string)  @23:3-23:51
+  type TFuncB = function(A: Integer): Boolean of object  @24:3-24:52
+  type TRefC = reference to procedure(X: Integer)  @25:3-25:46
+  type TFile = file of Byte  @26:3-26:24
+  type TClassRef = class of TObject  @27:3-27:32
+  class TFwd {forward}  @28:3-28:16
+  record TMyRec  @29:3-32:7
+    [public] field A: Integer  @30:5-30:16
+    [public] field B: array[0..3] of Char  @31:5-31:28
+  class TObj : TInterfacedObject, IInterface  @33:3-47:7
+    [private] field FA: Integer  @35:5-35:17
+    [private] field FB: string  @35:18-35:29
+    [private] function GetA(): Integer  @36:5-36:28
+    [public] constructor Create(const AName: string = 'x'; AValue: Integer = 3 + 4)  @38:5-38:76
+    [public] function Calc(A: Integer; B: Integer; var C: Double): Integer {virtual overload}  @39:5-39:77
+    [public] function Calc(A: Double): Integer {overload}  @40:5-40:49
+    [public] procedure Done() {reintroduce deprecated deprecated='use X'}  @41:5-41:53
+    [public] procedure Stat() {class static}  @42:5-42:34
+    [public] procedure Msg(var M: TMessage) {message 1}  @43:5-43:47
+    [public] property A: Integer read GetA write FA default 0  @44:5-44:54
+    [public] property Items[I: Integer]: string read GetItem {default}  @45:5-45:62
+    [public] property Name: string index 3 read GetS  @46:5-46:45
+  field GVar: Integer  @50:3-50:17
+  field GInit: Integer = 5  @51:3-51:22
+  field TV: Integer {threadvar}  @54:3-54:15
+  function Free1(A: Integer): Integer {stdcall}  @56:1-56:46
+  procedure Ext() {external}  @57:1-57:46
+  function Inl(): Integer {inline}  @58:1-58:31
+  function Free1(A: Integer): Integer {impl stdcall}  @62:1-62:46
+  procedure Ext() {external impl}  @66:1-66:46
+  function Inl(): Integer {inline impl}  @68:1-68:31
+  function TObj.GetA(): Integer {impl}  @72:1-72:29

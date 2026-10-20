@@ -1,0 +1,7 @@
+program Prog  @1:1
+  uses interface: SysUtils, Unit1
+  class TX  @11:3-12:7
+    doc: Local class.
+  field G: Integer  @15:3-15:14
+  procedure P1()  @18:1-18:14
+    doc: Helper.

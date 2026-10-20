@@ -1,4 +1,4 @@
-unit DoxyPas.Core.Log;
+﻿unit DoxyPas.Core.Log;
 
 interface
 

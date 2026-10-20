@@ -12,6 +12,7 @@ uses
   Winapi.Windows,
 {$ENDIF}
   System.SysUtils,
+  System.Classes,
   System.IOUtils,
   DoxyPas.Core.Version,
   DoxyPas.Core.Log,
@@ -21,7 +22,13 @@ uses
   DoxyPas.Model.Entry,
   DoxyPas.Model.EntryDump,
   DoxyPas.Lang.Pascal.Parser,
-  DoxyPas.Lang.Pascal.Options;
+  DoxyPas.Lang.Pascal.Options,
+  DoxyPas.Doc.Markdown,
+  DoxyPas.Doc.Nodes,
+  DoxyPas.Doc.Parser,
+  DoxyPas.Doc.Dump,
+  DoxyPas.Comments.Scanner,
+  DoxyPas.Comments.EntryDocs;
 
 type
   TCommand = (cmdRun, cmdGenerate, cmdUpdate, cmdDiff);
@@ -39,14 +46,39 @@ begin
   Writeln('  doxypas -s -g [configName]  same, without explanatory comments');
   Writeln('  doxypas -u [configName]     update a configuration file to this version (-s: strip comments)');
   Writeln('  doxypas -x [configName]     show the options that differ from the defaults');
-  Writeln('  doxypas --parse <path> [configName] [--verbose] [--interface-only]');
+  Writeln('  doxypas --parse <path> [configName] [--docs] [--verbose] [--interface-only]');
   Writeln('                              developer: parse a Pascal file/folder and dump the entries');
+  Writeln('  doxypas --doc <file>        developer: Markdown + documentation parser on a text file');
   Writeln('  doxypas -v | --version      print the version');
   Writeln('  doxypas -h | --help         print this help');
 end;
 
+{ Parses the brief/detailed text of every entry; problems found by the documentation parser go to AWarnings. }
+procedure CheckEntryDocs(AEntry: TEntry; AWarnings: TStrings);
+var
+  Child: TEntry;
+  Root: TDocNode;
+  W: TStringList;
+  Msg: string;
+begin
+  if (AEntry.Brief <> '') or (AEntry.Detailed <> '') then
+  begin
+    W := TStringList.Create;
+    try
+      Root := ParseDoc(AEntry.Brief + #10#10 + AEntry.Detailed, W);
+      Root.Free;
+      for Msg in W do
+        AWarnings.Add(Format('%s:%d: %s', [AEntry.FileName, AEntry.DocLine, Msg]));
+    finally
+      W.Free;
+    end;
+  end;
+  for Child in AEntry.Children do
+    CheckEntryDocs(Child, AWarnings);
+end;
+
 { Developer command: parse one Pascal file (dump the entries) or a folder (summary; -V dumps every file). }
-function RunParse(const APath, AConfigName: string; AVerbose, AInterfaceOnly: Boolean): Integer;
+function RunParse(const APath, AConfigName: string; AVerbose, AInterfaceOnly, AScanDocs: Boolean): Integer;
 var
   Opts: TPascalParseOptions;
   Files: TArray<string>;
@@ -54,8 +86,12 @@ var
   R: TPascalParseResult;
   Ok, Failed: Integer;
   Config: TConfig;
+  DocOpts: TDocOptions;
+  Warnings: TStringList;
+  Msg: string;
 begin
   Opts := TPascalParseOptions.Default;
+  DocOpts := TDocOptions.Default;
   if AConfigName <> '' then
   begin
     Config := TConfig.Create;
@@ -63,6 +99,7 @@ begin
       ReadDoxyfile(Config, AConfigName);
       Config.PostProcess;
       Opts := PascalOptionsFromConfig(Config);
+      DocOpts := DocOptionsFromConfig(Config);
     finally
       Config.Free;
     end;
@@ -92,6 +129,18 @@ begin
         Inc(Failed);
         Error(F, R.ErrorLine, R.ErrorMessage);
       end;
+      if (R.Root <> nil) and AScanDocs then
+      begin
+        Warnings := TStringList.Create;
+        try
+          ScanEntryDocs(R.Root, DocOpts, Warnings);
+          CheckEntryDocs(R.Root, Warnings);
+          for Msg in Warnings do
+            Warn('', 0, Msg);
+        finally
+          Warnings.Free;
+        end;
+      end;
       if (R.Root <> nil) and (AVerbose or (Length(Files) = 1)) then
         Write(DumpEntry(R.Root));
     finally
@@ -106,6 +155,42 @@ begin
     Result := 0;
 end;
 
+{ Developer command: run a documentation text file through Markdown + parser and print the result. }
+function RunDocFile(const AFileName: string; AMarkdown: Boolean): Integer;
+var
+  Text: string;
+  Root: TDocNode;
+  W: TStringList;
+begin
+  if not TFile.Exists(AFileName) then
+  begin
+    Error('', 0, Format('''%s'' not found', [AFileName]));
+    Exit(1);
+  end;
+  Text := TFile.ReadAllText(AFileName, TEncoding.UTF8);
+  if AMarkdown then
+  begin
+    Text := MarkdownToDoxygen(Text);
+    Writeln('--- markdown output');
+    Writeln(Text);
+    Writeln('--- parsed');
+  end;
+  W := TStringList.Create;
+  try
+    Root := ParseDoc(Text, W);
+    try
+      Writeln(DumpDoc(Root));
+    finally
+      Root.Free;
+    end;
+    for Text in W do
+      Warn(AFileName, 0, Text);
+  finally
+    W.Free;
+  end;
+  Result := 0;
+end;
+
 procedure WriteText(const AFileName, AText: string);
 begin
   if AFileName = '-' then
@@ -117,8 +202,8 @@ end;
 function RunCli(const AArgs: TArray<string>): Integer;
 var
   Cmd: TCommand;
-  Short, Verbose, IfaceOnly: Boolean;
-  ParsePath: string;
+  Short, Verbose, IfaceOnly, ScanDocs: Boolean;
+  ParsePath, DocPath: string;
   Name, Arg: string;
   I: Integer;
   Config: TConfig;
@@ -132,7 +217,9 @@ begin
   Short := False;
   Verbose := False;
   IfaceOnly := False;
+  ScanDocs := False;
   ParsePath := '';
+  DocPath := '';
   Name := '';
   I := 0;
   while I < Length(AArgs) do
@@ -158,6 +245,12 @@ begin
       ParsePath := AArgs[I];
       Inc(I);
     end
+    else if (Arg = '--doc') and (I < Length(AArgs)) then
+    begin
+      DocPath := AArgs[I];
+      Inc(I);
+    end
+    else if Arg = '--docs' then ScanDocs := True
     else if Arg = '--verbose' then Verbose := True
     else if Arg = '--interface-only' then IfaceOnly := True
     else if (Arg = '-') or ((Arg <> '') and (Arg[1] <> '-')) then
@@ -168,10 +261,12 @@ begin
       Exit(1);
     end;
   end;
+  if DocPath <> '' then
+    Exit(RunDocFile(DocPath, not IfaceOnly));
   if ParsePath <> '' then
   begin
     try
-      Exit(RunParse(ParsePath, Name, Verbose, IfaceOnly));
+      Exit(RunParse(ParsePath, Name, Verbose, IfaceOnly, ScanDocs));
     except
       on E: EConfigError do
       begin

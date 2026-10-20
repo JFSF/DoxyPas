@@ -18,9 +18,17 @@ uses
   DoxyPas.Lang.Pascal.DocBlocks in '..\..\src\Lang\Pascal\DoxyPas.Lang.Pascal.DocBlocks.pas',
   DoxyPas.Lang.Pascal.Parser in '..\..\src\Lang\Pascal\DoxyPas.Lang.Pascal.Parser.pas',
   DoxyPas.Lang.Pascal.Options in '..\..\src\Lang\Pascal\DoxyPas.Lang.Pascal.Options.pas',
+  DoxyPas.Doc.Nodes in '..\..\src\Doc\DoxyPas.Doc.Nodes.pas',
+  DoxyPas.Doc.Dump in '..\..\src\Doc\DoxyPas.Doc.Dump.pas',
+  DoxyPas.Doc.Markdown in '..\..\src\Doc\DoxyPas.Doc.Markdown.pas',
+  DoxyPas.Doc.Parser in '..\..\src\Doc\DoxyPas.Doc.Parser.pas',
+  DoxyPas.Comments.XmlDoc in '..\..\src\Comments\DoxyPas.Comments.XmlDoc.pas',
+  DoxyPas.Comments.Scanner in '..\..\src\Comments\DoxyPas.Comments.Scanner.pas',
+  DoxyPas.Comments.EntryDocs in '..\..\src\Comments\DoxyPas.Comments.EntryDocs.pas',
   DoxyPas.Tests.Core in 'DoxyPas.Tests.Core.pas',
   DoxyPas.Tests.Config in 'DoxyPas.Tests.Config.pas',
-  DoxyPas.Tests.Pascal in 'DoxyPas.Tests.Pascal.pas';
+  DoxyPas.Tests.Pascal in 'DoxyPas.Tests.Pascal.pas',
+  DoxyPas.Tests.Doc in 'DoxyPas.Tests.Doc.pas';
 
 var
   Runner: ITestRunner;

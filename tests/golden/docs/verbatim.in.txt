@@ -1,0 +1,15 @@
+Example:
+
+\code{.pas}
+for I := 0 to 10 do
+  Writeln(I < 5);   // <not a tag> & \param stays
+\endcode
+
+\verbatim
+raw *text* \b here
+\endverbatim
+
+\htmlonly <b>only html</b> \endhtmlonly
+\dot
+digraph G { a -> b }
+\enddot

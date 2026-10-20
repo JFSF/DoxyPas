@@ -1,0 +1,23 @@
+--- markdown
+Example:
+
+\code{.pas}
+for I := 0 to 10 do
+  Writeln(I < 5);   // <not a tag> & \param stays
+\endcode
+
+\verbatim
+raw *text* \b here
+\endverbatim
+
+\htmlonly <b>only html</b> \endhtmlonly
+\dot
+digraph G { a -> b }
+\enddot
+--- parsed
+<doc>
+  <p>Example:</p>
+  <p><verbatim kind="code" lang=".pas">for I := 0 to 10 do\n  Writeln(I &lt; 5);   // &lt;not a tag&gt; &amp; \param stays</verbatim></p>
+  <p><verbatim kind="verbatim">raw *text* \b here</verbatim></p>
+  <p><verbatim kind="htmlonly">&lt;b&gt;only html&lt;/b&gt;</verbatim> <verbatim kind="dot">digraph G { a -&gt; b }</verbatim></p>
+</doc>

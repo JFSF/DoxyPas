@@ -1,4 +1,4 @@
-unit DoxyPas.Lang.Pascal.Options;
+﻿unit DoxyPas.Lang.Pascal.Options;
 
 interface
 

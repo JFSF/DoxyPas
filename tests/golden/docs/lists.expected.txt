@@ -1,0 +1,57 @@
+--- markdown
+Intro paragraph.
+
+<ul>
+<li>first</li>
+<li>second line one
+second line two
+<ul>
+<li>nested a</li>
+<li>nested b</li>
+</ul></li>
+<li>third</li>
+</ul>
+
+<ol>
+<li>one</li>
+<li>two
+continued</li>
+</ol>
+
+<ul>
+<li>star item</li>
+</ul>
+
+<ul><li>html one</li><li>html two<ul><li>deep</li></ul></li></ul>
+<ol>
+<li>numbered
+<li>implicit close
+</ol>
+--- parsed
+<doc>
+  <p>Intro paragraph.</p>
+  <p><list name="ul">
+      <li name="li"><p>first</p></li>
+      <li name="li"><p>second line one second line two <list name="ul">
+            <li name="li"><p>nested a</p></li>
+            <li name="li"><p>nested b</p></li>
+          </list></p></li>
+      <li name="li"><p>third</p></li>
+    </list></p>
+  <p><list name="ol">
+      <li name="li"><p>one</p></li>
+      <li name="li"><p>two continued</p></li>
+    </list></p>
+  <p><list name="ul">
+      <li name="li"><p>star item</p></li>
+    </list></p>
+  <p><list name="ul">
+      <li name="li"><p>html one</p></li>
+      <li name="li"><p>html two<list name="ul">
+            <li name="li"><p>deep</p></li>
+          </list></p></li>
+    </list> <list name="ol">
+      <li name="li"><p>numbered</p></li>
+      <li name="li"><p>implicit close</p></li>
+    </list></p>
+</doc>

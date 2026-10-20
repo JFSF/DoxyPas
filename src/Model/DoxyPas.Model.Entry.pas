@@ -19,7 +19,9 @@ type
     ekProperty,
     ekTypeAlias,  // type TFoo = <anything that is not a class-like or an enum>
     ekEnum,
-    ekEnumValue);
+    ekEnumValue,
+    ekPage,       // \page / \mainpage: Name = id, TypeText = title, Doc = text
+    ekGroup);     // \defgroup / ddtogroup: Name = id, TypeText = title, Doc = text
 
   TClassKind = (ckClass, ckRecord, ckObject, ckInterface, ckDispInterface, ckClassHelper, ckRecordHelper,
     ckTypeHelper);
@@ -50,7 +52,10 @@ type
     efThreadVar,
     efResourceString,
     efImplementation, // declared in the implementation section
-    efTypedConst);
+    efTypedConst,
+    efInternal,       // \internal
+    efHideInitializer,
+    efShowInitializer);
 
   TEntryFlags = set of TEntryFlag;
 
@@ -103,6 +108,9 @@ type
     Doc: string;               // documentation comment text, markers removed (empty if none)
     DocLine: Integer;
     DocIsAfter: Boolean;       // documented by a trailing comment (//<, {!< })
+    Brief: string;             // set by DoxyPas.Comments.EntryDocs: brief description (Doxygen markup, HTML)
+    Detailed: string;          // detailed description (parsed by DoxyPas.Doc.Parser when needed)
+    Groups: TList<string>;     // \ingroup
     constructor Create(AKind: TEntryKind; const AName: string);
     destructor Destroy; override;
     function Add(AChild: TEntry): TEntry;
@@ -134,10 +142,12 @@ begin
   Directives := TList<string>.Create;
   UsesInterface := TList<string>.Create;
   UsesImplementation := TList<string>.Create;
+  Groups := TList<string>.Create;
 end;
 
 destructor TEntry.Destroy;
 begin
+  Groups.Free;
   UsesImplementation.Free;
   UsesInterface.Free;
   Directives.Free;

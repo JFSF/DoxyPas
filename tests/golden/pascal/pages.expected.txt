@@ -1,0 +1,8 @@
+unit Pages  @3:1
+  doc: Documentation of the unit itself.
+  procedure P()  @17:1-17:13
+    doc: Plain routine.
+  page mainpage "Pages Demo"  @5:1-9:12
+    doc: Welcome to the demo. | \section s1 First section | Text.
+  group core "Core API"  @11:1-12:25
+    doc: Group description.

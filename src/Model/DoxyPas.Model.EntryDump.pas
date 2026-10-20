@@ -18,7 +18,7 @@ uses
 const
   FlagNames: array[TEntryFlag] of string = ('class', 'static', 'abstract', 'final', 'sealed', 'inline', 'overload',
     'reintroduce', 'forward', 'external', 'deprecated', 'platform', 'experimental', 'library', 'default',
-    'constparam', 'threadvar', 'resourcestring', 'impl', 'typedconst');
+    'constparam', 'threadvar', 'resourcestring', 'impl', 'typedconst', 'internal', 'hideinit', 'showinit');
 
 function Join(const AItems: array of string): string;
 var
@@ -153,6 +153,8 @@ begin
       S := 'type ' + AEntry.Name + TypeParamsText(AEntry) + ' = ' + AEntry.TypeText;
     ekEnum:
       S := 'enum ' + AEntry.Name;
+    ekPage, ekGroup:
+      S := EntryKindName(AEntry.Kind) + ' ' + AEntry.Name + ' "' + AEntry.TypeText + '"';
     ekEnumValue:
       begin
         S := 'value ' + AEntry.Name;
@@ -180,6 +182,12 @@ begin
       SB.Append('<');
     SB.Append(': ').Append(AEntry.Doc.Replace(#10, ' | ')).Append(#10);
   end;
+  if AEntry.Brief <> '' then
+    SB.Append(Pad).Append('  brief: ').Append(AEntry.Brief.Replace(#10, ' | ')).Append(#10);
+  if AEntry.Detailed <> '' then
+    SB.Append(Pad).Append('  detailed: ').Append(AEntry.Detailed.Replace(#10, ' | ')).Append(#10);
+  if AEntry.Groups.Count > 0 then
+    SB.Append(Pad).Append('  groups: ').Append(string.Join(', ', AEntry.Groups.ToArray)).Append(#10);
   for Child in AEntry.Children do
     DumpTo(SB, Child, AIndent + 1);
 end;

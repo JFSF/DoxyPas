@@ -1,0 +1,33 @@
+--- markdown
+<h1>Header one</h1>
+<h2>Header two</h2>
+
+<h1>Setext header</h1>
+
+<blockquote>
+quoted text
+more quote
+</blockquote>
+
+<hr/>
+
+\code{.pascal}
+var X: Integer; // *not* emphasis
+\endcode
+
+\code
+indented code
+second line
+\endcode
+Final paragraph.
+--- parsed
+<doc>
+  <p><h level="1">Header one</h> <h level="2">Header two</h></p>
+  <p><h level="1">Setext header</h></p>
+  <p><quote>
+      <p>quoted text more quote</p>
+    </quote></p>
+  <p><hr/></p>
+  <p><verbatim kind="code" lang=".pascal">var X: Integer; // *not* emphasis</verbatim></p>
+  <p><verbatim kind="code">indented code\nsecond line</verbatim> Final paragraph.</p>
+</doc>

@@ -1,0 +1,20 @@
+Intro paragraph.
+
+- first
+- second line one
+  second line two
+  - nested a
+  - nested b
+- third
+
+1. one
+2. two
+   continued
+
+* star item
+
+<ul><li>html one</li><li>html two<ul><li>deep</li></ul></li></ul>
+<ol>
+<li>numbered
+<li>implicit close
+</ol>

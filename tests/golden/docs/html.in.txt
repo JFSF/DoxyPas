@@ -1,0 +1,12 @@
+<b>bold</b> <i>italic</i> <em>em</em> <code>code</code> <u>under</u> <s>strike</s> x<sub>2</sub> and TList<T> with Foo<Bar, Baz>.
+<h1>Title</h1>
+<h3>Sub <i>title</i></h3>
+<p>Paragraph via p tag.</p>
+Line<br/>break and rule:<hr/>
+<blockquote>quoted <b>text</b></blockquote>
+<pre>
+ <b>not bold</b> &lt;raw&gt;
+</pre>
+<a href="http://x.org">link</a> <a name="anch"></a> <img src="a.png" alt="alt"/>
+<dl><dt>Term</dt><dd>Definition</dd></dl>
+<!-- a comment -->after comment

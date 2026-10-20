@@ -1,0 +1,38 @@
+--- markdown
+<table>
+<tr><th align="left">Name</th><th align="right">Value</th></tr>
+<tr><td align="left">a</td><td align="right"><code>1</code></td></tr>
+<tr><td align="left">b</td><td align="right"><strong>2</strong></td></tr>
+</table>
+
+<table>
+<tr><th>H1</th><th>H2</th></tr>
+<tr><td>x</td><td>y</td></tr>
+</table>
+--- parsed
+<doc>
+  <p><table>
+      <tr>
+        <td name="th" extra="align=&quot;left&quot;"><p>Name</p></td>
+        <td name="th" extra="align=&quot;right&quot;"><p>Value</p></td>
+      </tr>
+      <tr>
+        <td name="td" extra="align=&quot;left&quot;"><p>a</p></td>
+        <td name="td" extra="align=&quot;right&quot;"><p><code>1</code></p></td>
+      </tr>
+      <tr>
+        <td name="td" extra="align=&quot;left&quot;"><p>b</p></td>
+        <td name="td" extra="align=&quot;right&quot;"><p><b>2</b></p></td>
+      </tr>
+    </table></p>
+  <p><table>
+      <tr>
+        <td name="th"><p>H1</p></td>
+        <td name="th"><p>H2</p></td>
+      </tr>
+      <tr>
+        <td name="td"><p>x</p></td>
+        <td name="td"><p>y</p></td>
+      </tr>
+    </table></p>
+</doc>

@@ -1,0 +1,15 @@
+\mainpage My Project
+
+Welcome.
+
+\section intro Introduction
+Intro text.
+
+\subsection details Details
+Detail text.
+
+\section usage Usage
+Usage text.
+
+\page other Another Page
+Other page.

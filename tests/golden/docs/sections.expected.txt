@@ -1,0 +1,34 @@
+--- markdown
+\mainpage My Project
+
+Welcome.
+
+\section intro Introduction
+Intro text.
+
+\subsection details Details
+Detail text.
+
+\section usage Usage
+Usage text.
+
+\page other Another Page
+Other page.
+--- parsed
+<doc>
+  <section name="mainpage" text="My Project" id="mainpage">
+    <p>Welcome.</p>
+    <section name="section" text="Introduction" id="intro" level="1">
+      <p>Intro text.</p>
+      <section name="subsection" text="Details" id="details" level="2">
+        <p>Detail text.</p>
+      </section>
+    </section>
+    <section name="section" text="Usage" id="usage" level="1">
+      <p>Usage text.</p>
+    </section>
+  </section>
+  <section name="page" text="Another Page" id="other">
+    <p>Other page.</p>
+  </section>
+</doc>

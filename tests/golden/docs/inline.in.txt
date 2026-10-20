@@ -1,0 +1,7 @@
+Plain *emphasis* and _also emphasis_, **strong**, __strong too__, ~~gone~~ and `code <T> & \c` here.
+snake_case_name and 2*3*4 and a * b stay literal; so does FOO_BAR_.
+
+A [link](http://example.org "Title") and an ![image](pic.png "cap"), <http://auto.link/x> and https://plain.url/path.
+Mail me at john.doe@example.com or \c Foo.Bar, then \b bold. Escapes: \* \_ \# \\ \@ \& 100\%.
+Hard break here
+next line &amp; &lt;tag&gt; &copy; &#65; &#x42; &unknown;

@@ -1,0 +1,16 @@
+Summary text \a x and \p y.
+
+\param a first parameter,
+ continued here
+\param[out] b,c second and third
+\tparam T the type
+\retval 0 on success
+\exception EInvalidOp when bad
+\return the value
+\see Other.Thing
+\note A note.
+\warning Careful!
+\par Custom title
+ Paragraph of the par.
+\since 2.0
+\deprecated use New instead

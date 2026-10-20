@@ -1,0 +1,23 @@
+--- markdown
+<b>bold</b> <i>italic</i> <em>em</em> <code>code</code> <u>under</u> <s>strike</s> x<sub>2</sub> and TList<T> with Foo<Bar, Baz>.
+<h1>Title</h1>
+<h3>Sub <i>title</i></h3>
+<p>Paragraph via p tag.</p>
+Line<br/>break and rule:<hr/>
+<blockquote>quoted <b>text</b></blockquote>
+<pre>
+ <b>not bold</b> &lt;raw&gt;
+</pre>
+<a href="http://x.org">link</a> <a name="anch"></a> <img src="a.png" alt="alt"/>
+<dl><dt>Term</dt><dd>Definition</dd></dl>
+<!-- a comment -->after comment
+--- parsed
+<doc>
+  <p><b>bold</b> <i>italic</i> <em>em</em> <code>code</code> <u>under</u> <s>strike</s> x<sub>2</sub> and TList&lt;T&gt; with Foo&lt;Bar, Baz&gt;. <h level="1">Title</h> <h level="3">Sub <i>title</i></h></p>
+  <p>Paragraph via p tag. Line<br/>break and rule:<hr/> <quote>
+      <p>quoted <b>text</b></p>
+    </quote> <verbatim kind="pre"> &lt;b&gt;not bold&lt;/b&gt; &lt;raw&gt;</verbatim> <link name="href" text="http://x.org">link</link> <anchor text="anch"/> <image name="html" text="a.png" extra="alt"/> <list name="dl">
+      <li name="dt"><p>Term</p></li>
+      <li name="dd"><p>Definition</p></li>
+    </list> after comment</p>
+</doc>

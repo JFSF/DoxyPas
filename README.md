@@ -3,7 +3,7 @@
 Doxygen-style documentation generator for Object Pascal (Delphi and FreePascal sources), written entirely in Delphi.
 Based on [Doxygen](https://github.com/doxygen/doxygen). Licensed under GPL-2.0 (see `LICENSE`).
 
-Status: **M2 (Pascal front end: `doxypas --parse`)**. Planning and decision log: [`docs/DOXYPAS.md`](docs/DOXYPAS.md).
+Status: **M3 (comments and documentation parser: `--parse --docs`, `--doc`)**. Planning and decision log: [`docs/DOXYPAS.md`](docs/DOXYPAS.md).
 
 ## Build
 

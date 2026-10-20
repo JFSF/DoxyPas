@@ -16,6 +16,13 @@ uses
   DoxyPas.Lang.Pascal.DocBlocks in 'Lang\Pascal\DoxyPas.Lang.Pascal.DocBlocks.pas',
   DoxyPas.Lang.Pascal.Parser in 'Lang\Pascal\DoxyPas.Lang.Pascal.Parser.pas',
   DoxyPas.Lang.Pascal.Options in 'Lang\Pascal\DoxyPas.Lang.Pascal.Options.pas',
+  DoxyPas.Doc.Nodes in 'Doc\DoxyPas.Doc.Nodes.pas',
+  DoxyPas.Doc.Dump in 'Doc\DoxyPas.Doc.Dump.pas',
+  DoxyPas.Doc.Markdown in 'Doc\DoxyPas.Doc.Markdown.pas',
+  DoxyPas.Doc.Parser in 'Doc\DoxyPas.Doc.Parser.pas',
+  DoxyPas.Comments.XmlDoc in 'Comments\DoxyPas.Comments.XmlDoc.pas',
+  DoxyPas.Comments.Scanner in 'Comments\DoxyPas.Comments.Scanner.pas',
+  DoxyPas.Comments.EntryDocs in 'Comments\DoxyPas.Comments.EntryDocs.pas',
   DoxyPas.Cli in 'Cli\DoxyPas.Cli.pas';
 
 var

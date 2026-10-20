@@ -1,0 +1,11 @@
+--- markdown
+See \ref MyUnit.TFoo.Bar and \ref other "the other thing". Also \link TFoo.Baz the Baz method\endlink.
+Anchor \anchor here then \cite smith99 and \copydoc TBase.Run.
+\image html logo.png "The logo"
+Formula \f$x^2 + y^2\f$ inline and
+\f[ \sum_{i=0}^n i \f]
+\inheritdoc
+--- parsed
+<doc>
+  <p>See <ref text="MyUnit.TFoo.Bar"></ref> and <ref text="other">the other thing</ref>. Also <link name="link" text="TFoo.Baz">the Baz method</link>. Anchor <anchor text="here"/> then <cite text="smith99"/> and <copydoc name="copydoc" text="TBase.Run"/>. <image name="html" text="logo.png" extra="The logo"/> Formula <formula kind="inline">x^2 + y^2</formula> inline and <formula kind="display">\sum_{i=0}^n i</formula> <copydoc name="inheritdoc"/></p>
+</doc>

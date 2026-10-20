@@ -1,0 +1,11 @@
+--- markdown
+Path C:\Temp\file.pas and \unknowncmd with text; also a stray \endlink here.
+Email me@host.org, price is $5 at 5@6 and trailing \
+Backslash at end \
+--- parsed
+<doc>
+  <p>Path C:\Temp\file.pas and \unknowncmd with text; also a stray here. Email <url name="email" text="me@host.org"/>, price is $5 at 5@6 and trailing \ Backslash at end \</p>
+</doc>
+--- warnings
+line 1: unknown command \unknowncmd
+line 1: \endlink without \link

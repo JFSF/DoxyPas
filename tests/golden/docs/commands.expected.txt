@@ -1,0 +1,31 @@
+--- markdown
+Summary text \a x and \p y.
+
+\param a first parameter,
+ continued here
+\param[out] b,c second and third
+\tparam T the type
+\retval 0 on success
+\exception EInvalidOp when bad
+\return the value
+\see Other.Thing
+\note A note.
+\warning Careful!
+\par Custom title
+ Paragraph of the par.
+\since 2.0
+\deprecated use New instead
+--- parsed
+<doc>
+  <p>Summary text <em>x</em> and <code>y</code>.</p>
+  <p><params name="param">
+      <param text="a"><p>first parameter, continued here</p></param>
+      <param text="b,c" extra="out"><p>second and third</p></param>
+    </params><params name="templateparam">
+      <param text="T"><p>the type</p></param>
+    </params><params name="retval">
+      <param text="0"><p>on success</p></param>
+    </params><params name="exception">
+      <param text="EInvalidOp"><p>when bad</p></param>
+    </params><sect name="return"><p>the value</p></sect><sect name="see"><p>Other.Thing</p></sect><sect name="note"><p>A note.</p></sect><sect name="warning"><p>Careful!</p></sect><sect name="par" text="Custom title"><p>Paragraph of the par.</p></sect><sect name="since"><p>2.0</p></sect><sect name="deprecated"><p>use New instead</p></sect></p>
+</doc>

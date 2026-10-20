@@ -21,6 +21,7 @@ implementation
 uses
   System.SysUtils,
   System.Classes,
+  System.RegularExpressions,
   System.Generics.Collections;
 
 type
@@ -260,6 +261,68 @@ begin
   end;
 end;
 
+{ Blocks that start with \page, \mainpage, \defgroup, \addtogroup or \file are not attached to a declaration:
+  they become page/group entries below the unit (\file documents the unit itself). }
+function AddStandalone(ARoot: TEntry; const B: TDocBlock; const AFileName: string): Boolean;
+var
+  M: TMatch;
+  E: TEntry;
+  Cmd, LineRest, Rest, Id: string;
+  P: Integer;
+begin
+  M := TRegEx.Match(B.Text, '^[\\@](page|mainpage|defgroup|addtogroup|weakgroup|file)\b[ \t]*([^\n]*)(?:\n(.*))?$',
+    [roSingleLine]);
+  Result := M.Success;
+  if not Result then
+    Exit;
+  Cmd := M.Groups[1].Value;
+  LineRest := Trim(M.Groups[2].Value);
+  if M.Groups.Count > 3 then
+    Rest := Trim(M.Groups[3].Value)
+  else
+    Rest := '';
+  if Cmd = 'file' then
+  begin
+    if ARoot.Doc = '' then
+    begin
+      ARoot.Doc := Rest;
+      ARoot.DocLine := B.Line;
+    end
+    else
+      ARoot.Doc := ARoot.Doc + #10#10 + Rest;
+    Exit;
+  end;
+  if Cmd = 'mainpage' then
+    Id := 'mainpage'
+  else
+  begin
+    P := Pos(' ', LineRest);
+    if P = 0 then
+    begin
+      Id := LineRest;
+      LineRest := '';
+    end
+    else
+    begin
+      Id := Copy(LineRest, 1, P - 1);
+      LineRest := Trim(Copy(LineRest, P + 1, MaxInt));
+    end;
+  end;
+  if (Cmd = 'page') or (Cmd = 'mainpage') then
+    E := TEntry.Create(ekPage, Id)
+  else
+    E := TEntry.Create(ekGroup, Id);
+  E.TypeText := LineRest;
+  E.Doc := Rest;
+  E.DocLine := B.Line;
+  E.FileName := AFileName;
+  E.Line := B.Line;
+  E.Col := B.Col;
+  E.EndLine := B.EndLine;
+  E.EndCol := B.EndCol;
+  ARoot.Add(E);
+end;
+
 procedure AttachDocComments(ASource: TPasSource; ARoot: TEntry; const AFileName: string);
 var
   Blocks: TList<TDocBlock>;
@@ -272,6 +335,8 @@ begin
     for B in Blocks do
     begin
       if B.Text = '' then
+        Continue;
+      if (not B.IsAfter) and AddStandalone(ARoot, B, AFileName) then
         Continue;
       if B.IsAfter then
         Target := FindPrev(ARoot, B, AFileName)

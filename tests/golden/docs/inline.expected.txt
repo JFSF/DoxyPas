@@ -1,0 +1,13 @@
+--- markdown
+Plain <em>emphasis</em> and <em>also emphasis</em>, <strong>strong</strong>, <strong>strong too</strong>, <strike>gone</strike> and <code>code &lt;T&gt; &amp; \\c</code> here.
+snake_case_name and 2<em>3</em>4 and a * b stay literal; so does FOO_BAR_.
+
+A <a href="http://example.org" title="Title">link</a> and an <img src="pic.png" alt="image" title="cap"/>, http://auto.link/x and https://plain.url/path.
+Mail me at john.doe@example.com or \c Foo.Bar, then \b bold. Escapes: \* \_ \# \\ \@ \& 100\%.
+Hard break here
+next line &amp; &lt;tag&gt; &copy; &#65; &#x42; &unknown;
+--- parsed
+<doc>
+  <p>Plain <em>emphasis</em> and <em>also emphasis</em>, <b>strong</b>, <b>strong too</b>, <s>gone</s> and <code>code <sym>&lt;</sym>T<sym>&gt;</sym> <sym>&amp;</sym> \c</code> here. snake_case_name and 2<em>3</em>4 and a * b stay literal; so does FOO_BAR_.</p>
+  <p>A <link name="href" text="http://example.org">link</link> and an <image name="html" text="pic.png" extra="image"/>, <url text="http://auto.link/x"/> and <url text="https://plain.url/path"/>. Mail me at <url name="email" text="john.doe@example.com"/> or <code>Foo.Bar</code>, then <b>bold</b>. Escapes: * _ # \ @ &amp; 100%. Hard break here next line <sym>&amp;</sym> <sym>&lt;</sym>tag<sym>&gt;</sym> <sym>©</sym> <sym>A</sym> <sym>B</sym> &amp;unknown;</p>
+</doc>

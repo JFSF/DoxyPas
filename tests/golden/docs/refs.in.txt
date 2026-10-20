@@ -1,0 +1,6 @@
+See \ref MyUnit.TFoo.Bar and \ref other "the other thing". Also \link TFoo.Baz the Baz method\endlink.
+Anchor \anchor here then \cite smith99 and \copydoc TBase.Run.
+\image html logo.png "The logo"
+Formula \f$x^2 + y^2\f$ inline and
+\f[ \sum_{i=0}^n i \f]
+\inheritdoc

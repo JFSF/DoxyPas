@@ -75,7 +75,9 @@ begin
     'Ausführliche Beschreibung');
   Add('More...', 'Mais...', '', 'Más...', 'Plus...', 'Mehr...');
   Add('Inherits', 'Herda de', '', 'Hereda de', 'Hérite de', 'Erbt von');
-  Add('Inherited by', 'Herdado por', '', 'Heredado por', 'Hérité par', 'Vererbt an');
+  Add('Inheritance diagram for %s:', 'Diagrama de heranças para %s:', '', 'Diagrama de herencia para %s:',
+    'Graphe d''héritage de %s :', 'Klassendiagramm für %s:');
+  Add('Inherited by','Herdado por', '', 'Heredado por', 'Hérité par', 'Vererbt an');
   Add('Class', 'Classe', '', 'Clase', 'Classe', 'Klasse');
   Add('Record', 'Record', 'Record', 'Registro', 'Enregistrement', 'Record');
   Add('Interface', 'Interface', '', 'Interfaz', 'Interface', 'Schnittstelle');

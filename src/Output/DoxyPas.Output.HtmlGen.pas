@@ -74,6 +74,8 @@ type
     FPage: TStringBuilder;
     FPageFile, FPageTitle: string;
     FHasPages, FHasGroups, FHasClasses, FHasUnits: Boolean;
+    FDotGraphs: Boolean;      // HAVE_DOT and CLASS_GRAPH: draw the inheritance diagrams (Windows only for now)
+    FDotPath: string;
     FNav: TObjectList<TNavNode>;
     FNavIndex: TList<TPair<string, string>>;
     FSearchTerms: array of TList<TSearchTerm>;
@@ -115,6 +117,8 @@ type
     function DetailedBlock(ADef: TDefinition; AWithHeading: Boolean): string;
     function NavPathOf(ADef: TDefinition): string;
     // pages
+    function ClassDot(C: TClassDef): string;
+    function ClassGraph(C: TClassDef): string;
     procedure WriteMainPage;
     procedure WriteClass(C: TClassDef);
     procedure WriteMembersPage(C: TClassDef);
@@ -165,24 +169,40 @@ const
   CProperties = 8; CGroups = 9; CPages = 10;
 
 {$IFDEF MSWINDOWS}
-// Runs hhc.exe on index.hhp and waits for it (it exits with 1 when the CHM was built).
-procedure RunHhc(const AHhc, ADir: string);
+// Runs a command line in ADir and waits for it; False when it could not be started or exited with a non-zero code.
+function RunTool(const ACmd, ADir: string): Boolean;
 var
   SI: TStartupInfo;
   PI: TProcessInformation;
   Cmd: string;
+  Code: Cardinal;
 begin
+  Result := False;
   ZeroMemory(@SI, SizeOf(SI));
   SI.cb := SizeOf(SI);
-  Cmd := '"' + AHhc + '" index.hhp';
+  Cmd := ACmd;
+  UniqueString(Cmd);
   if CreateProcess(nil, PChar(Cmd), nil, nil, False, CREATE_NO_WINDOW, nil, PChar(ADir), SI, PI) then
   begin
     WaitForSingleObject(PI.hProcess, 600000);
+    GetExitCodeProcess(PI.hProcess, Code);
+    Result := Code = 0;
     CloseHandle(PI.hProcess);
     CloseHandle(PI.hThread);
   end;
 end;
+
+// Runs hhc.exe on index.hhp and waits for it (it exits with 1 when the CHM was built).
+procedure RunHhc(const AHhc, ADir: string);
+begin
+  RunTool('"' + AHhc + '" index.hhp', ADir);
+end;
 {$ENDIF}
+
+function DotQuote(const S: string): string;
+begin
+  Result := '"' + S.Replace('\', '\\').Replace('"', '\"') + '"';
+end;
 
 { TNavNode }
 
@@ -224,6 +244,12 @@ begin
   if FExt[1] <> '.' then
     FExt := '.' + FExt;
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
+{$IFDEF MSWINDOWS}
+  FDotGraphs := AConfig.GetBool('HAVE_DOT') and SameText(AConfig.GetString('CLASS_GRAPH'), 'YES');
+  FDotPath := AConfig.GetString('DOT_PATH');
+  if FDotPath <> '' then
+    FDotPath := IncludeTrailingPathDelimiter(FDotPath);
+{$ENDIF}
   FColors := THtmlColors.Parse(AConfig.GetString('HTML_COLORSTYLE'), AConfig.GetInt('HTML_COLORSTYLE_HUE'),
     AConfig.GetInt('HTML_COLORSTYLE_SAT'), AConfig.GetInt('HTML_COLORSTYLE_GAMMA'));
   FLight := HtmlResourceText('lightmode_settings.css');
@@ -1133,6 +1159,139 @@ end;
 
 { ------------------------------------------------------------------ pages }
 
+// Doxygen's inheritance graph: all ancestors above the class, its descendants (three levels) below it.
+function THtmlGenerator.ClassDot(C: TClassDef): string;
+const
+  MaxDepth = 3;
+var
+  SB: TStringBuilder;
+  Ids: TDictionary<string, Integer>;
+  Max: Integer;
+
+  function NodeOf(const AKey, ALabel, AUrl: string; AStyle: string): Integer;
+  begin
+    if Ids.TryGetValue(AKey, Result) then
+      Exit;
+    Result := Ids.Count;
+    Ids.Add(AKey, Result);
+    SB.Append('  n').Append(Result).Append(' [label=').Append(DotQuote(ALabel)).Append(AStyle);
+    if AUrl <> '' then
+      SB.Append(', URL=').Append(DotQuote(AUrl)).Append(', target="_top"');
+    SB.Append('];'#10);
+  end;
+
+  function ClassNode(X: TClassDef; ARoot: Boolean): Integer;
+  begin
+    if ARoot then
+      Result := NodeOf(X.DiskName, X.Name, '', ', fillcolor="#bfbfbf"')
+    else
+      Result := NodeOf(X.DiskName, X.Name, FDoc.DefUrl(X), '');
+  end;
+
+  procedure Ancestors(X: TClassDef; AId: Integer);
+  var
+    B: TBaseRef;
+    P: Integer;
+  begin
+    for B in X.Bases do
+    begin
+      if Ids.Count >= Max then
+        Exit;
+      if (B.ClassDef <> nil) and FLinks.IsLinkable(B.ClassDef) then
+      begin
+        P := ClassNode(B.ClassDef, False);
+        SB.Append('  n').Append(P).Append(' -> n').Append(AId).Append(';'#10);
+        Ancestors(B.ClassDef, P);
+      end
+      else
+      begin
+        P := NodeOf('?' + B.Text, B.Text, '', '');
+        SB.Append('  n').Append(P).Append(' -> n').Append(AId).Append(';'#10);
+      end;
+    end;
+  end;
+
+  procedure Descendants(X: TClassDef; AId, ADepth: Integer);
+  var
+    D: TClassDef;
+    N: Integer;
+  begin
+    if ADepth > MaxDepth then
+      Exit;
+    for D in X.Derived do
+      if FLinks.IsLinkable(D) and (Ids.Count < Max) then
+      begin
+        N := ClassNode(D, False);
+        SB.Append('  n').Append(AId).Append(' -> n').Append(N).Append(';'#10);
+        Descendants(D, N, ADepth + 1);
+      end;
+  end;
+
+var
+  Root: Integer;
+begin
+  Max := FConfig.GetInt('DOT_GRAPH_MAX_NODES');
+  if Max <= 0 then
+    Max := MaxInt;
+  SB := TStringBuilder.Create;
+  Ids := TDictionary<string, Integer>.Create;
+  try
+    SB.Append('digraph "').Append(C.Name.Replace('"', '')).Append('" {'#10 +
+      '  bgcolor="transparent";'#10 +
+      '  edge [fontname="Helvetica", fontsize=10, labelfontname="Helvetica", labelfontsize=10, ' +
+      'dir=back, color="midnightblue", style=solid];'#10 +
+      '  node [fontname="Helvetica", fontsize=10, shape=box, height=0.2, width=0.4, color="gray40", ' +
+      'fillcolor="white", style=filled];'#10);
+    Root := ClassNode(C, True);
+    Ancestors(C, Root);
+    Descendants(C, Root, 1);
+    SB.Append('}'#10);
+    Result := SB.ToString;
+  finally
+    Ids.Free;
+    SB.Free;
+  end;
+end;
+
+// Runs dot on the class's graph; returns the HTML block that shows the SVG, or '' when there is nothing to draw.
+function THtmlGenerator.ClassGraph(C: TClassDef): string;
+{$IFDEF MSWINDOWS}
+var
+  D: TClassDef;
+  HasLink: Boolean;
+  Base, Dot: string;
+begin
+  Result := '';
+  if not FDotGraphs then
+    Exit;
+  HasLink := C.Bases.Count > 0;
+  for D in C.Derived do
+    if FLinks.IsLinkable(D) then
+      HasLink := True;
+  if not HasLink then
+    Exit;
+  Base := C.DiskName + '_inherit_graph';
+  Dot := TPath.Combine(FDir, Base + '.dot');
+  TFile.WriteAllText(Dot, ClassDot(C), TUTF8Encoding.Create(False)); // dot 2.x rejects a BOM
+  try
+    if RunTool('"' + FDotPath + 'dot" -Tsvg -o "' + TPath.Combine(FDir, Base + '.svg') + '" "' + Dot + '"', FDir) then
+    begin
+      Inc(FFiles);
+      Result := '<div class="dynheader">'#10 + Format(Tr('Inheritance diagram for %s:'), [HtmlEscape(C.Name)]) +
+        '</div>'#10'<div class="dyncontent">'#10'<div class="center"><object type="image/svg+xml" data="' + Base +
+        '.svg" class="inherit_graph">' + HtmlEscape(C.Name) + '</object></div>'#10'</div>'#10;
+    end;
+  finally
+    if FConfig.GetBool('DOT_CLEANUP') then
+      TFile.Delete(Dot);
+  end;
+end;
+{$ELSE}
+begin
+  Result := '';
+end;
+{$ENDIF}
+
 procedure THtmlGenerator.WriteMainPage;
 var
   P, Q: TPageDef;
@@ -1226,6 +1385,7 @@ begin
       end;
     if Text <> '' then
       W('<p>' + Tr('Inherited by') + ' ' + Text + '.</p>'#10);
+    W(ClassGraph(C));
     W('<p><a href="' + C.DiskName + '-members' + FExt + '">List of all members</a></p>'#10);
     if Rows.Length > 0 then
       W('<table class="memberdecls">'#10 + Rows.ToString + '</table>'#10);

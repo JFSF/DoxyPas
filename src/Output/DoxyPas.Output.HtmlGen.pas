@@ -24,6 +24,7 @@ uses
   System.Classes,
   System.IOUtils,
   System.Hash,
+  System.Math,
   System.RegularExpressions,
   System.Generics.Collections,
   System.Generics.Defaults,
@@ -31,6 +32,7 @@ uses
   DoxyPas.Model.Entry,
   DoxyPas.Model.Defs,
   DoxyPas.Model.Links,
+  DoxyPas.Model.Calls,
   DoxyPas.Output.HtmlTemplate,
   DoxyPas.Output.Translator,
   DoxyPas.Output.HtmlDoc,
@@ -90,7 +92,9 @@ type
     FPage: TStringBuilder;
     FPageFile, FPageTitle: string;
     FHasPages, FHasGroups, FHasClasses, FHasUnits: Boolean;
-    FDotGraphs: Boolean;      // HAVE_DOT and CLASS_GRAPH: draw the inheritance diagrams (Windows only for now)
+    FDotGraphs: Boolean;      // HAVE_DOT: draw the graphs (Windows only for now)
+    FPendingGraphs: TList<string>;   // .dot files written, not converted yet
+    FCalls: TCallIndex;       // CALL_GRAPH / CALLER_GRAPH, nil otherwise
     FDotPath: string;
     FSource: Boolean;         // SOURCE_BROWSER: a highlighted page with line numbers for every unit
     FNav: TObjectList<TNavNode>;
@@ -137,8 +141,11 @@ type
     function ClassDot(C: TClassDef; ACollab: Boolean): string;
     function UnitDot(U: TUnitDef; AUsedBy: Boolean): string;
     function RunGraph(const ABase, ATitle, ADot: string): string;
+    procedure FlushGraphs;
     function ClassGraph(C: TClassDef): string;
     function UnitGraph(U: TUnitDef): string;
+    function CallDot(M: TMemberDef; ACallers: Boolean): string;
+    function MemberGraphs(M: TMemberDef): string;
     procedure WriteMainPage;
     procedure WriteClass(C: TClassDef);
     procedure WriteMembersPage(C: TClassDef);
@@ -321,7 +328,10 @@ begin
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
   FSource := AConfig.GetBool('SOURCE_BROWSER');
 {$IFDEF MSWINDOWS}
-  FDotGraphs := AConfig.GetBool('HAVE_DOT') and SameText(AConfig.GetString('CLASS_GRAPH'), 'YES');
+  FPendingGraphs := TList<string>.Create;
+  FDotGraphs := AConfig.GetBool('HAVE_DOT');
+  if FDotGraphs and (AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH')) then
+    FCalls := TCallIndex.Create(AProject, FLinks);
   FDotPath := AConfig.GetString('DOT_PATH');
   if FDotPath <> '' then
     FDotPath := IncludeTrailingPathDelimiter(FDotPath);
@@ -365,6 +375,8 @@ begin
   FNavIndex.Free;
   FNav.Free;
   FDoc.Free;
+  FCalls.Free;
+  FPendingGraphs.Free;
   FLinks.Free;
   inherited;
 end;
@@ -1172,7 +1184,7 @@ begin
     '<h2 class="memtitle"><span class="permalink"><a href="#' + M.DiskName + '">&#9670;&#160;</a></span>' + Title +
     '</h2>'#10#10'<div class="memitem">'#10'<div class="memproto">'#10 +
     '      <table class="memname">'#10'        <tr>'#10'          <td class="memname">' + ProtoHtml(M) +
-    '</td>'#10'        </tr>'#10'      </table>'#10'</div><div class="memdoc">'#10 + Body + Tail + DefinedAt(M) +
+    '</td>'#10'        </tr>'#10'      </table>'#10'</div><div class="memdoc">'#10 + Body + Tail + DefinedAt(M) + MemberGraphs(M) +
     #10'</div>'#10'</div>'#10;
 end;
 
@@ -1408,24 +1420,13 @@ end;
 // Runs dot on ADot and returns the HTML block that shows the resulting SVG, or '' when dot fails.
 function THtmlGenerator.RunGraph(const ABase, ATitle, ADot: string): string;
 {$IFDEF MSWINDOWS}
-var
-  Dot: string;
 begin
-  Result := '';
-  Dot := TPath.Combine(FDir, ABase + '.dot');
-  TFile.WriteAllText(Dot, ADot, TUTF8Encoding.Create(False)); // dot 2.x rejects a BOM
-  try
-    if RunTool('"' + FDotPath + 'dot" -Tsvg -o "' + TPath.Combine(FDir, ABase + '.svg') + '" "' + Dot + '"', FDir) then
-    begin
-      Inc(FFiles);
-      Result := '<div class="dynheader">'#10 + ATitle + '</div>'#10'<div class="dyncontent">'#10 +
-        '<div class="center"><object type="image/svg+xml" data="' + ABase + '.svg" class="inherit_graph">' +
-        ATitle + '</object></div>'#10'</div>'#10;
-    end;
-  finally
-    if FConfig.GetBool('DOT_CLEANUP') then
-      TFile.Delete(Dot);
-  end;
+  // dot runs later, over many files at once (FlushGraphs): starting it once per graph takes minutes on a big project
+  TFile.WriteAllText(TPath.Combine(FDir, ABase + '.dot'), ADot, TUTF8Encoding.Create(False)); // dot 2.x rejects a BOM
+  FPendingGraphs.Add(ABase);
+  Result := '<div class="dynheader">'#10 + ATitle + '</div>'#10'<div class="dyncontent">'#10 +
+    '<div class="center"><object type="image/svg+xml" data="' + ABase + '.svg" class="inherit_graph">' +
+    ATitle + '</object></div>'#10'</div>'#10;
 end;
 {$ELSE}
 begin
@@ -1433,6 +1434,43 @@ begin
 end;
 {$ENDIF}
 
+// Turns the pending .dot files into .svg: dot -Tsvg -O writes <name>.dot.svg for every file it is given.
+procedure THtmlGenerator.FlushGraphs;
+{$IFDEF MSWINDOWS}
+const
+  Chunk = 25;
+var
+  I, J: Integer;
+  Cmd, Dot, Svg: string;
+begin
+  I := 0;
+  while I < FPendingGraphs.Count do
+  begin
+    Cmd := '"' + FDotPath + 'dot" -Tsvg -O';
+    for J := I to Min(I + Chunk, FPendingGraphs.Count) - 1 do
+      Cmd := Cmd + ' "' + FPendingGraphs[J] + '.dot"';
+    RunTool(Cmd, FDir);
+    for J := I to Min(I + Chunk, FPendingGraphs.Count) - 1 do
+    begin
+      Dot := TPath.Combine(FDir, FPendingGraphs[J] + '.dot');
+      Svg := Dot + '.svg';
+      if TFile.Exists(Svg) then
+      begin
+        TFile.Delete(TPath.Combine(FDir, FPendingGraphs[J] + '.svg'));  // no-op when absent
+        TFile.Move(Svg, TPath.Combine(FDir, FPendingGraphs[J] + '.svg'));
+        Inc(FFiles);
+      end;
+      if FConfig.GetBool('DOT_CLEANUP') then
+        TFile.Delete(Dot);
+    end;
+    Inc(I, Chunk);
+  end;
+  FPendingGraphs.Clear;
+end;
+{$ELSE}
+begin
+end;
+{$ENDIF}
 // The graphs of a class: inheritance (CLASS_GRAPH) and collaboration (COLLABORATION_GRAPH).
 function THtmlGenerator.ClassGraph(C: TClassDef): string;
 var
@@ -1458,6 +1496,76 @@ begin
           Format(Tr('Collaboration diagram for %s:'), [HtmlEscape(C.Name)]), ClassDot(C, True));
         Break;
       end;
+end;
+
+// Call graph of a routine (what it calls) or, with ACallers, its caller graph; two levels deep.
+// shortcut: depth 2, deeper chains make the graph unreadable; the calls are found by name (see DoxyPas.Model.Calls).
+function THtmlGenerator.CallDot(M: TMemberDef; ACallers: Boolean): string;
+const
+  MaxDepth = 2;
+var
+  G: TDotBuilder;
+
+  function NodeOf(X: TMemberDef; ARoot: Boolean): Integer;
+  var
+    Name, Style: string;
+  begin
+    Name := X.Name;
+    if X.Scope is TClassDef then
+      Name := X.Scope.Name + '.' + Name;
+    if ARoot then
+      Result := G.Node(X.DiskName, Name, '', ', fillcolor="#bfbfbf"')
+    else
+      Result := G.Node(X.DiskName, Name, FDoc.DefUrl(X), '');
+  end;
+
+  procedure Walk(X: TMemberDef; AId, ADepth: Integer);
+  var
+    L: TList<TMemberDef>;
+    T: TMemberDef;
+    N: Integer;
+  begin
+    if ADepth > MaxDepth then
+      Exit;
+    if ACallers then
+      L := FCalls.CallersOf(X)
+    else
+      L := FCalls.CallsOf(X);
+    if L = nil then
+      Exit;
+    for T in L do
+      if not G.Full then
+      begin
+        N := NodeOf(T, False);
+        if ACallers then
+          G.Edge(N, AId, 'color="midnightblue", arrowhead="open"')
+        else
+          G.Edge(AId, N, 'color="midnightblue", arrowhead="open"');
+        Walk(T, N, ADepth + 1);
+      end;
+  end;
+
+begin
+  G := TDotBuilder.Create(M.Name, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'LR');
+  try
+    Walk(M, NodeOf(M, True), 1);
+    Result := G.Finish;
+  finally
+    G.Free;
+  end;
+end;
+
+// "Here is the call graph for this function:" and the caller graph, when the routine has any.
+function THtmlGenerator.MemberGraphs(M: TMemberDef): string;
+begin
+  Result := '';
+  if (FCalls = nil) or (M.Kind <> memFunction) then
+    Exit;
+  if FConfig.GetBool('CALL_GRAPH') and (FCalls.CallsOf(M) <> nil) then
+    Result := RunGraph(M.DiskName + '_cgraph', Tr('Here is the call graph for this function:'), CallDot(M, False));
+  if FConfig.GetBool('CALLER_GRAPH') and (FCalls.CallersOf(M) <> nil) then
+    Result := Result + RunGraph(M.DiskName + '_icgraph', Tr('Here is the caller graph for this function:'),
+      CallDot(M, True));
 end;
 
 // The dependency graphs of a unit: what it uses and what uses it.
@@ -1723,21 +1831,6 @@ end;
 function THtmlGenerator.SourceUrl(U: TUnitDef): string;
 begin
   Result := U.DiskName + '_source' + FExt;
-end;
-
-// The text of a source file: UTF-8 (BOM or not), else the ANSI code page.
-function ReadSourceText(const AFile: string): string;
-var
-  Bytes: TBytes;
-  Enc: TEncoding;
-  Skip: Integer;
-begin
-  Bytes := TFile.ReadAllBytes(AFile);
-  Enc := nil;
-  Skip := TEncoding.GetBufferEncoding(Bytes, Enc, TEncoding.UTF8);
-  Result := Enc.GetString(Bytes, Skip, Length(Bytes) - Skip);
-  if Result.Contains(#$FFFD) then
-    Result := TEncoding.ANSI.GetString(Bytes, Skip, Length(Bytes) - Skip);
 end;
 
 // Doxygen's "source file" page: the unit's text with line numbers and links from identifiers to their pages.
@@ -2905,6 +2998,7 @@ begin
   WriteMenuData;
   WriteNavTree;
   WriteSearchData;
+  FlushGraphs;
   if FConfig.GetBool('GENERATE_HTMLHELP') then
     WriteHtmlHelp;
   Result := FFiles;

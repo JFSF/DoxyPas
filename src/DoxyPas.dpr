@@ -1,4 +1,4 @@
-﻿program DoxyPas;
+program DoxyPas;
 
 {$APPTYPE CONSOLE}
 
@@ -29,6 +29,7 @@ uses
   DoxyPas.Model.Project in 'Model\DoxyPas.Model.Project.pas',
   DoxyPas.Model.ProjectDump in 'Model\DoxyPas.Model.ProjectDump.pas',
   DoxyPas.Model.Links in 'Model\DoxyPas.Model.Links.pas',
+  DoxyPas.Model.Calls in 'Model\DoxyPas.Model.Calls.pas',
   DoxyPas.Output.XmlWriter in 'Output\DoxyPas.Output.XmlWriter.pas',
   DoxyPas.Output.XmlDoc in 'Output\DoxyPas.Output.XmlDoc.pas',
   DoxyPas.Output.XmlGen in 'Output\DoxyPas.Output.XmlGen.pas',

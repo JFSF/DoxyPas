@@ -79,6 +79,12 @@ begin
     'Graphe d''héritage de %s :', 'Klassendiagramm für %s:');
   Add('Go to the source code of this file.', 'Ir para o código-fonte deste ficheiro.', 'Ir para o código-fonte deste arquivo.',
     'Ir al código fuente de este archivo.', 'Aller au code source de ce fichier.', 'Gehe zum Quellcode dieser Datei.');
+  Add('Here is the call graph for this function:', 'Segue o grafo de chamadas desta função:', '',
+    'Este es el gráfico de llamadas de esta función:', 'Voici le graphe d''appel pour cette fonction :',
+    'Hier ist der Aufrufgraph für diese Funktion:');
+  Add('Here is the caller graph for this function:', 'Segue o grafo de quem chama esta função:', '',
+    'Este es el gráfico de llamadores de esta función:', 'Voici le graphe des appelants de cette fonction :',
+    'Hier ist der Aufrufer-Graph für diese Funktion:');
   Add('Collaboration diagram for %s:', 'Diagrama de colaboração para %s:', '', 'Diagrama de colaboración para %s:',
     'Graphe de collaboration de %s :', 'Zusammenarbeitsdiagramm für %s:');
   Add('Dependency graph for %s:', 'Grafo de dependências para %s:', '', 'Gráfico de dependencias para %s:',

@@ -13,7 +13,8 @@ type
   TWordLinker = reference to function(const AWord: string): string;
 
 /// <summary>Like HighlightPascal, with Doxygen's line numbers and anchors (l00001) and links on identifiers.</summary>
-function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker): string;
+function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker;
+  AFirstLine: Integer = 1): string;
 
 /// <summary>&lt;span class="keyword"&gt;AWord&lt;/span&gt;</summary>
 function KeywordSpan(const AWord: string): string;
@@ -167,7 +168,8 @@ begin
   end;
 end;
 
-function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker): string;
+function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker;
+  AFirstLine: Integer = 1): string;
 var
   SB: TStringBuilder;
   T: TTok;
@@ -186,7 +188,7 @@ var
   end;
 
 begin
-  Line := 1;
+  Line := AFirstLine;
   SB := TStringBuilder.Create;
   try
     StartLine;

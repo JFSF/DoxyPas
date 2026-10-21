@@ -96,8 +96,11 @@ type
     FDotGraphs: Boolean;      // HAVE_DOT: draw the graphs (Windows only for now)
     FPendingGraphs: TList<string>;   // .dot files written, not converted yet
     FDirs: TDirTree;          // SHOW_FILES: the directories of the unit files, nil when there is none
+    FBodies: TBodyLocator;    // INLINE_SOURCES / CALL_GRAPH / CALLER_GRAPH: where the bodies are
     FCalls: TCallIndex;       // CALL_GRAPH / CALLER_GRAPH, nil otherwise
     FDotPath: string;
+    FInline: Boolean;         // INLINE_SOURCES: the body of each routine in its documentation
+    FWordCache: TDictionary<string, string>;
     FSource: Boolean;         // SOURCE_BROWSER: a highlighted page with line numbers for every unit
     FNav: TObjectList<TNavNode>;
     FNavIndex: TList<TPair<string, string>>;
@@ -160,6 +163,8 @@ type
     function HasSource(U: TUnitDef): Boolean;
     function SourceUrl(U: TUnitDef): string;
     procedure WriteSource(U: TUnitDef);
+    function WordLinker(AScope: TDefinition): TWordLinker;
+    function InlineSource(M: TMemberDef): string;
     procedure WriteGroup(G: TGroupDef);
     procedure WritePage(P: TPageDef);
     // index pages
@@ -334,11 +339,15 @@ begin
     FExt := '.' + FExt;
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
   FSource := AConfig.GetBool('SOURCE_BROWSER');
+  FWordCache := TDictionary<string, string>.Create;
 {$IFDEF MSWINDOWS}
   FPendingGraphs := TList<string>.Create;
   FDotGraphs := AConfig.GetBool('HAVE_DOT');
+  FInline := AConfig.GetBool('INLINE_SOURCES');
+  if FInline or (FDotGraphs and (AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH'))) then
+    FBodies := TBodyLocator.Create(AProject, FLinks);
   if FDotGraphs and (AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH')) then
-    FCalls := TCallIndex.Create(AProject, FLinks);
+    FCalls := TCallIndex.Create(FBodies, FLinks);
   FDotPath := AConfig.GetString('DOT_PATH');
   if FDotPath <> '' then
     FDotPath := IncludeTrailingPathDelimiter(FDotPath);
@@ -383,6 +392,8 @@ begin
   FNav.Free;
   FDoc.Free;
   FCalls.Free;
+  FBodies.Free;
+  FWordCache.Free;
   FDirs.Free;
   FPendingGraphs.Free;
   FLinks.Free;
@@ -1192,7 +1203,7 @@ begin
     '<h2 class="memtitle"><span class="permalink"><a href="#' + M.DiskName + '">&#9670;&#160;</a></span>' + Title +
     '</h2>'#10#10'<div class="memitem">'#10'<div class="memproto">'#10 +
     '      <table class="memname">'#10'        <tr>'#10'          <td class="memname">' + ProtoHtml(M) +
-    '</td>'#10'        </tr>'#10'      </table>'#10'</div><div class="memdoc">'#10 + Body + Tail + DefinedAt(M) + MemberGraphs(M) +
+    '</td>'#10'        </tr>'#10'      </table>'#10'</div><div class="memdoc">'#10 + Body + Tail + DefinedAt(M) + InlineSource(M) + MemberGraphs(M) +
     #10'</div>'#10'</div>'#10;
 end;
 
@@ -1842,37 +1853,60 @@ begin
   Result := U.DiskName + '_source' + FExt;
 end;
 
-// Doxygen's "source file" page: the unit's text with line numbers and links from identifiers to their pages.
-procedure THtmlGenerator.WriteSource(U: TUnitDef);
-var
-  Cache: TDictionary<string, string>;
-  Name: string;
+// The URL an identifier of AScope's code links to; the answers are cached.
+function THtmlGenerator.WordLinker(AScope: TDefinition): TWordLinker;
 begin
-  Cache := TDictionary<string, string>.Create;
-  try
-    Name := ExtractFileName(FProject.OutputPath(U.FileName));
-    BeginPage(U.DiskName + '_source', Name);
-    PageHeader(Name);
-    W('<div class="fragment">' + HighlightSource(ReadSourceText(U.FileName), True,
-      function(const AWord: string): string
-      var
-        T: TLinkTarget;
+  Result :=
+    function(const AWord: string): string
+    var
+      T: TLinkTarget;
+      Key: string;
+    begin
+      Key := AWord + '|' + IntToStr(NativeInt(AScope));
+      if not FWordCache.TryGetValue(Key, Result) then
       begin
-        if not Cache.TryGetValue(AWord, Result) then
-        begin
-          Result := '';
-          T := FLinks.Resolve(AWord, U);
-          if (T.Def <> nil) and (T.Def <> U) and FLinks.IsLinkable(T.Def) then
-            Result := FDoc.DefUrl(T.Def);
-          Cache.Add(AWord, Result);
-        end;
-      end) + '</div>'#10);
-    EndPage(NavPathOf(U));
+        Result := '';
+        T := FLinks.Resolve(AWord, AScope);
+        if (T.Def <> nil) and (T.Def <> AScope) and FLinks.IsLinkable(T.Def) then
+          Result := FDoc.DefUrl(T.Def);
+        FWordCache.Add(Key, Result);
+      end;
+    end;
+end;
+
+// INLINE_SOURCES: the body of a routine, with the line numbers of its file, below its documentation.
+function THtmlGenerator.InlineSource(M: TMemberDef): string;
+var
+  F: string;
+  First, Last, K: Integer;
+  All: TArray<string>;
+  SB: TStringBuilder;
+begin
+  Result := '';
+  if (FBodies = nil) or not FInline or (M.Kind <> memFunction) or not FBodies.Find(M, F, First, Last) then
+    Exit;
+  All := FBodies.Lines(F);
+  SB := TStringBuilder.Create;
+  try
+    for K := First to Last do
+      SB.Append(All[K - 1]).Append(#10);
+    Result := '<div class="fragment">' + HighlightSource(SB.ToString, True, WordLinker(M), First) + '</div>'#10;
   finally
-    Cache.Free;
+    SB.Free;
   end;
 end;
 
+// Doxygen's "source file" page: the unit's text with line numbers and links from identifiers to their pages.
+procedure THtmlGenerator.WriteSource(U: TUnitDef);
+var
+  Name: string;
+begin
+  Name := ExtractFileName(FProject.OutputPath(U.FileName));
+  BeginPage(U.DiskName + '_source', Name);
+  PageHeader(Name);
+  W('<div class="fragment">' + HighlightSource(ReadSourceText(U.FileName), True, WordLinker(U)) + '</div>'#10);
+  EndPage(NavPathOf(U));
+end;
 { ------------------------------------------------------------------ directories }
 
 const

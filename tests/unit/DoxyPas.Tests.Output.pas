@@ -26,6 +26,7 @@ type
     [Test] procedure ReplacesColorMarkers;
     [Test] procedure HighlightsPascalKeywords;
     [Test] procedure NumbersAndLinksSourceLines;
+    [Test] procedure FindsBodyEnds;
     [Test] procedure EscapesLatex;
     [Test] procedure QuotesSql;
     [Test] procedure TranslatesTexts;
@@ -69,6 +70,7 @@ uses
   DoxyPas.Model.Defs,
   DoxyPas.Model.Project,
   DoxyPas.Model.Links,
+  DoxyPas.Model.Calls,
   DoxyPas.Build.Pipeline,
   DoxyPas.Output.XmlWriter,
   DoxyPas.Output.XmlGen,
@@ -387,6 +389,16 @@ begin
   Assert.IsFalse(Html.Contains('href="b.html">A<'));
 end;
 
+procedure THtmlTemplateTests.FindsBodyEnds;
+var
+  Src: TArray<string>;
+begin
+  Src := ['procedure A;', 'var R: record X: Integer; end;', 'procedure Local;', 'begin', '  X;', 'end;', 'begin',
+    '  try', '    Y(''end'');  // end', '  finally', '    Z;', '  end;', 'end;', 'procedure B;', 'begin', 'end;'];
+  Assert.AreEqual(13, FindBodyEnd(Src, 1, 13), 'local routine, record, try/finally, string and comment');
+  Assert.AreEqual(16, FindBodyEnd(Src, 14, 16));
+  Assert.AreEqual(-1, FindBodyEnd(['function F: Integer; external ''x.dll'';'], 1, 1), 'external');
+end;
 procedure THtmlTemplateTests.EscapesLatex;
 begin
   Assert.AreEqual('a\_b \& 50\%', LatexEscape('a_b & 50%'));

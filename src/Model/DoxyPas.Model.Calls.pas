@@ -10,22 +10,42 @@ uses
   System.Generics.Collections,
   DoxyPas.Model.Defs,
   DoxyPas.Model.Project,
-  DoxyPas.Model.Links;
+  DoxyPas.Model.Links,
+  DoxyPas.Model.Entry;
 
 type
+  /// <summary>Where the bodies of the routines are: the file and the first and last line.</summary>
+  TBodyLocator = class
+  strict private
+    FRoutines: TList<TMemberDef>;
+    FFiles: TDictionary<string, TArray<string>>;
+    FStarts: TObjectDictionary<string, TList<Integer>>;   // per file: the sorted first lines of the bodies
+    function BodyEntry(AMember: TMemberDef): TEntry;
+  public
+    constructor Create(AProject: TProject; ALinks: TLinkResolver);
+    destructor Destroy; override;
+    /// <summary>The routines that have a body in the project's files.</summary>
+    property Routines: TList<TMemberDef> read FRoutines;
+    function Lines(const AFile: string): TArray<string>;
+    function Find(AMember: TMemberDef; out AFile: string; out AFirst, ALast: Integer): Boolean;
+  end;
   TCallIndex = class
   strict private
     FCalls: TObjectDictionary<TMemberDef, TList<TMemberDef>>;
     FCallers: TObjectDictionary<TMemberDef, TList<TMemberDef>>;
     procedure Link(AFrom, ATo: TMemberDef);
   public
-    constructor Create(AProject: TProject; ALinks: TLinkResolver);
+    constructor Create(ALocator: TBodyLocator; ALinks: TLinkResolver);
     destructor Destroy; override;
     /// <summary>The routines AMember calls (nil when none); owned by the index.</summary>
     function CallsOf(AMember: TMemberDef): TList<TMemberDef>;
     /// <summary>The routines that call AMember (nil when none).</summary>
     function CallersOf(AMember: TMemberDef): TList<TMemberDef>;
   end;
+
+/// <summary>The line of the "end" that closes the routine starting at AStart (searching up to ALimit); -1 when there
+/// is none (an external declaration).</summary>
+function FindBodyEnd(const ALines: TArray<string>; AStart, ALimit: Integer): Integer;
 
 /// <summary>The text of a source file: UTF-8 (BOM or not), else the ANSI code page.</summary>
 function ReadSourceText(const AFile: string): string;
@@ -34,8 +54,7 @@ implementation
 
 uses
   System.SysUtils,
-  System.IOUtils,
-  DoxyPas.Model.Entry;
+  System.IOUtils;
 
 function ReadSourceText(const AFile: string): string;
 var
@@ -150,86 +169,261 @@ begin
   end;
 end;
 
-{ TCallIndex }
+{ TBodyLocator }
 
-constructor TCallIndex.Create(AProject: TProject; ALinks: TLinkResolver);
+// The parser records where a body starts but not where it ends. Scans from AStart (ALimit: the line before the next
+// body) for the "end" that closes the routine; local routines are told by a routine keyword after a ';'.
+function FindBodyEnd(const ALines: TArray<string>; AStart, ALimit: Integer): Integer;
 var
-  Routines: TList<TMemberDef>;
+  Line, I, N, J, Locals: Integer;
+  S, Word, Stack: string;   // one letter per open block: b begin/asm, x try/case, r record
+  Kind: Char;
+  InBrace, InParen, PrevSemi, First: Boolean;
+  C: Char;
+begin
+  Result := -1;                            // no closing "end": an external declaration or a body it could not follow
+  Stack := '';
+  Locals := 0;
+  InBrace := False;
+  InParen := False;
+  PrevSemi := False;
+  First := True;
+  for Line := AStart to ALimit do
+  begin
+    S := ALines[Line - 1];
+    N := Length(S);
+    I := 1;
+    while I <= N do
+    begin
+      C := S[I];
+      if InBrace then
+      begin
+        if C = '}' then
+          InBrace := False;
+        Inc(I);
+      end
+      else if InParen then
+      begin
+        if (C = '*') and (I < N) and (S[I + 1] = ')') then
+        begin
+          InParen := False;
+          Inc(I);
+        end;
+        Inc(I);
+      end
+      else if C = '{' then
+      begin
+        InBrace := True;
+        Inc(I);
+      end
+      else if (C = '(') and (I < N) and (S[I + 1] = '*') then
+      begin
+        InParen := True;
+        Inc(I, 2);
+      end
+      else if (C = '/') and (I < N) and (S[I + 1] = '/') then
+        Break
+      else if C = '''' then
+      begin
+        Inc(I);
+        while I <= N do
+        begin
+          if S[I] = '''' then
+          begin
+            if (I < N) and (S[I + 1] = '''') then
+              Inc(I)
+            else
+              Break;
+          end;
+          Inc(I);
+        end;
+        Inc(I);
+        PrevSemi := False;
+      end
+      else if CharInSet(C, ['A'..'Z', 'a'..'z', '_']) then
+      begin
+        J := I;
+        while (J <= N) and CharInSet(S[J], ['A'..'Z', 'a'..'z', '_', '0'..'9']) do
+          Inc(J);
+        Word := LowerCase(Copy(S, I, J - I));
+        I := J;
+        if (Word = 'begin') or (Word = 'asm') then
+        begin
+          Stack := Stack + 'b';
+        end
+        else if (Word = 'try') or (Word = 'case') then
+          Stack := Stack + 'x'
+        else if Word = 'record' then
+          Stack := Stack + 'r'
+        else if (Word = 'end') and (Stack <> '') then
+        begin
+          Kind := Stack[Length(Stack)];
+          SetLength(Stack, Length(Stack) - 1);
+          if (Stack = '') and (Kind = 'b') then
+          begin
+            if Locals = 0 then
+              Exit(Line);
+            Dec(Locals);
+          end;
+        end
+        else if ((Word = 'procedure') or (Word = 'function') or (Word = 'constructor') or (Word = 'destructor')) and
+          (Stack = '') then
+        begin
+          if First then
+            First := False                 // the routine's own header
+          else if PrevSemi then
+            Inc(Locals);
+        end;
+        if First and ((Word = 'class') or (Word = 'inline')) then
+          Continue;                        // "class function ..." is still the header
+        First := False;
+        PrevSemi := False;
+      end
+      else
+      begin
+        if C = ';' then
+          PrevSemi := True
+        else if not CharInSet(C, [' ', #9]) then
+          PrevSemi := False;
+        Inc(I);
+      end;
+    end;
+  end;
+end;
+
+constructor TBodyLocator.Create(AProject: TProject; ALinks: TLinkResolver);
+var
   Seen: TDictionary<TMemberDef, Boolean>;
-  ByName: TObjectDictionary<string, TList<TMemberDef>>;
-  Files: TDictionary<string, TArray<string>>;
-  Cache: TDictionary<string, TMemberDef>;
-  Starts_: TObjectDictionary<string, TList<Integer>>;   // per file: the sorted first lines of the bodies
   U: TUnitDef;
   C: TClassDef;
   M: TMemberDef;
+  E: TEntry;
+  SL: TList<Integer>;
 
   procedure Collect(AList: TList<TMemberDef>);
   var
     X: TMemberDef;
-    L: TList<TMemberDef>;
   begin
     for X in AList do
       if (X.Kind = memFunction) and ALinks.IsLinkable(X) and not Seen.ContainsKey(X) then
       begin
         Seen.Add(X, True);
-        Routines.Add(X);
-        if not ByName.TryGetValue(LowerCase(X.Name), L) then
-        begin
-          L := TList<TMemberDef>.Create;
-          ByName.Add(LowerCase(X.Name), L);
-        end;
-        L.Add(X);
+        FRoutines.Add(X);
       end;
   end;
 
-  function Lines(const AFile: string): TArray<string>;
+begin
+  inherited Create;
+  FRoutines := TList<TMemberDef>.Create;
+  FFiles := TDictionary<string, TArray<string>>.Create;
+  FStarts := TObjectDictionary<string, TList<Integer>>.Create([doOwnsValues]);
+  Seen := TDictionary<TMemberDef, Boolean>.Create;
+  try
+    for U in AProject.Units do
+      Collect(U.Members);
+    for C in AProject.Classes do
+      Collect(C.Members);
+  finally
+    Seen.Free;
+  end;
+  for M in FRoutines do
   begin
-    if not Files.TryGetValue(AFile.ToLower, Result) then
+    E := BodyEntry(M);
+    if E = nil then
+      Continue;
+    if not FStarts.TryGetValue(E.FileName.ToLower, SL) then
     begin
-      if TFile.Exists(AFile) then
-        Result := ReadSourceText(AFile).Replace(#13#10, #10).Split([#10])
-      else
-        Result := nil;
-      Files.Add(AFile.ToLower, Result);
+      SL := TList<Integer>.Create;
+      FStarts.Add(E.FileName.ToLower, SL);
     end;
+    SL.Add(E.Line);
   end;
+  for SL in FStarts.Values do
+    SL.Sort;
+end;
 
-  // The entry holding the body: the implementation, or the declaration of a routine that only exists in the
-  // implementation section.
-  function BodyEntry(AMember: TMemberDef): TEntry;
+destructor TBodyLocator.Destroy;
+begin
+  FStarts.Free;
+  FFiles.Free;
+  FRoutines.Free;
+  inherited;
+end;
+
+// The entry holding the body: the implementation, or the declaration of a routine that only exists in the
+// implementation section.
+function TBodyLocator.BodyEntry(AMember: TMemberDef): TEntry;
+begin
+  Result := AMember.Impl;
+  if (Result = nil) and AMember.ImplementationOnly then
+    Result := AMember.Entry;
+  if (Result <> nil) and ((Result.FileName = '') or (Result.Line < 1)) then
+    Result := nil;
+end;
+
+function TBodyLocator.Lines(const AFile: string): TArray<string>;
+begin
+  if not FFiles.TryGetValue(AFile.ToLower, Result) then
   begin
-    Result := AMember.Impl;
-    if (Result = nil) and AMember.ImplementationOnly then
-      Result := AMember.Entry;
-    if (Result <> nil) and ((Result.FileName = '') or (Result.Line < 1)) then
+    if TFile.Exists(AFile) then
+      Result := ReadSourceText(AFile).Replace(#13#10, #10).Split([#10])
+    else
       Result := nil;
+    FFiles.Add(AFile.ToLower, Result);
   end;
+end;
 
-  // The parser records where a body starts but not where it ends, so the body runs up to the next one in the file.
+function TBodyLocator.Find(AMember: TMemberDef; out AFile: string; out AFirst, ALast: Integer): Boolean;
+var
+  B: TEntry;
+  All: TArray<string>;
+  Starts: TList<Integer>;
+  K, Limit: Integer;
+begin
+  Result := False;
+  B := BodyEntry(AMember);
+  if (B = nil) or not FStarts.TryGetValue(B.FileName.ToLower, Starts) then
+    Exit;
+  All := Lines(B.FileName);
+  if B.Line > Length(All) then
+    Exit;
+  Limit := Length(All);
+  for K in Starts do
+    if (K > B.Line) and (K <= Limit) then
+    begin
+      Limit := K - 1;
+      Break;
+    end;
+  AFile := B.FileName;
+  AFirst := B.Line;
+  ALast := FindBodyEnd(All, B.Line, Limit);
+  Result := ALast >= B.Line;
+end;
+
+{ TCallIndex }
+
+constructor TCallIndex.Create(ALocator: TBodyLocator; ALinks: TLinkResolver);
+var
+  ByName: TObjectDictionary<string, TList<TMemberDef>>;
+  Cache: TDictionary<string, TMemberDef>;
+  M: TMemberDef;
+  W: TWord;
+  Target: TMemberDef;
+
   function BodyOf(AMember: TMemberDef): string;
   var
-    B: TEntry;
+    F: string;
+    First, Last, K: Integer;
     All: TArray<string>;
-    Starts: TList<Integer>;
-    K, Last: Integer;
     SB: TStringBuilder;
   begin
     Result := '';
-    B := BodyEntry(AMember);
-    if (B = nil) or not Starts_.TryGetValue(B.FileName.ToLower, Starts) then
+    if not ALocator.Find(AMember, F, First, Last) then
       Exit;
-    All := Lines(B.FileName);
-    Last := Length(All);
-    for K in Starts do
-      if (K > B.Line) and (K <= Last) then
-      begin
-        Last := K - 1;
-        Break;
-      end;
+    All := ALocator.Lines(F);
     SB := TStringBuilder.Create;
     try
-      for K := B.Line to Last do
+      for K := First to Last do
         SB.Append(All[K - 1]).Append(#10);
       Result := SB.ToString;
     finally
@@ -268,40 +462,24 @@ var
   end;
 
 var
-  W: TWord;
-  Target: TMemberDef;
-  E: TEntry;
-  SL: TList<Integer>;
+  L: TList<TMemberDef>;
 begin
   inherited Create;
-  Starts_ := TObjectDictionary<string, TList<Integer>>.Create([doOwnsValues]);
   FCalls := TObjectDictionary<TMemberDef, TList<TMemberDef>>.Create([doOwnsValues]);
   FCallers := TObjectDictionary<TMemberDef, TList<TMemberDef>>.Create([doOwnsValues]);
-  Routines := TList<TMemberDef>.Create;
-  Seen := TDictionary<TMemberDef, Boolean>.Create;
   ByName := TObjectDictionary<string, TList<TMemberDef>>.Create([doOwnsValues]);
-  Files := TDictionary<string, TArray<string>>.Create;
   Cache := TDictionary<string, TMemberDef>.Create;
   try
-    for U in AProject.Units do
-      Collect(U.Members);
-    for C in AProject.Classes do
-      Collect(C.Members);
-    for M in Routines do
+    for M in ALocator.Routines do
     begin
-      E := BodyEntry(M);
-      if E = nil then
-        Continue;
-      if not Starts_.TryGetValue(E.FileName.ToLower, SL) then
+      if not ByName.TryGetValue(LowerCase(M.Name), L) then
       begin
-        SL := TList<Integer>.Create;
-        Starts_.Add(E.FileName.ToLower, SL);
+        L := TList<TMemberDef>.Create;
+        ByName.Add(LowerCase(M.Name), L);
       end;
-      SL.Add(E.Line);
+      L.Add(M);
     end;
-    for SL in Starts_.Values do
-      SL.Sort;
-    for M in Routines do
+    for M in ALocator.Routines do
       for W in BodyWords(BodyOf(M)) do
       begin
         Target := TargetOf(M, W);
@@ -309,12 +487,8 @@ begin
           Link(M, Target);
       end;
   finally
-    Starts_.Free;
     Cache.Free;
-    Files.Free;
     ByName.Free;
-    Seen.Free;
-    Routines.Free;
   end;
 end;
 

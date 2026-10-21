@@ -147,6 +147,12 @@ type
     function MemberDoc(M: TMemberDef): string;
     function DocSections(AMembers: TList<TMemberDef>; AInUnit: Boolean): string;
     function DetailedBlock(ADef: TDefinition; AWithHeading: Boolean): string;
+    function PageKind(ADef: TDefinition): string;
+    function LayoutElement(const APage, AName: string): TLayoutEntry;
+    function LayoutShows(const APage, AName: string): Boolean;
+    function LayoutTitle(const APage, AName, ADefault: string): string;
+    function DetailTitle(ADef: TDefinition): string;
+    function LayoutMembers(AInUnit: Boolean; const AKind: string): TLayoutEntry;
     function NavPathOf(ADef: TDefinition): string;
     // pages
     function RunGraph(const ABase, ATitle, ADot: string): string;
@@ -934,6 +940,44 @@ end;
 
 { ------------------------------------------------------------------ members }
 
+// The section of the declaration tables a <memberdecl> element stands for ('' for the ones DoxyPas does not have).
+function DeclKeyOf(const AName: string; AInUnit: Boolean): string;
+const
+  Prot: array[0..2] of string = ('public', 'protected', 'private');
+  Short: array[0..2] of string = ('pub', 'pro', 'pri');
+  Kinds: array[0..4] of string = ('types', 'methods', 'staticmethods', 'attributes', 'staticattributes');
+  Keys: array[0..4] of string = ('types', 'methods', 'static-methods', 'attribs', 'static-attribs');
+var
+  I, K: Integer;
+begin
+  Result := '';
+  if AInUnit then
+  begin
+    if AName = 'typedefs' then Result := 'typedef-members'
+    else if AName = 'enums' then Result := 'enum-members'
+    else if AName = 'functions' then Result := 'func-members'
+    else if AName = 'variables' then Result := 'var-members';
+    Exit;
+  end;
+  if AName = 'properties' then
+    Exit('properties');
+  for I := 0 to 2 do
+    for K := 0 to 4 do
+      if AName = Prot[I] + Kinds[K] then
+        Exit(Short[I] + '-' + Keys[K]);
+end;
+
+// The group of documentation (see DocSections) a <memberdef> element stands for, -1 for the others.
+function DefGroupOf(const AName: string; AInUnit: Boolean): Integer;
+begin
+  Result := -1;
+  if (AName = 'constructors') and not AInUnit then Result := 0
+  else if AName = 'typedefs' then Result := 1
+  else if AName = 'enums' then Result := 2
+  else if AName = 'functions' then Result := 3
+  else if AName = 'variables' then Result := 4
+  else if (AName = 'properties') and not AInUnit then Result := 5;
+end;
 function THtmlGenerator.IsConstructor(M: TMemberDef): Boolean;
 begin
   Result := (M.Kind = memFunction) and (M.Entry <> nil) and (M.Entry.MethodKind in [rkConstructor, rkDestructor]);
@@ -1222,9 +1266,10 @@ const
   Kinds: array[0..4] of string = ('types', 'methods', 'static-methods', 'attribs', 'static-attribs');
 var
   Order: TList<string>;
-  Key, P, K: string;
+  Key, P, K, Title: string;
   M: TMemberDef;
   Any: Boolean;
+  MD, E: TLayoutEntry;
 begin
   Order := TList<string>.Create;
   try
@@ -1240,6 +1285,17 @@ begin
           for K in Kinds do
             Order.Add(P + '-' + K);
     end;
+    MD := LayoutMembers(AInUnit, 'memberdecl');
+    if MD <> nil then
+    begin
+      Order.Clear;                       // only what the layout lists, in its order
+      for E in MD.Children do
+      begin
+        Key := DeclKeyOf(E.Name, AInUnit);
+        if (Key <> '') and FLayout.Visible(E) and not Order.Contains(Key) then
+          Order.Add(Key);
+      end;
+    end;
     for Key in Order do
     begin
       Any := False;
@@ -1248,11 +1304,16 @@ begin
           Any := True;
       if not Any then
         Continue;
+      Title := SectionTitle(Key);
+      if MD <> nil then
+        for E in MD.Children do
+          if (DeclKeyOf(E.Name, AInUnit) = Key) and (E.Attr('title') <> '') then
+            Title := E.Attr('title');
       ARows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="' + Key + '" name="' + Key +
-        '"></a>'#10 + SectionTitle(Key) + '</h2></td></tr>'#10);
+        '"></a>'#10 + HtmlEscape(Title) + '</h2></td></tr>'#10);
       if ASummary.Length > 0 then
         ASummary.Append(' &#124;'#10);
-      ASummary.Append('<a href="#' + Key + '">' + SectionTitle(Key) + '</a>');
+      ASummary.Append('<a href="#' + Key + '">' + HtmlEscape(Title) + '</a>');
       for M in AMembers do
         if SectionKey(M, AInUnit) = Key then
           ARows.Append(MemberRows(M, ''));
@@ -1411,15 +1472,38 @@ const
   end;
 
 var
-  G: Integer;
+  G, I: Integer;
   M: TMemberDef;
   Docs: TList<TMemberDef>;
   Title: string;
+  MD, E: TLayoutEntry;
+  Groups: TList<Integer>;
+  Titles: array[0..5] of string;
 begin
   Result := '';
   Docs := TList<TMemberDef>.Create;
+  Groups := TList<Integer>.Create;
   try
     for G := 0 to 5 do
+    begin
+      Groups.Add(G);
+      Titles[G] := '';
+    end;
+    MD := LayoutMembers(AInUnit, 'memberdef');
+    if MD <> nil then
+    begin
+      Groups.Clear;
+      for E in MD.Children do
+      begin
+        I := DefGroupOf(E.Name, AInUnit);
+        if (I >= 0) and FLayout.Visible(E) and not Groups.Contains(I) then
+        begin
+          Groups.Add(I);
+          Titles[I] := E.Attr('title');
+        end;
+      end;
+    end;
+    for G in Groups do
     begin
       Docs.Clear;
       for M in AMembers do
@@ -1436,23 +1520,82 @@ begin
       if AInUnit then Title := Tr(UnitGroups[G]) else Title := Tr(ClassGroups[G]);
       if (Title = '') and AInUnit then
         Title := Tr(UnitGroups[3]);
+      if Titles[G] <> '' then
+        Title := Titles[G];
       Result := Result + '<h2 class="groupheader">' + HtmlEscape(Title) + '</h2>'#10;
       for M in Docs do
         Result := Result + MemberDoc(M);
     end;
   finally
+    Groups.Free;
     Docs.Free;
   end;
+end;
+
+// The layout kind of a page: "class" for classes, "namespace" for units, "group" for groups.
+function THtmlGenerator.PageKind(ADef: TDefinition): string;
+begin
+  if ADef is TClassDef then Result := 'class'
+  else if ADef is TUnitDef then Result := 'namespace'
+  else if ADef is TGroupDef then Result := 'group'
+  else Result := '';
+end;
+
+// An element of the layout of a kind of page (nil without layout or when it does not say anything about it).
+function THtmlGenerator.LayoutElement(const APage, AName: string): TLayoutEntry;
+var
+  P: TLayoutEntry;
+begin
+  Result := nil;
+  P := FLayout.Page(APage);
+  if P <> nil then
+    Result := P.Child(AName);
+end;
+
+// A page element is shown unless the layout says visible="no".
+function THtmlGenerator.LayoutShows(const APage, AName: string): Boolean;
+var
+  E: TLayoutEntry;
+begin
+  E := LayoutElement(APage, AName);
+  Result := (E = nil) or FLayout.Visible(E);
+end;
+
+function THtmlGenerator.LayoutTitle(const APage, AName, ADefault: string): string;
+var
+  E: TLayoutEntry;
+begin
+  E := LayoutElement(APage, AName);
+  if (E <> nil) and (E.Attr('title') <> '') then
+    Result := E.Attr('title')
+  else
+    Result := ADefault;
+end;
+
+function THtmlGenerator.DetailTitle(ADef: TDefinition): string;
+begin
+  Result := LayoutTitle(PageKind(ADef), 'detaileddescription', Tr('Detailed Description'));
+end;
+
+// <memberdecl> (the declaration tables) or <memberdef> (the documentation) of the layout of a class or unit page.
+function THtmlGenerator.LayoutMembers(AInUnit: Boolean; const AKind: string): TLayoutEntry;
+begin
+  if AInUnit then
+    Result := LayoutElement('namespace', AKind)
+  else
+    Result := LayoutElement('class', AKind);
 end;
 
 function THtmlGenerator.DetailedBlock(ADef: TDefinition; AWithHeading: Boolean): string;
 var
   Text: string;
 begin
+  if (PageKind(ADef) <> '') and not LayoutShows(PageKind(ADef), 'detaileddescription') then
+    Exit('');
   Text := FDoc.Render(ADef.Detailed, ADef);
   if (Text = '') and (DefinedAt(ADef) = '') then
     Exit('');
-  Result := '<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>'#10 +
+  Result := '<a name="details" id="details"></a><h2 class="groupheader">' + HtmlEscape(DetailTitle(ADef)) + '</h2>'#10 +
     '<div class="textblock">' + Text + '</div>'#10 + DefinedAt(ADef);
 end;
 
@@ -1655,10 +1798,10 @@ begin
   for D in C.Derived do
     if FLinks.IsLinkable(D) then
       Uses_ := True;
-  if Uses_ and SameText(FConfig.GetString('CLASS_GRAPH'), 'YES') then
+  if Uses_ and SameText(FConfig.GetString('CLASS_GRAPH'), 'YES') and LayoutShows('class', 'inheritancegraph') then
     Result := RunGraph(C.DiskName + '_inherit_graph', Format(Tr('Inheritance diagram for %s:'), [HtmlEscape(C.Name)]),
       FDot.ClassDot(C, False));
-  if FConfig.GetBool('COLLABORATION_GRAPH') then
+  if FConfig.GetBool('COLLABORATION_GRAPH') and LayoutShows('class', 'collaborationgraph') then
     for M in C.Members do
       if (M.Kind in [memVariable, memProperty]) and (M.Entry.TypeText <> '') then
       begin
@@ -1737,17 +1880,31 @@ var
   Rows, Summary: TStringBuilder;
   B: TBaseRef;
   D, N: TClassDef;
-  Text, Brief, Detail, List: string;
-  HasDetail: Boolean;
+  Text, Brief, Detail, List, NestedTitle: string;
+  HasDetail, ShowNested: Boolean;
+  E: TLayoutEntry;
 begin
+  ShowNested := True;
+  NestedTitle := Tr('Classes');
+  E := LayoutMembers(False, 'memberdecl');
+  if E <> nil then
+  begin
+    E := E.Child('nestedclasses');
+    ShowNested := (E <> nil) and FLayout.Visible(E);
+    if ShowNested and (E.Attr('title') <> '') then
+      NestedTitle := E.Attr('title');
+  end;
   Vis := VisibleMembers(C.Members);
   Rows := TStringBuilder.Create;
   Summary := TStringBuilder.Create;
   try
     Detail := DetailedBlock(C, True);
     Brief := BriefOf(C);
+    if not LayoutShows('class', 'briefdescription') then
+      Brief := '';
     // nested classes
     List := '';
+    if ShowNested then
     for N in C.NestedClasses do
       if FLinks.IsLinkable(N) then
         List := List + '<tr class="memitem:' + N.DiskName + '"><td class="memItemLeft" align="right" valign="top">' +
@@ -1757,8 +1914,8 @@ begin
     if List <> '' then
     begin
       Rows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>'#10 +
-        'Classes</h2></td></tr>'#10).Append(List);
-      Summary.Append('<a href="#nested-classes">Classes</a>');
+        HtmlEscape(NestedTitle) + '</h2></td></tr>'#10).Append(List);
+      Summary.Append('<a href="#nested-classes">' + HtmlEscape(NestedTitle) + '</a>');
     end;
     DeclSections(Vis, False, Rows, Summary);
     InheritedSections(C, Rows);
@@ -1766,7 +1923,7 @@ begin
     begin
       if Summary.Length > 0 then
         Summary.Append(' &#124;'#10);
-      Summary.Append('<a href="#details">Detailed Description</a>');
+      Summary.Append('<a href="#details">' + HtmlEscape(DetailTitle(C)) + '</a>');
     end;
     BeginPage(C.DiskName, ClassTitle(C), C.DiskName + '-members' + FExt);
     PageHeader(ClassTitle(C), Summary.ToString);
@@ -1775,7 +1932,7 @@ begin
     begin
       W('<p>' + Brief);
       if HasDetail then
-        W(' <a href="#details">More...</a>');
+        W(' <a href="#details">' + HtmlEscape(Tr('More...')) + '</a>');
       W('</p>'#10);
     end;
     Text := '';
@@ -1797,7 +1954,8 @@ begin
     if Text <> '' then
       W('<p>' + Tr('Inherited by') + ' ' + Text + '.</p>'#10);
     W(ClassGraph(C));
-    W('<p><a href="' + C.DiskName + '-members' + FExt + '">List of all members</a></p>'#10);
+    if LayoutShows('class', 'allmemberslink') then
+      W('<p><a href="' + C.DiskName + '-members' + FExt + '">' + HtmlEscape(Tr('List of all members')) + '</a></p>'#10);
     if Rows.Length > 0 then
       W('<table class="memberdecls">'#10 + Rows.ToString + '</table>'#10);
     W(Detail);
@@ -1852,23 +2010,34 @@ var
   Vis: TList<TMemberDef>;
   Rows, Summary: TStringBuilder;
   C: TClassDef;
-  Detail, Brief, Uses_, S: string;
+  Detail, Brief, Uses_, S, ClassesTitle: string;
   T: TUnitDef;
-  HasClasses: Boolean;
+  HasClasses, ShowClasses: Boolean;
+  E: TLayoutEntry;
 begin
+  ShowClasses := True;
+  ClassesTitle := Tr('Classes');
+  E := LayoutMembers(True, 'memberdecl');
+  if E <> nil then
+  begin
+    E := E.Child('classes');
+    ShowClasses := (E <> nil) and FLayout.Visible(E);
+    if ShowClasses and (E.Attr('title') <> '') then
+      ClassesTitle := E.Attr('title');
+  end;
   Vis := VisibleMembers(U.Members);
   Rows := TStringBuilder.Create;
   Summary := TStringBuilder.Create;
   try
     HasClasses := False;
     for C in U.Classes do
-      if FLinks.IsLinkable(C) and (C.Scope = U) then
+      if ShowClasses and FLinks.IsLinkable(C) and (C.Scope = U) then
       begin
         if not HasClasses then
         begin
           Rows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>'#10 +
-            'Classes</h2></td></tr>'#10);
-          Summary.Append('<a href="#nested-classes">Classes</a>');
+            HtmlEscape(ClassesTitle) + '</h2></td></tr>'#10);
+          Summary.Append('<a href="#nested-classes">' + HtmlEscape(ClassesTitle) + '</a>');
           HasClasses := True;
         end;
         Rows.Append('<tr class="memitem:' + C.DiskName + '"><td class="memItemLeft" align="right" valign="top">' +
@@ -1886,7 +2055,7 @@ begin
     begin
       if Summary.Length > 0 then
         Summary.Append(' &#124;'#10);
-      Summary.Append('<a href="#details">Detailed Description</a>');
+      Summary.Append('<a href="#details">' + HtmlEscape(DetailTitle(U)) + '</a>');
     end;
     BeginPage(U.DiskName, UnitTitle(U));
     PageHeader(UnitTitle(U), Summary.ToString);

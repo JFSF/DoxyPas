@@ -78,6 +78,7 @@ type
     FLight, FDark: string;
     FTree, FSearch, FNoIndex, FDynMenus, FSidebar, FFold, FDynSec, FClip: Boolean;
     FLayout: TLayout;         // LAYOUT_FILE
+    FPageLayout: string;      // the layout page the member tables follow when it is not the one of the kind of definition ('group')
     FTabs: TDictionary<string, TLayoutEntry>;   // type of tab -> its <tab> element
     FMenu: TNavNode;          // the tabs, for HTML_DYNAMIC_MENUS = NO
     FPageMenu: TDictionary<string, TPair<string, string>>;   // page -> the URL bases of its tab and sub-tab
@@ -144,6 +145,8 @@ type
     function ProtoHtml(M: TMemberDef): string;
     function MemberRows(M: TMemberDef; const AInheritClass: string): string;
     procedure DeclSections(AMembers: TList<TMemberDef>; AInUnit: Boolean; ARows, ASummary: TStringBuilder);
+    function DirTable(D: TDirDef; const AHeading: string; ADirs: Boolean): string;
+    procedure DeclSection(AMembers: TList<TMemberDef>; AInUnit: Boolean; const AKey: string; ARows, ASummary: TStringBuilder);
     procedure InheritedSections(C: TClassDef; ARows: TStringBuilder);
     function MemberDoc(M: TMemberDef): string;
     function DocSections(AMembers: TList<TMemberDef>; AInUnit: Boolean): string;
@@ -1272,10 +1275,7 @@ const
   Kinds: array[0..4] of string = ('types', 'methods', 'static-methods', 'attribs', 'static-attribs');
 var
   Order: TList<string>;
-  Key, P, K, Title: string;
-  M: TMemberDef;
-  T0: Int64;
-  Any: Boolean;
+  Key, P, K: string;
   MD, E: TLayoutEntry;
 begin
   Order := TList<string>.Create;
@@ -1304,34 +1304,45 @@ begin
       end;
     end;
     for Key in Order do
-    begin
-      Any := False;
-      for M in AMembers do
-        if SectionKey(M, AInUnit) = Key then
-          Any := True;
-      if not Any then
-        Continue;
-      Title := SectionTitle(Key);
-      if MD <> nil then
-        for E in MD.Children do
-          if (DeclKeyOf(E.Name, AInUnit) = Key) and (E.Attr('title') <> '') then
-            Title := E.Attr('title');
-      ARows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="' + Key + '" name="' + Key +
-        '"></a>'#10 + HtmlEscape(Title) + '</h2></td></tr>'#10);
-      if ASummary.Length > 0 then
-        ASummary.Append(' &#124;'#10);
-      ASummary.Append('<a href="#' + Key + '">' + HtmlEscape(Title) + '</a>');
-      for M in AMembers do
-        if SectionKey(M, AInUnit) = Key then
-        begin
-          T0 := Tick;
-          ARows.Append(MemberRows(M, ''));
-          Add('decl: MemberRows', T0);
-        end;
-    end;
+      DeclSection(AMembers, AInUnit, Key, ARows, ASummary);
   finally
     Order.Free;
   end;
+end;
+
+// The table of one section (AKey, see SectionKey) of the declarations of AMembers; nothing when it has no members.
+procedure THtmlGenerator.DeclSection(AMembers: TList<TMemberDef>; AInUnit: Boolean; const AKey: string; ARows, ASummary: TStringBuilder);
+var
+  Title: string;
+  M: TMemberDef;
+  T0: Int64;
+  Any: Boolean;
+  MD, E: TLayoutEntry;
+begin
+  Any := False;
+  for M in AMembers do
+    if SectionKey(M, AInUnit) = AKey then
+      Any := True;
+  if not Any then
+    Exit;
+  Title := SectionTitle(AKey);
+  MD := LayoutMembers(AInUnit, 'memberdecl');
+  if MD <> nil then
+    for E in MD.Children do
+      if (DeclKeyOf(E.Name, AInUnit) = AKey) and (E.Attr('title') <> '') then
+        Title := E.Attr('title');
+  ARows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="' + AKey + '" name="' + AKey +
+    '"></a>'#10 + HtmlEscape(Title) + '</h2></td></tr>'#10);
+  if ASummary.Length > 0 then
+    ASummary.Append(' &#124;'#10);
+  ASummary.Append('<a href="#' + AKey + '">' + HtmlEscape(Title) + '</a>');
+  for M in AMembers do
+    if SectionKey(M, AInUnit) = AKey then
+    begin
+      T0 := Tick;
+      ARows.Append(MemberRows(M, ''));
+      Add('decl: MemberRows', T0);
+    end;
 end;
 
 procedure THtmlGenerator.InheritedSections(C: TClassDef; ARows: TStringBuilder);
@@ -1591,7 +1602,9 @@ end;
 // <memberdecl> (the declaration tables) or <memberdef> (the documentation) of the layout of a class or unit page.
 function THtmlGenerator.LayoutMembers(AInUnit: Boolean; const AKind: string): TLayoutEntry;
 begin
-  if AInUnit then
+  if FPageLayout <> '' then
+    Result := LayoutElement(FPageLayout, AKind)
+  else if AInUnit then
     Result := LayoutElement('namespace', AKind)
   else
     Result := LayoutElement('class', AKind);
@@ -1603,6 +1616,8 @@ var
 begin
   if (PageKind(ADef) <> '') and not LayoutShows(PageKind(ADef), 'detaileddescription') then
     Exit('');
+  if (ADef is TUnitDef) and not LayoutShows('file', 'detaileddescription') then
+    Exit('');       // a unit is also a file
   Text := FDoc.Render(ADef.Detailed, ADef);
   if (Text = '') and (DefinedAt(ADef) = '') then
     Exit('');
@@ -1844,14 +1859,14 @@ begin
   Result := '';
   if not FDotGraphs then
     Exit;
-  if FConfig.GetBool('INCLUDE_GRAPH') and (U.UsesInterfaceNames.Count > 0) then
+  if FConfig.GetBool('INCLUDE_GRAPH') and LayoutShows('file', 'includegraph') and (U.UsesInterfaceNames.Count > 0) then
     Result := RunGraph(U.DiskName + '_uses_graph', Format(Tr('Dependency graph for %s:'), [HtmlEscape(U.Name)]),
       FDot.UnitDot(U, False));
   Used := False;
   for T in U.UsedBy do
     if FLinks.IsLinkable(T) then
       Used := True;
-  if Used and FConfig.GetBool('INCLUDED_BY_GRAPH') then
+  if Used and FConfig.GetBool('INCLUDED_BY_GRAPH') and LayoutShows('file', 'includedbygraph') then
     Result := Result + RunGraph(U.DiskName + '_used_by_graph',
       Format(Tr('This graph shows which units directly or indirectly use this unit (%s):'), [HtmlEscape(U.Name)]),
       FDot.UnitDot(U, True));
@@ -2036,7 +2051,7 @@ var
   C: TClassDef;
   Detail, Brief, Uses_, S, ClassesTitle: string;
   T: TUnitDef;
-  HasClasses, ShowClasses: Boolean;
+  HasClasses, ShowClasses, ShowIncludes: Boolean;
   E: TLayoutEntry;
 begin
   ShowClasses := True;
@@ -2084,13 +2099,14 @@ begin
     BeginPage(U.DiskName, UnitTitle(U));
     PageHeader(UnitTitle(U), Summary.ToString);
     Brief := BriefOf(U);
-    if Brief <> '' then
+    if (Brief <> '') and LayoutShows('namespace', 'briefdescription') and LayoutShows('file', 'briefdescription') then
     begin
       W('<p>' + Brief);
       if Trim(U.Detailed) <> '' then
         W(' <a href="#details">More...</a>');
       W('</p>'#10);
     end;
+    ShowIncludes := LayoutShows('file', 'includes');   // the uses clauses are the includes of a unit
     Uses_ := '';
     for S in U.UsesInterfaceNames do
     begin
@@ -2102,7 +2118,7 @@ begin
       else
         Uses_ := Uses_ + HtmlEscape(S);
     end;
-    if Uses_ <> '' then
+    if (Uses_ <> '') and ShowIncludes then
       W('<p>' + Tr('Uses') + ': ' + Uses_ + '</p>'#10);
     Uses_ := '';
     for T in U.UsedBy do
@@ -2112,9 +2128,9 @@ begin
           Uses_ := Uses_ + ', ';
         Uses_ := Uses_ + FDoc.Link(T, T.Name);
       end;
-    if Uses_ <> '' then
+    if (Uses_ <> '') and ShowIncludes then
       W('<p>' + Tr('Used by') + ': ' + Uses_ + '</p>'#10);
-    if HasSource(U) then
+    if HasSource(U) and LayoutShows('file', 'sourcelink') then
       W('<p><a href="' + SourceUrl(U) + '">' + Tr('Go to the source code of this file.') + '</a></p>'#10);
     W(UnitGraph(U));
     if Rows.Length > 0 then
@@ -2304,47 +2320,74 @@ begin
   end;
 end;
 
-procedure THtmlGenerator.WriteDirectory(D: TDirDef);
+// The rows of the subdirectories (ADirs) or of the files of a directory under one heading; nothing when there are none.
+function THtmlGenerator.DirTable(D: TDirDef; const AHeading: string; ADirs: Boolean): string;
 var
-  Title, Graph: string;
   Sub: TDirDef;
   U: TUnitDef;
+begin
+  Result := '';
+  if ADirs and (D.Dirs.Count > 0) then
+  begin
+    Result := '<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="subdirs" name="subdirs"></a>'#10 +
+      HtmlEscape(AHeading) + '</h2></td></tr>'#10;
+    for Sub in D.Dirs do
+      Result := Result + '<tr class="memitem:' + Sub.DiskName + '"><td class="memItemLeft" align="right" valign="top">' + FolderIcon +
+        '&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="' + Sub.DiskName + FExt + '">' +
+        HtmlEscape(Sub.Name) + '</a></td></tr>'#10'<tr class="separator:' + Sub.DiskName +
+        '"><td class="memSeparator" colspan="2">&#160;</td></tr>'#10;
+  end;
+  if not ADirs and (D.Units.Count > 0) then
+  begin
+    Result := '<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="files" name="files"></a>'#10 +
+      HtmlEscape(AHeading) + '</h2></td></tr>'#10;
+    for U in D.Units do
+      Result := Result + '<tr class="memitem:' + U.DiskName + '"><td class="memItemLeft" align="right" valign="top">' +
+        '<span class="icondoc"><div class="doc-icon"></div></span>&#160;</td>' +
+        '<td class="memItemRight" valign="bottom">' + FDoc.Link(U, ExtractFileName(U.FileName)) + '</td></tr>'#10 +
+        '<tr class="separator:' + U.DiskName + '"><td class="memSeparator" colspan="2">&#160;</td></tr>'#10;
+  end;
+end;
+
+procedure THtmlGenerator.WriteDirectory(D: TDirDef);
+var
+  Title, Graph, Tables: string;
+  MD, E: TLayoutEntry;
+
+  function Pick(const AText, ADefault: string): string;
+  begin
+    if AText <> '' then Result := AText else Result := ADefault;
+  end;
+
 begin
   Title := Format(Tr('%s Directory Reference'), [D.Path]);
   Graph := '';
   if FDotGraphs and FConfig.GetBool('DIRECTORY_GRAPH') and
+    LayoutShows('directory', 'directorygraph') and
     ((Length(FDirs.Dependencies(D, False)) > 0) or (Length(FDirs.Dependencies(D, True)) > 0)) then
     Graph := RunGraph(D.DiskName + '_dep', Format(Tr('Directory dependency graph for %s:'), [HtmlEscape(D.Name)]),
       DirDot(D));
   BeginPage(D.DiskName, Title);
   PageHeader(Title);
   W(Graph);
-  if (D.Dirs.Count > 0) or (D.Units.Count > 0) then
+  Tables := '';
+  MD := LayoutElement('directory', 'memberdecl');
+  if MD = nil then
   begin
-    W('<table class="memberdecls">'#10);
-    if D.Dirs.Count > 0 then
-    begin
-      W('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="subdirs" name="subdirs"></a>'#10 +
-        Tr('Directories') + '</h2></td></tr>'#10);
-      for Sub in D.Dirs do
-        W('<tr class="memitem:' + Sub.DiskName + '"><td class="memItemLeft" align="right" valign="top">' + FolderIcon +
-          '&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="' + Sub.DiskName + FExt + '">' +
-          HtmlEscape(Sub.Name) + '</a></td></tr>'#10'<tr class="separator:' + Sub.DiskName +
-          '"><td class="memSeparator" colspan="2">&#160;</td></tr>'#10);
-    end;
-    if D.Units.Count > 0 then
-    begin
-      W('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="files" name="files"></a>'#10 +
-        Tr('Files') + '</h2></td></tr>'#10);
-      for U in D.Units do
-        W('<tr class="memitem:' + U.DiskName + '"><td class="memItemLeft" align="right" valign="top">' +
-          '<span class="icondoc"><div class="doc-icon"></div></span>&#160;</td>' +
-          '<td class="memItemRight" valign="bottom">' + FDoc.Link(U, ExtractFileName(U.FileName)) + '</td></tr>'#10 +
-          '<tr class="separator:' + U.DiskName + '"><td class="memSeparator" colspan="2">&#160;</td></tr>'#10);
-    end;
-    W('</table>'#10);
-  end;
-  EndPage(DirNavPath(D));
+    Tables := DirTable(D, Tr('Directories'), True) + DirTable(D, Tr('Files'), False);
+  end
+  else
+    for E in MD.Children do
+      if FLayout.Visible(E) then
+      begin
+        Title := E.Attr('title');
+        if E.Name = 'dirs' then
+          Tables := Tables + DirTable(D, Pick(Title, Tr('Directories')), True)
+        else if E.Name = 'files' then
+          Tables := Tables + DirTable(D, Pick(Title, Tr('Files')), False);
+      end;
+  if Tables <> '' then
+    W('<table class="memberdecls">'#10 + Tables + '</table>'#10);  EndPage(DirNavPath(D));
 end;
 
 procedure THtmlGenerator.DirTreeRows(D: TDirDef; ALevel: Integer; var ARow: Integer);
@@ -2378,53 +2421,96 @@ var
   Rows, Summary: TStringBuilder;
   Mem: TList<TMemberDef>;
   D: TDefinition;
-  S: TGroupDef;
-  Detail, Brief: string;
-  Any: Boolean;
-begin
-  Rows := TStringBuilder.Create;
-  Summary := TStringBuilder.Create;
-  Mem := TList<TMemberDef>.Create;
-  try
-    if G.Subgroups.Count > 0 then
-    begin
-      Rows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader">Topics</h2></td></tr>'#10);
-      for S in G.Subgroups do
-        Rows.Append('<tr class="memitem:' + S.DiskName + '"><td class="memItemLeft" align="right" valign="top">&#160;</td>' +
-          '<td class="memItemRight" valign="bottom">' + FDoc.Link(S, S.Title) + '</td></tr>'#10);
-    end;
+  Detail, Brief, Key, Title: string;
+  MD, E: TLayoutEntry;
+
+  function Pick(const AText, ADefault: string): string;
+  begin
+    if AText <> '' then Result := AText else Result := ADefault;
+  end;
+
+  procedure AddTopics(const AHeading: string);
+  var
+    S: TGroupDef;
+  begin
+    if G.Subgroups.Count = 0 then
+      Exit;
+    Rows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader">' + HtmlEscape(AHeading) + '</h2></td></tr>'#10);
+    for S in G.Subgroups do
+      Rows.Append('<tr class="memitem:' + S.DiskName + '"><td class="memItemLeft" align="right" valign="top">&#160;</td>' +
+        '<td class="memItemRight" valign="bottom">' + FDoc.Link(S, S.Title) + '</td></tr>'#10);
+  end;
+
+  // The classes and/or the units of the group under one heading.
+  procedure AddCompounds(const AHeading: string; AUnits, AClasses: Boolean);
+  var
+    Any: Boolean;
+    D: TDefinition;
+  begin
     Any := False;
     for D in G.Members do
-      if (D is TClassDef) or (D is TUnitDef) then
+      if ((D is TClassDef) and AClasses) or ((D is TUnitDef) and AUnits) then
         if FLinks.IsLinkable(D) then
         begin
           if not Any then
           begin
-            Rows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader">Classes and Units</h2></td></tr>'#10);
+            Rows.Append('<tr class="heading"><td colspan="2"><h2 class="groupheader">' + HtmlEscape(AHeading) + '</h2></td></tr>'#10);
             Any := True;
           end;
           Rows.Append('<tr class="memitem:' + D.DiskName + '"><td class="memItemLeft" align="right" valign="top">&#160;</td>' +
             '<td class="memItemRight" valign="bottom">' + FDoc.Link(D, D.QualifiedName) + '</td></tr>'#10);
         end;
+  end;
+
+begin
+  Rows := TStringBuilder.Create;
+  Summary := TStringBuilder.Create;
+  Mem := TList<TMemberDef>.Create;
+  FPageLayout := 'group';             // the tables of members follow the layout of the groups
+  try
     for D in G.Members do
       if (D is TMemberDef) and FProject.IsVisible(D) then
         Mem.Add(TMemberDef(D));
-    DeclSections(Mem, True, Rows, Summary);
+    MD := LayoutMembers(True, 'memberdecl');
+    if MD = nil then
+    begin
+      AddTopics('Topics');
+      AddCompounds('Classes and Units', True, True);
+      DeclSections(Mem, True, Rows, Summary);
+    end
+    else
+      for E in MD.Children do
+        if FLayout.Visible(E) then
+        begin
+          Title := E.Attr('title');
+          if E.Name = 'nestedgroups' then
+            AddTopics(Pick(Title, 'Topics'))
+          else if E.Name = 'namespaces' then
+            AddCompounds(Pick(Title, 'Units'), True, False)
+          else if E.Name = 'classes' then
+            AddCompounds(Pick(Title, Tr('Classes')), False, True)
+          else
+          begin
+            Key := DeclKeyOf(E.Name, True);
+            if Key <> '' then
+              DeclSection(Mem, True, Key, Rows, Summary);
+          end;
+        end;
     Detail := DetailedBlock(G, True);
     if Detail <> '' then
     begin
       if Summary.Length > 0 then
         Summary.Append(' &#124;'#10);
-      Summary.Append('<a href="#details">Detailed Description</a>');
+      Summary.Append('<a href="#details">' + HtmlEscape(DetailTitle(G)) + '</a>');
     end;
     BeginPage(G.DiskName, G.Title);
     PageHeader(G.Title, Summary.ToString);
     Brief := BriefOf(G);
-    if Brief <> '' then
+    if (Brief <> '') and LayoutShows('group', 'briefdescription') then
     begin
       W('<p>' + Brief);
-      if Trim(G.Detailed) <> '' then
-        W(' <a href="#details">More...</a>');
+      if (Trim(G.Detailed) <> '') and (Detail <> '') then
+        W(' <a href="#details">' + Tr('More...') + '</a>');
       W('</p>'#10);
     end;
     if Rows.Length > 0 then
@@ -2433,6 +2519,7 @@ begin
     W(DocSections(Mem, True));
     EndPage;
   finally
+    FPageLayout := '';
     Mem.Free;
     Summary.Free;
     Rows.Free;

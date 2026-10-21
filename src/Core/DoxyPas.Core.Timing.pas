@@ -20,7 +20,9 @@ uses
   System.Classes,
   System.Diagnostics,
   System.Generics.Collections,
-  System.Generics.Defaults;
+  System.Generics.Defaults{$IFDEF MSWINDOWS},
+  Winapi.Windows,
+  Winapi.PsAPI{$ENDIF};
 
 var
   Enabled: Boolean;
@@ -30,6 +32,19 @@ var
   Counts: TDictionary<string, Integer>;
   Lock: TObject;
 
+{$IFDEF MSWINDOWS}
+function LiveMB: Int64;
+var
+  C: TProcessMemoryCounters;
+begin
+  C.cb := SizeOf(C);
+  if GetProcessMemoryInfo(GetCurrentProcess, @C, SizeOf(C)) then
+    Result := C.WorkingSetSize div (1024 * 1024)
+  else
+    Result := 0;
+end;
+{$ENDIF}
+
 procedure Lap(const AWhat: string);
 var
   Now_: Int64;
@@ -37,7 +52,11 @@ begin
   if not Enabled then
     Exit;
   Now_ := Watch.ElapsedMilliseconds;
+{$IFDEF MSWINDOWS}
+  Writeln(ErrOutput, Format('[timing] %-28s %8d ms   (total %d ms, %d MB)', [AWhat, Now_ - LastMs, Now_, LiveMB]));
+{$ELSE}
   Writeln(ErrOutput, Format('[timing] %-28s %8d ms   (total %d ms)', [AWhat, Now_ - LastMs, Now_]));
+{$ENDIF}
   LastMs := Now_;
 end;
 

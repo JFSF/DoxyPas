@@ -319,7 +319,7 @@ end;
 function TBuilder.FindClassPath(AUnit: TUnitDef; const AParts: TArray<string>; ACount: Integer): TClassDef;
 var
   I: Integer;
-  L: TList<TDefinition>;
+  L: TArray<TDefinition>;
   Cur: TScopeDef;
   D: TDefinition;
   Found: TClassDef;
@@ -350,7 +350,7 @@ var
   Parts: TArray<string>;
   C: TClassDef;
   Cand: TList<TMemberDef>;
-  L: TList<TDefinition>;
+  L: TArray<TDefinition>;
   D: TDefinition;
   M: TMemberDef;
   Name: string;
@@ -445,7 +445,7 @@ var
   D: TDefinition;
   U: TUnitDef;
   I: Integer;
-  L: TList<TDefinition>;
+  L: TArray<TDefinition>;
 begin
   for C in AProject.Classes do
     for S in C.Entry.Bases do
@@ -461,7 +461,7 @@ begin
         for I := U.UsesInterface.Count - 1 downto 0 do
         begin
           L := U.UsesInterface[I].Find(C.Name);
-          if (L <> nil) and (L.Count > 0) and (L[0] is TClassDef) then
+          if (Length(L) > 0) and (L[0] is TClassDef) then
           begin
             D := L[0];
             Break;
@@ -615,7 +615,7 @@ end;
 function FindOverridden(AClass: TClassDef; M: TMemberDef; AVisited: TList<TClassDef>): TMemberDef;
 var
   B: TBaseRef;
-  L: TList<TDefinition>;
+  L: TArray<TDefinition>;
   D: TDefinition;
   Best: TMemberDef;
 begin

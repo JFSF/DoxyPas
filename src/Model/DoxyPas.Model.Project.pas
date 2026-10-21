@@ -337,7 +337,7 @@ end;
 { A member of a class or of one of its ancestors. }
 function TProject.LookupMember(AScope: TDefinition; const AName: string; AVisited: TList<TDefinition>): TDefinition;
 var
-  L: TList<TDefinition>;
+  L: TArray<TDefinition>;
   B: TBaseRef;
   E: TDefinition;
 begin
@@ -348,7 +348,7 @@ begin
   if AScope is TScopeDef then
   begin
     L := TScopeDef(AScope).Find(AName);
-    if (L <> nil) and (L.Count > 0) then
+    if Length(L) > 0 then
       Exit(L[0]);
   end;
   if AScope is TMemberDef then
@@ -374,7 +374,7 @@ var
   Visited: TList<TDefinition>;
   U: TUnitDef;
   I: Integer;
-  L: TList<TDefinition>;
+  L: TArray<TDefinition>;
 begin
   Result := nil;
   Visited := TList<TDefinition>.Create;
@@ -398,13 +398,13 @@ begin
         for I := U.UsesImplementation.Count - 1 downto 0 do
         begin
           L := U.UsesImplementation[I].Find(AName);
-          if (L <> nil) and (L.Count > 0) then
+          if Length(L) > 0 then
             Exit(L[0]);
         end;
         for I := U.UsesInterface.Count - 1 downto 0 do
         begin
           L := U.UsesInterface[I].Find(AName);
-          if (L <> nil) and (L.Count > 0) then
+          if Length(L) > 0 then
             Exit(L[0]);
         end;
       end;

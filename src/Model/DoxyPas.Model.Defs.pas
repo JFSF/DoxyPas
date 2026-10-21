@@ -32,6 +32,7 @@ type
     Brief: string;              // after merging implementation docs, \copydoc and inheritance
     Detailed: string;
     DocInherited: Boolean;      // the documentation was inherited from an overridden member
+    NextSame: TDefinition;      // the next definition with the same name in the scope (TScopeDef.AddSymbol)
     DiskName: string;           // output file name without extension (compounds) or anchor (members)
     ImplementationOnly: Boolean; // declared in the implementation section only
     constructor Create(const AName: string; AEntry: TEntry);
@@ -48,7 +49,8 @@ type
   /// <summary>A definition that contains other definitions and can be searched by name.</summary>
   TScopeDef = class(TDefinition)
   strict private
-    FSymbols: TObjectDictionary<string, TList<TDefinition>>;
+    // the first definition of each name (case-insensitive); the others with the same name follow it in NextSame
+    FSymbols: TDictionary<string, TDefinition>;
   public
     /// <summary>Counts the symbols added to any scope: an index over many scopes is out of date when it changes.</summary>
     class var SymbolVersion: Integer;
@@ -56,7 +58,7 @@ type
     destructor Destroy; override;
     procedure AddSymbol(ADef: TDefinition);
     /// <summary>Definitions with this (case-insensitive) name declared directly in this scope.</summary>
-    function Find(const AName: string): TList<TDefinition>;
+    function Find(const AName: string): TArray<TDefinition>;
     /// <summary>Adds the first symbol of every name to ATarget (names it already has are kept).</summary>
     procedure FirstSymbolsInto(ATarget: TDictionary<string, TDefinition>);
   end;
@@ -146,7 +148,8 @@ implementation
 
 uses
   System.SysUtils,
-  System.Classes;
+  System.Classes,
+  System.Generics.Defaults;
 
 type
   TFrozenLists = class
@@ -244,7 +247,7 @@ end;
 constructor TScopeDef.Create(const AName: string; AEntry: TEntry);
 begin
   inherited;
-  FSymbols := TObjectDictionary<string, TList<TDefinition>>.Create([doOwnsValues]);
+  FSymbols := TDictionary<string, TDefinition>.Create(TIStringComparer.Ordinal);
 end;
 
 destructor TScopeDef.Destroy;
@@ -255,32 +258,48 @@ end;
 
 procedure TScopeDef.AddSymbol(ADef: TDefinition);
 var
-  L: TList<TDefinition>;
-  Key: string;
+  D: TDefinition;
 begin
   Inc(SymbolVersion);
-  Key := LowerCase(ADef.Name);
-  if not FSymbols.TryGetValue(Key, L) then
+  if not FSymbols.TryGetValue(ADef.Name, D) then
+    FSymbols.Add(ADef.Name, ADef)
+  else
   begin
-    L := TList<TDefinition>.Create;
-    FSymbols.Add(Key, L);
+    while D.NextSame <> nil do
+      D := D.NextSame;
+    D.NextSame := ADef;
   end;
-  L.Add(ADef);
 end;
 
-function TScopeDef.Find(const AName: string): TList<TDefinition>;
+function TScopeDef.Find(const AName: string): TArray<TDefinition>;
+var
+  D: TDefinition;
+  N: Integer;
 begin
-  if not FSymbols.TryGetValue(LowerCase(AName), Result) then
-    Result := nil;
+  Result := nil;
+  if not FSymbols.TryGetValue(AName, D) then
+    Exit;
+  N := 0;
+  while D <> nil do
+  begin
+    SetLength(Result, N + 1);
+    Result[N] := D;
+    Inc(N);
+    D := D.NextSame;
+  end;
 end;
 
 procedure TScopeDef.FirstSymbolsInto(ATarget: TDictionary<string, TDefinition>);
 var
-  P: TPair<string, TList<TDefinition>>;
+  P: TPair<string, TDefinition>;
+  Key: string;
 begin
   for P in FSymbols do
-    if (P.Value.Count > 0) and not ATarget.ContainsKey(P.Key) then
-      ATarget.Add(P.Key, P.Value[0]);
+  begin
+    Key := LowerCase(P.Key);
+    if not ATarget.ContainsKey(Key) then
+      ATarget.Add(Key, P.Value);
+  end;
 end;
 
 { TUnitDef }

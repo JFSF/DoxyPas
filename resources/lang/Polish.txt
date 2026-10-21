@@ -123,3 +123,4 @@ Topic Documentation => Dokumentacja modułów
 Unit Documentation => Dokumentacja jednostek
 Class Documentation => Dokumentacja klas
 Index => Skorowidz
+Bibliography => Bibliografia

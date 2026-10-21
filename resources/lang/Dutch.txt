@@ -123,3 +123,4 @@ Topic Documentation => Documentatie van onderwerpen
 Unit Documentation => Documentatie van units
 Class Documentation => Documentatie van klassen
 Index => Index
+Bibliography => Literatuurlijst

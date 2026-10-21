@@ -123,3 +123,4 @@ Topic Documentation => Документация групп
 Unit Documentation => Документация модулей
 Class Documentation => Документация классов
 Index => Алфавитный указатель
+Bibliography => Литература

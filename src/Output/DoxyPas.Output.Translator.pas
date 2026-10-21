@@ -114,6 +114,7 @@ begin
   Add('Unit Documentation', 'Documentação das Units', '', 'Documentación de unidades', 'Documentation des unités', 'Unit-Dokumentation');
   Add('Class Documentation', 'Documentação das Classes', '', 'Documentación de clases', 'Documentation des classes', 'Klassendokumentation');
   Add('Index', 'Índice Remissivo', '', 'Índice', 'Index', 'Index');
+  Add('Bibliography', 'Bibliografia', '', 'Bibliografía', 'Bibliographie', 'Literaturverzeichnis');
   Add('Collaboration diagram for %s:', 'Diagrama de colaboração para %s:', '', 'Diagrama de colaboración para %s:',
     'Graphe de collaboration de %s :', 'Zusammenarbeitsdiagramm für %s:');
   Add('Dependency graph for %s:', 'Grafo de dependências para %s:', '', 'Gráfico de dependencias para %s:',

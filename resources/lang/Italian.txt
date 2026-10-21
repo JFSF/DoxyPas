@@ -123,3 +123,4 @@ Topic Documentation => Documentazione dei moduli
 Unit Documentation => Documentazione delle unit
 Class Documentation => Documentazione delle classi
 Index => Indice analitico
+Bibliography => Bibliografia

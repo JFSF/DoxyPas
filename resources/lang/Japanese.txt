@@ -123,3 +123,4 @@ Topic Documentation => モジュールの詳細
 Unit Documentation => ユニットの詳細
 Class Documentation => クラスの詳細
 Index => 索引
+Bibliography => 参考文献

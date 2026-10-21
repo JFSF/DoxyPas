@@ -71,6 +71,7 @@ type
     FLinks: TLinkResolver;
     FDir: string;
     FFiles: Integer;
+    FCite: Boolean;           // CITE_BIB_FILES: \cite and a bibliography
     FDotOn: Boolean;          // HAVE_DOT and dot runs: the graphs are PDF files included with \includegraphics
     FDot: TDotGraphs;
     FRunner: TDotRunner;
@@ -118,6 +119,7 @@ begin
     SetOutputLanguage('English');
     Warn('', 0, 'OUTPUT_LANGUAGE: the LaTeX output is in English for this language');
   end;
+  FCite := Length(AConfig.GetList('CITE_BIB_FILES')) > 0;
   FDotOn := AConfig.GetBool('HAVE_DOT');
   if FDotOn then
   begin
@@ -198,7 +200,11 @@ begin
     dnFormula:
       if ANode.Name = 'inline' then Result := '$' + ANode.Text + '$'
       else Result := '\[' + ANode.Text + '\]';
-    dnCite: Result := '[' + LatexEscape(ANode.Text) + ']';
+    dnCite:
+      if FCite then
+        Result := '\cite{' + ANode.Text + '}'
+      else
+        Result := '[' + LatexEscape(ANode.Text) + ']';
   end;
 end;
 
@@ -738,7 +744,7 @@ begin
     for F in FConfig.GetList(AOption) do
       if TFile.Exists(F) then
       begin
-        TFile.Copy(F, TPath.Combine(FDir, ExtractFileName(F)), True);
+        TFile.WriteAllBytes(TPath.Combine(FDir, ExtractFileName(F)), TFile.ReadAllBytes(F));
         Inc(FFiles);
         Names.Add(ExtractFileName(F));
       end
@@ -756,10 +762,11 @@ var
   C: TClassDef;
   G: TGroupDef;
   P: TPageDef;
-  Main, Name, Title, Brief, Packages, TitlePage, Opts, Logo, Pkg, Cmd, Idx, Footer: string;
+  Main, Name, Title, Brief, Packages, TitlePage, Opts, Logo, Pkg, Cmd, Idx, Footer, Bib, BibStyle: string;
   Pages, Topics, Units, Classes: TStringList;
   Compact, Hyper, HideIndex: Boolean;
   Extra: TArray<string>;
+  Bibs: TArray<string>;
 
   procedure Part(const ATitle: string; AList: TStringList);
   var
@@ -829,6 +836,8 @@ begin
       Packages := Packages + '\usepackage[colorlinks=true,linkcolor=doxyblue,urlcolor=doxyblue]{hyperref}'#10
     else
       Packages := Packages + '\providecommand{\hyperref}[2][]{#2}'#10'\providecommand{\phantomsection}{}'#10;
+    if FCite then
+      Packages := Packages + '\usepackage[numbers]{natbib}'#10;
     Packages := Packages + '\renewcommand{\indexname}{' + LatexEscape(Tr('Index')) + '}'#10;
 
     // title page and contents
@@ -837,7 +846,7 @@ begin
     TitlePage := '\begin{titlepage}'#10'\vspace*{3cm}'#10'\begin{center}'#10;
     if (Logo <> '') and TFile.Exists(Logo) and MatchText(ExtractFileExt(Logo), ['.png', '.jpg', '.jpeg', '.pdf']) then
     begin
-      TFile.Copy(Logo, TPath.Combine(FDir, 'logo' + ExtractFileExt(Logo)), True);
+      TFile.WriteAllBytes(TPath.Combine(FDir, 'logo' + ExtractFileExt(Logo)), TFile.ReadAllBytes(Logo));
       Inc(FFiles);
       TitlePage := TitlePage + '\includegraphics[height=3cm]{logo' + ExtractFileExt(Logo) + '}\par\vspace{3ex}'#10;
     end
@@ -897,7 +906,21 @@ begin
       Idx := '\cleardoublepage'#10'\phantomsection'#10'\addcontentsline{toc}{' + Name + '}{' + LatexEscape(Tr('Index')) +
         '}'#10'\printindex'#10;
     end;
-    Footer := Template('LATEX_FOOTER', '$printindex' + '\end{document}'#10, ['printindex', Idx]);
+    Bib := '';
+    if FCite then
+    begin
+      Bibs := CopyList('CITE_BIB_FILES');
+      BibStyle := FConfig.GetString('LATEX_BIB_STYLE');
+      if BibStyle = '' then
+        BibStyle := 'plainnat';
+      Name := '';
+      for Pkg in Bibs do
+        Name := Name + IfThen(Name = '', '', ',') + ChangeFileExt(Pkg, '');
+      if Compact then Pkg := 'section' else Pkg := 'chapter';
+      Bib := '\newpage'#10'\phantomsection'#10'\addcontentsline{toc}{' + Pkg + '}{' + LatexEscape(Tr('Bibliography')) + '}'#10 +
+        '\bibliographystyle{' + BibStyle + '}'#10'\bibliography{' + Name + '}'#10;
+    end;
+    Footer := Template('LATEX_FOOTER', Bib + '$printindex' + '\end{document}'#10, ['printindex', Idx]);
     Main := Main + Footer;
     Save('refman.tex', Main);
     Save('doxypas.sty', StyleText);
@@ -913,9 +936,10 @@ begin
     if Idx = '' then
       Idx := 'makeindex';
     TFile.WriteAllText(TPath.Combine(FDir, 'make.bat'), '@echo off'#13#10 + Cmd + ' refman'#13#10 +
-      IfThen(HideIndex, '', Idx + ' refman.idx'#13#10) + Cmd + ' refman'#13#10 + Cmd + ' refman'#13#10, TEncoding.ASCII);
+      IfThen(FCite, 'bibtex refman'#13#10, '') + IfThen(HideIndex, '', Idx + ' refman.idx'#13#10) + Cmd + ' refman'#13#10 + Cmd +
+      ' refman'#13#10, TEncoding.ASCII);
     TFile.WriteAllText(TPath.Combine(FDir, 'Makefile'), 'all: refman.pdf'#10#10'refman.pdf: refman.tex'#10#9 + Cmd +
-      ' refman'#10 + IfThen(HideIndex, '', #9 + Idx + ' refman.idx'#10) + #9 + Cmd + ' refman'#10#9 + Cmd + ' refman'#10#10 +
+      ' refman'#10 + IfThen(FCite, #9'bibtex refman'#10, '') + IfThen(HideIndex, '', #9 + Idx + ' refman.idx'#10) + #9 + Cmd + ' refman'#10#9 + Cmd + ' refman'#10#10 +
       'clean:'#10#9'rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out refman.pdf'#10, TEncoding.ASCII);
     Inc(FFiles, 2);
   finally

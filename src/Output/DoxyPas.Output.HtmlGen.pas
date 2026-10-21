@@ -2850,8 +2850,95 @@ var
         AddClass(N, K);
   end;
 
+  // LAYOUT_FILE: the tree follows the navigation index: the order of the tabs, the ones that are not visible are left
+  // out, the user tabs are added, and the entries of the Classes tab are in the order of its sub-tabs.
+  procedure Reorder;
+  var
+    Old: TList<TNavNode>;
+    Used: TList<TNavNode>;
+    Tab, Sub, N: TNavNode;
+    Kids: TList<TNavNode>;
+    I: Integer;
+    Base: string;
+
+    procedure Take(ANode: TNavNode);
+    begin
+      if (ANode <> nil) and Old.Contains(ANode) and not Used.Contains(ANode) then
+      begin
+        Used.Add(ANode);
+        FNav.Add(ANode);
+      end;
+    end;
+
+  begin
+    if FMenu = nil then
+      BuildMenu;
+    Old := TList<TNavNode>.Create;
+    Used := TList<TNavNode>.Create;
+    try
+      for N in FNav do
+        Old.Add(N);
+      FNav.OwnsObjects := False;
+      FNav.Clear;
+      FNav.OwnsObjects := True;
+      for Tab in FMenu.Kids do
+      begin
+        Base := Tab.Url;
+        if Base = 'pages' then
+        begin
+          for N in Old do
+            if (N <> Topics) and (N <> Units) and (N <> Dirs) and (N <> Classes) then
+              Take(N);
+        end
+        else if Base = 'topics' then Take(Topics)
+        else if Base = 'namespaces' then Take(Units)
+        else if Base = 'dirs' then Take(Dirs)
+        else if Base = 'annotated' then
+        begin
+          if Classes <> nil then
+          begin
+            Kids := TList<TNavNode>.Create;
+            try
+              for I := 0 to Classes.Kids.Count - 1 do
+                Kids.Add(Classes.Kids[I]);
+              Classes.Kids.OwnsObjects := False;
+              Classes.Kids.Clear;
+              Classes.Kids.OwnsObjects := True;
+              for Sub in Tab.Kids do
+                for N in Kids do
+                  if N.Url = Url(Sub.Url) then
+                    Classes.Kids.Add(N);
+              for N in Kids do
+                if not Classes.Kids.Contains(N) then
+                  N.Free;
+            finally
+              Kids.Free;
+            end;
+            Take(Classes);
+          end;
+        end
+        else if (Pos('.', Base) > 0) or (Pos(':', Base) > 0) then
+        begin
+          N := TNavNode.Create(Tab.Name, Base);
+          for Sub in Tab.Kids do
+            N.Add(Sub.Name, Sub.Url);
+          FNav.Add(N);
+        end;
+      end;
+      for N in Old do
+        if not Used.Contains(N) then
+          N.Free;
+    finally
+      Used.Free;
+      Old.Free;
+    end;
+  end;
+
 begin
-  for P in FProject.Pages do
+  Topics := nil;
+  Units := nil;
+  Dirs := nil;
+  Classes := nil;  for P in FProject.Pages do
     if not P.IsMainPage then
       FNav.Add(TNavNode.Create(P.Title, Url(P.DiskName)));
   if FHasGroups then
@@ -2880,7 +2967,7 @@ begin
   begin
     Classes := TNavNode.Create(NavTitle('classes'), Url('annotated'));
     FNav.Add(Classes);
-    List := Classes.Add('Class List', Url('annotated'));
+    List := Classes.Add(NavTitle('classlist'), Url('annotated'));
     for U in FProject.Units do
       if FLinks.IsLinkable(U) then
       begin
@@ -2893,10 +2980,12 @@ begin
             AddClass(Node, C);
           end;
       end;
-    Classes.Add('Class Index', Url('classes'));
-    Classes.Add('Class Hierarchy', Url('hierarchy'));
-    Classes.Add('Class Members', Url('functions'));
+    Classes.Add(NavTitle('classindex'), Url('classes'));
+    Classes.Add(NavTitle('hierarchy'), Url('hierarchy'));
+    Classes.Add(NavTitle('classmembers'), Url('functions'));
   end;
+  if FLayout.NavIndex <> nil then
+    Reorder;
 end;
 
 // one node per line as in Doxygen's navtreedata.js; the children are written inline

@@ -55,3 +55,7 @@ rem Packs resources\html\* (templates, css, js) into src\Resources\DoxyPas.Resou
 set HTMLRES=
 for %%F in ("%ROOT%resources\html\*") do call set HTMLRES=%%HTMLRES%% "%%F"
 "%ROOT%build\tools\PackResources.exe" -b64 "%ROOT%src\Resources\DoxyPas.Resources.Html.pas" DoxyPas.Resources.Html HtmlResource %HTMLRES%
+rem Packs resources\lang\* (texts of the output languages) into src\Resources\DoxyPas.Resources.Lang.pas
+set LANGRES=
+for %%F in ("%ROOT%resources\lang\*") do call set LANGRES=%%LANGRES%% "%%F"
+"%ROOT%build\tools\PackResources.exe" -b64 "%ROOT%src\Resources\DoxyPas.Resources.Lang.pas" DoxyPas.Resources.Lang LangResource %LANGRES%

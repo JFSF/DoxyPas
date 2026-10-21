@@ -436,6 +436,15 @@ begin
   finally
     SetOutputLanguage('English');
   end;
+  // the languages that come from resources\lang
+  SetOutputLanguage('Russian');
+  try
+    Assert.AreEqual('Главная страница', Tr('Main Page'));
+    Assert.AreEqual('Определение в строке 3 файла a.pas.', Format(Tr('Definition at line %d of file %s.'), [3, 'a.pas']));
+    Assert.AreEqual('ru', LanguageIso);
+  finally
+    SetOutputLanguage('English');
+  end;
 end;
 
 { TDelphiExtrasTests }

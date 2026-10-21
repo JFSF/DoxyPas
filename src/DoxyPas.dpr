@@ -42,6 +42,7 @@ uses
   DoxyPas.Output.HtmlDoc in 'Output\DoxyPas.Output.HtmlDoc.pas',
   DoxyPas.Output.HtmlGen in 'Output\DoxyPas.Output.HtmlGen.pas',
   DoxyPas.Resources.Html in 'Resources\DoxyPas.Resources.Html.pas',
+  DoxyPas.Resources.Lang in 'Resources\DoxyPas.Resources.Lang.pas',
   DoxyPas.Output.TagFile in 'Output\DoxyPas.Output.TagFile.pas',
   DoxyPas.Resources.Xml in 'Resources\DoxyPas.Resources.Xml.pas',
   DoxyPas.Build.Passes in 'Build\DoxyPas.Build.Passes.pas',

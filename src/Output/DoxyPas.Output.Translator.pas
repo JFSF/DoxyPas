@@ -1,12 +1,14 @@
 ﻿unit DoxyPas.Output.Translator;
 
 { The texts of the generated documentation (OUTPUT_LANGUAGE). English is the key: a text without a translation is
-  written in English. Languages: Portuguese, Brazilian, Spanish, French, German. }
+  written in English. Portuguese, Brazilian, Spanish, French and German are in the code (Fill); Italian, Dutch, Polish,
+  Russian, Chinese and Japanese are the files of resources\lang (English => translation), loaded when selected. }
 
 interface
 
 type
-  TLang = (lgEnglish, lgPortuguese, lgBrazilian, lgSpanish, lgFrench, lgGerman);
+  TLang = (lgEnglish, lgPortuguese, lgBrazilian, lgSpanish, lgFrench, lgGerman, lgItalian, lgDutch, lgPolish, lgRussian,
+    lgChinese, lgJapanese);
 
 /// <summary>Selects the language by its OUTPUT_LANGUAGE name ("Portuguese", ...); unknown names give English.</summary>
 procedure SetOutputLanguage(const AName: string);
@@ -25,7 +27,9 @@ implementation
 
 uses
   System.SysUtils,
-  System.Generics.Collections;
+  System.Classes,
+  System.Generics.Collections,
+  DoxyPas.Resources.Lang;
 
 var
   Lang: TLang = lgEnglish;
@@ -238,7 +242,30 @@ begin
   Add('virtual', 'virtual', 'virtual', 'virtual', 'virtuelle', 'virtuell');
 end;
 
+const
+  FileLanguages = [lgItalian .. lgJapanese];
+  // OUTPUT_LANGUAGE names of the languages that come from resource files, in the order of TLang
+  FileNames: array[lgItalian .. lgJapanese] of string = ('Italian', 'Dutch', 'Polish', 'Russian', 'Chinese', 'Japanese');
+
+// Reads resources\lang\<name>.txt: one "English => translation" per line, # starts a comment.
+procedure LoadFile(ALang: TLang);
+var
+  Line: string;
+  P: Integer;
+begin
+  if Tables[ALang].Count > 0 then
+    Exit;
+  for Line in LangResourceText(FileNames[ALang] + '.txt').Replace(#13#10, #10).Split([#10]) do
+  begin
+    P := Line.IndexOf(' => ');
+    if (P > 0) and not Line.StartsWith('#') then
+      Tables[ALang].AddOrSetValue(Copy(Line, 1, P), Copy(Line, P + 5, MaxInt).TrimRight);
+  end;
+end;
+
 procedure SetOutputLanguage(const AName: string);
+var
+  L: TLang;
 begin
   if SameText(AName, 'Portuguese') then Lang := lgPortuguese
   else if SameText(AName, 'Brazilian') then Lang := lgBrazilian
@@ -246,6 +273,11 @@ begin
   else if SameText(AName, 'French') then Lang := lgFrench
   else if SameText(AName, 'German') then Lang := lgGerman
   else Lang := lgEnglish;
+  for L in FileLanguages do
+    if SameText(AName, FileNames[L]) then
+      Lang := L;
+  if Lang in FileLanguages then
+    LoadFile(Lang);
 end;
 
 function OutputLanguage: TLang;
@@ -255,7 +287,7 @@ end;
 
 function LanguageIso: string;
 const
-  Codes: array[TLang] of string = ('en', 'pt', 'pt-BR', 'es', 'fr', 'de');
+  Codes: array[TLang] of string = ('en', 'pt', 'pt-BR', 'es', 'fr', 'de', 'it', 'nl', 'pl', 'ru', 'zh', 'ja');
 begin
   Result := Codes[Lang];
 end;

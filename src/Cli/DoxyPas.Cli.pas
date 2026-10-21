@@ -249,7 +249,12 @@ begin
       for Msg in Project.Warnings do
         Writeln(ErrOutput, Msg);
   finally
-    Project.Free;
+    // The process ends right after: the operating system gives the memory back at once, freeing the millions of
+    // objects of a big project one by one took 5 s of the 28 s of the RTL + VCL + FMX. DOXYPAS_FREE: free them (to
+    // look for leaks).
+    if GetEnvironmentVariable('DOXYPAS_FREE') <> '' then
+      Project.Free;
+    Lap('end of the run');
   end;
   Result := 0;
 end;

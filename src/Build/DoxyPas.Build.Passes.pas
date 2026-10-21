@@ -24,6 +24,7 @@ uses
   System.Classes,
   System.Generics.Collections,
   System.Hash,
+  System.Threading,
   System.Character,
   System.RegularExpressions,
   DoxyPas.Model.Entry,
@@ -848,7 +849,6 @@ procedure AssignDiskNames(AProject: TProject);
 var
   U: TUnitDef;
   C: TClassDef;
-  M, V: TMemberDef;
   G: TGroupDef;
   P: TPageDef;
   Prefix, Q: string;
@@ -882,12 +882,17 @@ begin
     Q := ScopedName(C);
     C.DiskName := ConvertNameToFile(Prefix + Q, Cs);
   end;
-  for M in AProject.Members do
-  begin
-    M.DiskName := MemberAnchor(M);
-    for V in M.EnumValues do
-      V.DiskName := MemberAnchor(V);
-  end;
+  // an MD5 of the qualified name and signature of every member; each member is independent of the others
+  TParallel.For(0, AProject.Members.Count - 1,
+    procedure(AIndex: Integer)
+    var
+      Mem, Val: TMemberDef;
+    begin
+      Mem := AProject.Members[AIndex];
+      Mem.DiskName := MemberAnchor(Mem);
+      for Val in Mem.EnumValues do
+        Val.DiskName := MemberAnchor(Val);
+    end);
   for G in AProject.Groups do
     G.DiskName := ConvertNameToFile('group__' + G.Name, Cs, False, True);
   for P in AProject.Pages do

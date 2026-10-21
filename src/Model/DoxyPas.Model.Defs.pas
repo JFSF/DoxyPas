@@ -19,21 +19,26 @@ type
   TMemberDef = class;
   TGroupDef = class;
 
+  { The lists of a definition are made when something is added to them (like the ones of TEntry): reading one that does
+    not exist gives a shared empty list that must not be changed (it raises); use the Write... function to add. }
   TDefinition = class
   strict private
     FScope: TScopeDef;
+    FGroups: TList<TGroupDef>;
+    function GetGroups: TList<TGroupDef>;
   public
     Name: string;
     Entry: TEntry;              // the declaration this definition was built from (not owned)
     Brief: string;              // after merging implementation docs, \copydoc and inheritance
     Detailed: string;
     DocInherited: Boolean;      // the documentation was inherited from an overridden member
-    Groups: TList<TGroupDef>;
     DiskName: string;           // output file name without extension (compounds) or anchor (members)
     ImplementationOnly: Boolean; // declared in the implementation section only
     constructor Create(const AName: string; AEntry: TEntry);
     destructor Destroy; override;
     property Scope: TScopeDef read FScope write FScope;
+    property Groups: TList<TGroupDef> read GetGroups;
+    function WriteGroups: TList<TGroupDef>;
     function QualifiedName: string; virtual;
     function IsDocumented: Boolean;
     function Protection: TProtection;
@@ -96,15 +101,22 @@ type
   end;
 
   TMemberDef = class(TDefinition)
+  strict private
+    FReimplementedBy: TList<TMemberDef>;
+    FEnumValues: TList<TMemberDef>;
+    function GetReimplementedBy: TList<TMemberDef>;
+    function GetEnumValues: TList<TMemberDef>;
   public
     Kind: TMemberKind;
     Impl: TEntry;                         // the implementation (routines): source location and docs
     Reimplements: TMemberDef;             // overridden / implemented member
-    ReimplementedBy: TList<TMemberDef>;
     ReadMember: TMemberDef;               // properties
     WriteMember: TMemberDef;
-    EnumValues: TList<TMemberDef>;        // enumerations
     EnumOwner: TMemberDef;                // enum values
+    property ReimplementedBy: TList<TMemberDef> read GetReimplementedBy;
+    property EnumValues: TList<TMemberDef> read GetEnumValues;        // enumerations
+    function WriteReimplementedBy: TList<TMemberDef>;
+    function WriteEnumValues: TList<TMemberDef>;
     constructor Create(const AName: string; AEntry: TEntry; AKind: TMemberKind);
     destructor Destroy; override;
     function QualifiedName: string; override;
@@ -136,6 +148,27 @@ uses
   System.SysUtils,
   System.Classes;
 
+type
+  TFrozenLists = class
+    procedure GroupChanged(Sender: TObject; const Item: TGroupDef; Action: TCollectionNotification);
+    procedure MemberChanged(Sender: TObject; const Item: TMemberDef; Action: TCollectionNotification);
+  end;
+
+var
+  Frozen: TFrozenLists;
+  EmptyGroups: TList<TGroupDef>;
+  EmptyMembers: TList<TMemberDef>;
+
+procedure TFrozenLists.GroupChanged(Sender: TObject; const Item: TGroupDef; Action: TCollectionNotification);
+begin
+  raise EInvalidOperation.Create('the shared empty list of groups was changed: use WriteGroups');
+end;
+
+procedure TFrozenLists.MemberChanged(Sender: TObject; const Item: TMemberDef; Action: TCollectionNotification);
+begin
+  raise EInvalidOperation.Create('a shared empty list of members was changed: use the Write... function');
+end;
+
 function MemberKindName(AKind: TMemberKind): string;
 const
   Names: array[TMemberKind] of string = ('function', 'variable', 'property', 'typedef', 'enumeration', 'enumvalue',
@@ -151,7 +184,6 @@ begin
   inherited Create;
   Name := AName;
   Entry := AEntry;
-  Groups := TList<TGroupDef>.Create;
   if AEntry <> nil then
   begin
     Brief := AEntry.Brief;
@@ -161,8 +193,19 @@ end;
 
 destructor TDefinition.Destroy;
 begin
-  Groups.Free;
+  FGroups.Free;
   inherited;
+end;
+
+function TDefinition.GetGroups: TList<TGroupDef>;
+begin
+  if FGroups <> nil then Result := FGroups else Result := EmptyGroups;
+end;
+
+function TDefinition.WriteGroups: TList<TGroupDef>;
+begin
+  if FGroups = nil then FGroups := TList<TGroupDef>.Create;
+  Result := FGroups;
 end;
 
 function TDefinition.QualifiedName: string;
@@ -299,15 +342,35 @@ constructor TMemberDef.Create(const AName: string; AEntry: TEntry; AKind: TMembe
 begin
   inherited Create(AName, AEntry);
   Kind := AKind;
-  ReimplementedBy := TList<TMemberDef>.Create;
-  EnumValues := TList<TMemberDef>.Create;
 end;
 
 destructor TMemberDef.Destroy;
 begin
-  EnumValues.Free;
-  ReimplementedBy.Free;
+  FEnumValues.Free;
+  FReimplementedBy.Free;
   inherited;
+end;
+
+function TMemberDef.GetReimplementedBy: TList<TMemberDef>;
+begin
+  if FReimplementedBy <> nil then Result := FReimplementedBy else Result := EmptyMembers;
+end;
+
+function TMemberDef.GetEnumValues: TList<TMemberDef>;
+begin
+  if FEnumValues <> nil then Result := FEnumValues else Result := EmptyMembers;
+end;
+
+function TMemberDef.WriteReimplementedBy: TList<TMemberDef>;
+begin
+  if FReimplementedBy = nil then FReimplementedBy := TList<TMemberDef>.Create;
+  Result := FReimplementedBy;
+end;
+
+function TMemberDef.WriteEnumValues: TList<TMemberDef>;
+begin
+  if FEnumValues = nil then FEnumValues := TList<TMemberDef>.Create;
+  Result := FEnumValues;
 end;
 
 function TMemberDef.QualifiedName: string;
@@ -355,5 +418,17 @@ begin
   Members.Free;
   inherited;
 end;
+
+initialization
+  Frozen := TFrozenLists.Create;
+  EmptyGroups := TList<TGroupDef>.Create;
+  EmptyGroups.OnNotify := Frozen.GroupChanged;
+  EmptyMembers := TList<TMemberDef>.Create;
+  EmptyMembers.OnNotify := Frozen.MemberChanged;
+
+finalization
+  EmptyMembers.Free;
+  EmptyGroups.Free;
+  Frozen.Free;
 
 end.

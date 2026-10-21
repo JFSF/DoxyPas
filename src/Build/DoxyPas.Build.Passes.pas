@@ -176,7 +176,7 @@ begin
       M.EnumOwner := E;
       M.ImplementationOnly := E.ImplementationOnly;
       FProject.Own(M);
-      E.EnumValues.Add(M);
+      E.WriteEnumValues.Add(M);
       AScope.AddSymbol(M); // enumeration values are visible in the enclosing scope
     end;
 end;
@@ -664,7 +664,7 @@ begin
           if O <> nil then
           begin
             M.Reimplements := O;
-            O.ReimplementedBy.Add(M);
+            O.WriteReimplementedBy.Add(M);
           end;
         end;
   finally
@@ -807,7 +807,7 @@ var
       if G.Members.IndexOf(ADef) < 0 then
       begin
         G.Members.Add(ADef);
-        ADef.Groups.Add(G);
+        ADef.WriteGroups.Add(G);
       end;
     end;
   end;

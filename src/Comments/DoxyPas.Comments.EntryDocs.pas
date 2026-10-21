@@ -37,7 +37,8 @@ begin
     end;
     AEntry.Brief := Info.Brief;
     AEntry.Detailed := Info.Detailed;
-    AEntry.Groups.AddRange(Info.Groups);
+    if Length(Info.Groups) > 0 then
+      AEntry.WriteGroups.AddRange(Info.Groups);
     if Info.IsInternal then Include(AEntry.Flags, efInternal);
     if Info.HideInitializer then Include(AEntry.Flags, efHideInitializer);
     if Info.ShowInitializer then Include(AEntry.Flags, efShowInitializer);

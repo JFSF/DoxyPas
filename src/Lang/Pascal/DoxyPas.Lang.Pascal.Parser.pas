@@ -137,7 +137,7 @@ type
     function NewEntry(AKind: TEntryKind; const AName: string; ANode: TSyntaxNode): TEntry;
     procedure TakeAttributes(AEntry: TEntry);
     procedure SetEnd(AEntry: TEntry; ATok: Integer);
-    procedure ReadArguments(AParams: TSyntaxNode; AArgs: TList<TArgument>);
+    procedure ReadArguments(AParams: TSyntaxNode; AEntry: TEntry);
     procedure ReadTypeParams(ANode: TSyntaxNode; AEntry: TEntry);
     function ReadAttributes(ANode: TSyntaxNode): string;
     procedure ReadDirectives(AEntry: TEntry; AFromTok: Integer);
@@ -246,7 +246,8 @@ end;
 
 procedure TEntryBuilder.TakeAttributes(AEntry: TEntry);
 begin
-  AEntry.Attributes.AddRange(FPendingAttrs);
+  if FPendingAttrs.Count > 0 then
+    AEntry.WriteAttributes.AddRange(FPendingAttrs);
   FPendingAttrs.Clear;
 end;
 
@@ -269,7 +270,7 @@ begin
   Result := FSrc.Slice(T + 1, E);
 end;
 
-procedure TEntryBuilder.ReadArguments(AParams: TSyntaxNode; AArgs: TList<TArgument>);
+procedure TEntryBuilder.ReadArguments(AParams: TSyntaxNode; AEntry: TEntry);
 var
   P: TSyntaxNode;
   A: TArgument;
@@ -299,7 +300,7 @@ begin
       if FSrc.IsSymbol(TypeEnd, '=') then
         A.DefaultText := FSrc.Slice(TypeEnd + 1, FSrc.ScanTo(TypeEnd + 1, ';)]', [], False));
     end;
-    AArgs.Add(A);
+    AEntry.WriteArgs.Add(A);
   end;
 end;
 
@@ -333,7 +334,7 @@ begin
           TP.Constraints := TP.Constraints + ', ';
         TP.Constraints := TP.Constraints + S;
       end;
-    AEntry.TypeParams.Add(TP);
+    AEntry.WriteTypeParams.Add(TP);
   end;
 end;
 
@@ -380,7 +381,7 @@ begin
     else if W = 'forward' then
       Include(AEntry.Flags, efForward)
     else
-      AEntry.Directives.Add(FSrc.Slice(T, E));
+      AEntry.WriteDirectives.Add(FSrc.Slice(T, E));
     if not FSrc.IsSymbol(E, ';') then
       Break;
     SetEnd(AEntry, E);
@@ -419,9 +420,9 @@ begin
   for U in ANode.ChildNodes do
     if U.Typ = ntUnit then
       if AImpl then
-        AUnit.UsesImplementation.Add(U.GetAttribute(anName))
+        AUnit.WriteUsesImplementation.Add(U.GetAttribute(anName))
       else
-        AUnit.UsesInterface.Add(U.GetAttribute(anName));
+        AUnit.WriteUsesInterface.Add(U.GetAttribute(anName));
 end;
 
 procedure TEntryBuilder.DoMethod(AParent: TEntry; ANode: TSyntaxNode; AProt: TProtection; AImpl: Boolean);
@@ -463,10 +464,10 @@ begin
     begin
       TP.Name := Copy(Name, Lt + 1, Length(Name) - Lt - 1);
       TP.Constraints := '';
-      E.TypeParams.Add(TP);
+      E.WriteTypeParams.Add(TP);
     end;
   end;
-  ReadArguments(ANode.FindNode(ntParameters), E.Args);
+  ReadArguments(ANode.FindNode(ntParameters), E);
   Ret := ANode.FindNode(ntReturnType);
   HeadEnd := FSrc.ScanTo(T, ';', [], False);
   if Ret <> nil then
@@ -539,7 +540,7 @@ begin
     Include(E.Flags, efClassMember);
     T := FSrc.NextCode(T);
   end;
-  ReadArguments(ANode.FindNode(ntParameters), E.Args);
+  ReadArguments(ANode.FindNode(ntParameters), E);
   // property Name [params] : Type [index N] [read X] [write Y] [stored Z] [default V] [implements I] ;
   Stop := FSrc.ScanTo(T + 1, ':;', ['read', 'write'], False);
   if FSrc.IsSymbol(Stop, ':') then
@@ -565,7 +566,7 @@ begin
       E.DeprecatedMsg := FSrc.Slice(Stop + 1, Nxt);
     end
     else
-      E.Directives.Add(FSrc.Slice(Stop, Nxt));
+      E.WriteDirectives.Add(FSrc.Slice(Stop, Nxt));
     if Nxt = Stop then
       Break;
     Stop := Nxt;
@@ -663,7 +664,7 @@ begin
   begin
     case N.Typ of
       ntType:
-        AEntry.Bases.Add(N.GetAttribute(anName));
+        AEntry.WriteBases.Add(N.GetAttribute(anName));
       ntHelper:
         if N.FindNode(ntType) <> nil then
           AEntry.HelperFor := N.FindNode(ntType).GetAttribute(anName);

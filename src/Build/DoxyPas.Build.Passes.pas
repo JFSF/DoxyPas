@@ -23,6 +23,7 @@ uses
   System.SysUtils,
   System.Classes,
   System.Generics.Collections,
+  System.Generics.Defaults,
   System.Hash,
   System.Threading,
   System.Character,
@@ -782,6 +783,15 @@ begin
   end;
 end;
 
+procedure SortByTitle(AList: TList<TGroupDef>);
+begin
+  AList.Sort(TComparer<TGroupDef>.Construct(
+    function(const A, B: TGroupDef): Integer
+    begin
+      Result := CompareText(A.Title, B.Title);
+    end));
+end;
+
 procedure AssignGroups(AProject: TProject);
 var
   D: TDefinition;
@@ -838,6 +848,13 @@ begin
             P.Subgroups.Add(G);
         end;
       end;
+  // SORT_GROUP_NAMES: the topics by their titles (else in the order they were declared)
+  if AProject.Options.SortGroupNames then
+  begin
+    SortByTitle(AProject.Groups);
+    for G in AProject.Groups do
+      SortByTitle(G.Subgroups);
+  end;
 end;
 
 function MemberAnchor(M: TMemberDef): string;

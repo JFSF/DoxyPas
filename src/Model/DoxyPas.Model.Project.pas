@@ -30,6 +30,8 @@ type
     CaseSenseNames: Boolean;         // file names: keep case (Linux) or escape upper case (Windows)
     UnitScopes: TArray<string>;      // prefixes tried for unit names ("Classes" -> "System.Classes")
     StripFromPath: TArray<string>;   // prefixes removed from file names in the output
+    FullPathNames: Boolean;          // FULL_PATH_NAMES: the path before the file names (after STRIP_FROM_PATH)
+    SortGroupNames: Boolean;         // SORT_GROUP_NAMES: the topics by title
     AutolinkSupport: Boolean;        // link words that match a class or unit name
     class function Default: TProjectOptions; static;
     class function FromConfig(AConfig: TConfig): TProjectOptions; static;
@@ -140,6 +142,7 @@ begin
 {$ENDIF}
   Result.UnitScopes := ['System', 'System.Win', 'Winapi', 'Vcl', 'FMX', 'Data', 'Xml', 'Soap', 'Web', 'Posix'];
   Result.StripFromPath := nil;
+  Result.FullPathNames := True;
   Result.AutolinkSupport := True;
 end;
 
@@ -167,6 +170,10 @@ begin
     Result.CaseSenseNames := SameText(Cs, 'YES');
   Result.UnitScopes := AConfig.GetList('PASCAL_UNIT_SCOPES');
   Result.StripFromPath := AConfig.GetList('STRIP_FROM_PATH');
+  if Length(Result.StripFromPath) = 0 then
+    Result.StripFromPath := [GetCurrentDir];        // blank: the directory the program is run from (like Doxygen)
+  Result.FullPathNames := AConfig.GetBool('FULL_PATH_NAMES');
+  Result.SortGroupNames := AConfig.GetBool('SORT_GROUP_NAMES');
   Result.AutolinkSupport := AConfig.GetBool('AUTOLINK_SUPPORT');
 end;
 
@@ -324,6 +331,8 @@ var
   Prefix, Full, Norm: string;
   Best: Integer;
 begin
+  if not Options.FullPathNames then
+    Exit(ExtractFileName(AFileName));         // FULL_PATH_NAMES = NO: only the name of the file
   Full := AFileName.Replace('\', '/');
   Best := 0;
   Result := Full;

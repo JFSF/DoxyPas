@@ -82,6 +82,8 @@ type
     FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
     FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
     FBriefMemberDesc, FRepeatBrief, FInlineInfo, FShowEnumValues: Boolean;
+    FCtorsFirst, FSortByScope, FShowUsedFiles: Boolean;
+    FTimestamp: string;            // TIMESTAMP: NO, YES / DATETIME or DATE
     FMaxInitLines, FEnumPerLine: Integer;
     FPageLayout: string;      // the layout page the member tables follow when it is not the one of the kind of definition ('group')
     FTabs: TDictionary<string, TLayoutEntry>;   // type of tab -> its <tab> element
@@ -199,6 +201,7 @@ type
     procedure WriteClassIndex;
     function IndexName(const AName: string): string;
     function ShowInitializer(E: TEntry): Boolean;
+    function MemberCompare(A, B: TMemberDef): Integer;
     procedure WriteHierarchy;
     procedure WriteUnitList;
     procedure WriteTopics;
@@ -313,6 +316,10 @@ begin
   FLayout := TLayout.Create(AConfig);
   FAlphabeticalIndex := AConfig.GetBool('ALPHABETICAL_INDEX');
   FIgnorePrefix := AConfig.GetList('IGNORE_PREFIX');
+  FCtorsFirst := AConfig.GetBool('SORT_MEMBERS_CTORS_1ST');
+  FSortByScope := AConfig.GetBool('SORT_BY_SCOPE_NAME');
+  FShowUsedFiles := AConfig.GetBool('SHOW_USED_FILES');
+  FTimestamp := UpperCase(AConfig.GetString('TIMESTAMP'));
   FBriefMemberDesc := AConfig.GetBool('BRIEF_MEMBER_DESC');
   FRepeatBrief := AConfig.GetBool('REPEAT_BRIEF');
   FInlineInfo := AConfig.GetBool('INLINE_INFO');
@@ -457,7 +464,12 @@ begin
   Blocks := TDictionary<string, Boolean>.Create;
   try
     Keys.Add('$title', Title);
-    Keys.Add('$doxygenversion', DoxyPasVersion);
+    if (FTimestamp = 'YES') or (FTimestamp = 'DATETIME') then
+      Keys.Add('$doxygenversion', DoxyPasVersion + ' (' + FormatDateTime('yyyy-mm-dd hh:nn', Now) + ')')
+    else if FTimestamp = 'DATE' then
+      Keys.Add('$doxygenversion', DoxyPasVersion + ' (' + FormatDateTime('yyyy-mm-dd', Now) + ')')
+    else
+      Keys.Add('$doxygenversion', DoxyPasVersion);
     Keys.Add('$projectname', HtmlEscape(FProjectName));
     Keys.Add('$projectnumber', HtmlEscape(FProjectNumber));
     Keys.Add('$projectbrief', HtmlEscape(FProjectBrief));
@@ -929,8 +941,18 @@ begin
     Result.Sort(TComparer<TMemberDef>.Construct(
       function(const A, B: TMemberDef): Integer
       begin
-        Result := CompareText(A.Name, B.Name);
+        Result := MemberCompare(A, B);
       end));
+end;
+
+// By name; with SORT_MEMBERS_CTORS_1ST the constructors and destructors come first.
+function THtmlGenerator.MemberCompare(A, B: TMemberDef): Integer;
+begin
+  if FCtorsFirst and (IsConstructor(A) <> IsConstructor(B)) then
+  begin
+    if IsConstructor(A) then Exit(-1) else Exit(1);
+  end;
+  Result := CompareText(A.Name, B.Name);
 end;
 
 // a member has an entry in the "documentation" part of the page
@@ -1629,7 +1651,7 @@ begin
         Docs.Sort(TComparer<TMemberDef>.Construct(
           function(const A, B: TMemberDef): Integer
           begin
-            Result := CompareText(A.Name, B.Name);
+            Result := MemberCompare(A, B);
           end));
       if AInUnit then Title := Tr(UnitGroups[G]) else Title := Tr(ClassGroups[G]);
       if (Title = '') and AInUnit then
@@ -2092,6 +2114,9 @@ begin
     W(Detail);
     T0 := Tick;
     W(DocSections(Vis, False));
+    if FShowUsedFiles and LayoutShows('class', 'usedfiles') and (C.Entry <> nil) and (C.Entry.FileName <> '') then
+      W('<hr/>The documentation for this class was generated from the following file:'#10'<ul>'#10'<li>' +
+        HtmlEscape(FProject.OutputPath(C.Entry.FileName)) + '</li>'#10'</ul>'#10);
     Add('class: DocSections', T0);
     T0 := Tick;
     EndPage(NavPathOf(C));
@@ -2738,7 +2763,10 @@ begin
     Sorted.Sort(TComparer<TClassDef>.Construct(
       function(const A, B: TClassDef): Integer
       begin
-        Result := CompareText(IndexName(A.Name), IndexName(B.Name));
+        if FSortByScope then
+          Result := CompareText(A.QualifiedName, B.QualifiedName)
+        else
+          Result := CompareText(IndexName(A.Name), IndexName(B.Name));
         if Result = 0 then
           Result := CompareText(A.Name, B.Name);
         if Result = 0 then

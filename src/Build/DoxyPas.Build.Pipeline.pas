@@ -98,6 +98,8 @@ end;
 function CollectInputFiles(AConfig: TConfig): TArray<string>;
 var
   Inputs, Patterns, Exclude, ExcludePatterns: TArray<string>;
+  Kept: TList<string>;
+  Pat: string;
   Files: TList<string>;
   Seen: TDictionary<string, Boolean>;
   Recursive: Boolean;
@@ -129,12 +131,19 @@ begin
   if Length(Inputs) = 0 then
     Inputs := ['.'];
   Opt := AConfig.Find('FILE_PATTERNS');
-  if (Opt <> nil) and Opt.IsDefault then
-    Patterns := ['*.pas', '*.dpr', '*.dpk', '*.pp', '*.lpr']   // Doxygen's default list is for C/C++
-  else
-    Patterns := AConfig.GetList('FILE_PATTERNS');
-  if (Opt <> nil) and Opt.IsDefault and AConfig.GetBool('PASCAL_PARSE_DFM') then
-    Patterns := Patterns + ['*.dfm', '*.fmx'];
+  Patterns := AConfig.GetList('FILE_PATTERNS');       // the default list is the one of Pascal (config.xml)
+  if (Opt <> nil) and Opt.IsDefault and not AConfig.GetBool('PASCAL_PARSE_DFM') then
+  begin
+    Kept := TList<string>.Create;
+    try
+      for Pat in Patterns do
+        if not SameText(Pat, '*.dfm') and not SameText(Pat, '*.fmx') then
+          Kept.Add(Pat);
+      Patterns := Kept.ToArray;
+    finally
+      Kept.Free;
+    end;
+  end;
   Recursive := AConfig.GetBool('RECURSIVE');
   Exclude := AConfig.GetList('EXCLUDE');
   ExcludePatterns := AConfig.GetList('EXCLUDE_PATTERNS');

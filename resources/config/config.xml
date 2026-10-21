@@ -602,42 +602,6 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='OPTIMIZE_OUTPUT_FOR_C' defval='0'>
-      <docs>
-<![CDATA[
- Set the \c OPTIMIZE_OUTPUT_FOR_C tag to \c YES if your project consists
- of C sources only. Doxygen will then generate output that is more tailored
- for C. For instance, some of the names that are used will be different.
- The list of all members will be omitted, etc.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='OPTIMIZE_OUTPUT_JAVA' defval='0'>
-      <docs>
-<![CDATA[
- Set the \c OPTIMIZE_OUTPUT_JAVA tag to \c YES if your project consists of Java or
- Python sources only. Doxygen will then generate output that is more tailored
- for that language. For instance, namespaces will be presented as packages,
- qualified scopes will look different, etc.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='OPTIMIZE_FOR_FORTRAN' defval='0'>
-      <docs>
-<![CDATA[
- Set the \c OPTIMIZE_FOR_FORTRAN tag to \c YES if your project consists of Fortran
- sources. Doxygen will then generate output that is tailored for Fortran.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='OPTIMIZE_OUTPUT_VHDL' defval='0'>
-      <docs>
-<![CDATA[
- Set the \c OPTIMIZE_OUTPUT_VHDL tag to \c YES if your project consists of VHDL
- sources. Doxygen will then generate output that is tailored for VHDL.
-]]>
-      </docs>
-    </option>
     <option type='bool' id='OPTIMIZE_OUTPUT_SLICE' defval='0'>
       <docs>
 <![CDATA[
@@ -736,36 +700,6 @@ Go to the <a href="commands.html">next</a> section or return to the
   will suppress auto links generation, if it is enabled via AUTOLINK_SUPPORT.
   This list does not affect links explicitly created using \# or
   the \ref cmdlink "\\link" or \ref cmdref "\\ref" commands.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='BUILTIN_STL_SUPPORT' defval='0'>
-      <docs>
-<![CDATA[
- If you use STL classes (i.e. `std::string`, `std::vector`, etc.) but do not want to
- include (a tag file for) the STL sources as input, then you should
- set this tag to \c YES in order to let Doxygen match functions declarations and
- definitions whose arguments contain STL classes (e.g. `func(std::string`); versus
- `func(std::string) {}`). This also makes the inheritance and collaboration
- diagrams that involve STL classes more complete and accurate.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='CPP_CLI_SUPPORT' defval='0'>
-      <docs>
-<![CDATA[
- If you use Microsoft's C++/CLI language, you should set this option to \c YES to
- enable parsing support.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='SIP_SUPPORT' defval='0'>
-      <docs>
-<![CDATA[
- Set the \c SIP_SUPPORT tag to \c YES if your project consists
- of <a href="https://www.riverbankcomputing.com/software">sip</a> sources only.
- Doxygen will parse them like normal C++ but will assume all classes use public
- instead of private inheritance when no explicit protection keyword is present.
 ]]>
       </docs>
     </option>
@@ -1613,66 +1547,23 @@ PATH=/Library/TeX/texbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 <![CDATA[
  If the value of the \ref cfg_input "INPUT" tag contains directories, you can use the
  \c FILE_PATTERNS tag to specify one or more wildcard patterns
- (like `*.cpp` and `*.h`) to filter out the source-files
+ (like `*.pas` and `*.dpr`) to filter out the source-files
  in the directories.<br>
- Note that for custom extensions or not directly supported extensions you also
- need to set \ref cfg_extension_mapping "EXTENSION_MAPPING" for the extension
- otherwise the files are not read by Doxygen.<br>
- Note the list of default checked file patterns might differ from the list of
- \ref default_file_extension_mapping "default file extension mappings".<br>
+ DoxyPas reads Object Pascal only (Delphi and Free Pascal), so the default list has
+ the extensions of those source files. The forms (`*.dfm`, `*.fmx`) are only read when
+ \ref cfg_pascal_parse_dfm "PASCAL_PARSE_DFM" is set to \c YES, and the include files
+ (`*.inc`) are left out: they are read through the units that include them.<br>
  If left blank the following patterns are tested:
 ]]>
       </docs>
-      <value name='*.c'/>
-      <value name='*.cc'/>
-      <value name='*.cxx'/>
-      <value name='*.cxxm'/>
-      <value name='*.cpp'/>
-      <value name='*.cppm'/>
-      <value name='*.ccm'/>
-      <value name='*.c++'/>
-      <value name='*.c++m'/>
-      <value name='*.java'/>
-      <value name='*.ii'/>
-      <value name='*.ixx'/>
-      <value name='*.ipp'/>
-      <value name='*.i++'/>
-      <value name='*.inl'/>
-      <value name='*.idl'/>
-      <value name='*.ddl'/>
-      <value name='*.odl'/>
-      <value name='*.h'/>
-      <value name='*.hh'/>
-      <value name='*.hxx'/>
-      <value name='*.hpp'/>
-      <value name='*.h++'/>
-      <value name='*.l'/>
-      <value name='*.cs'/>
-      <value name='*.d'/>
-      <value name='*.php'/>
-      <value name='*.php4'/>
-      <value name='*.php5'/>
-      <value name='*.phtml'/>
-      <value name='*.inc'/>
-      <value name='*.m'/>
-      <value name='*.markdown'/>
-      <value name='*.md'/>
-      <value name='*.mm'/>
-      <value name='*.dox' desc='(to be provided as Doxygen C comment)'/>
-      <value name='*.py'/>
-      <value name='*.pyw'/>
-      <value name='*.f90'/>
-      <value name='*.f95'/>
-      <value name='*.f03'/>
-      <value name='*.f08'/>
-      <value name='*.f18'/>
-      <value name='*.f'/>
-      <value name='*.for'/>
-      <value name='*.vhd'/>
-      <value name='*.vhdl'/>
-      <value name='*.ucf'/>
-      <value name='*.qsf'/>
-      <value name='*.ice'/>
+      <value name='*.pas'/>
+      <value name='*.dpr'/>
+      <value name='*.dpk'/>
+      <value name='*.pp'/>
+      <value name='*.p'/>
+      <value name='*.lpr'/>
+      <value name='*.dfm'/>
+      <value name='*.fmx'/>
     </option>
     <option type='bool' id='RECURSIVE' defval='0'>
       <docs>
@@ -4405,6 +4296,13 @@ This setting is not only used for dot files but also for msc temporary files.
 ]]>
       </docs>
     </option>
+    <option type='obsolete' orgtype='bool' id='OPTIMIZE_OUTPUT_FOR_C'/>
+    <option type='obsolete' orgtype='bool' id='OPTIMIZE_OUTPUT_JAVA'/>
+    <option type='obsolete' orgtype='bool' id='OPTIMIZE_FOR_FORTRAN'/>
+    <option type='obsolete' orgtype='bool' id='OPTIMIZE_OUTPUT_VHDL'/>
+    <option type='obsolete' orgtype='bool' id='BUILTIN_STL_SUPPORT'/>
+    <option type='obsolete' orgtype='bool' id='CPP_CLI_SUPPORT'/>
+    <option type='obsolete' orgtype='bool' id='SIP_SUPPORT'/>
     <option type='obsolete' orgtype='bool' id='USE_WINDOWS_ENCODING'/>
     <option type='obsolete' orgtype='bool' id='DETAILS_AT_TOP'/>
     <option type='obsolete' orgtype='string' id='QTHELP_FILE'/>

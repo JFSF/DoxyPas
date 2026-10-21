@@ -389,42 +389,6 @@ const
       'have to escape them by means of a backslash (\), this can lead to conflicts' + #10 +
       'with the commands \{ and \} for these it is advised to use the version @{ and' + #10 +
       '@} or use a double escape (\\{ and \\})'),
-    (Name: 'OPTIMIZE_OUTPUT_FOR_C';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources' + #10 +
-      'only. Doxygen will then generate output that is more tailored for C. For' + #10 +
-      'instance, some of the names that are used will be different. The list of all' + #10 +
-      'members will be omitted, etc.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'OPTIMIZE_OUTPUT_JAVA';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Set the OPTIMIZE_OUTPUT_JAVA tag to YES if your project consists of Java or' + #10 +
-      'Python sources only. Doxygen will then generate output that is more tailored' + #10 +
-      'for that language. For instance, namespaces will be presented as packages,' + #10 +
-      'qualified scopes will look different, etc.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'OPTIMIZE_FOR_FORTRAN';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Set the OPTIMIZE_FOR_FORTRAN tag to YES if your project consists of Fortran' + #10 +
-      'sources. Doxygen will then generate output that is tailored for Fortran.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'OPTIMIZE_OUTPUT_VHDL';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Set the OPTIMIZE_OUTPUT_VHDL tag to YES if your project consists of VHDL' + #10 +
-      'sources. Doxygen will then generate output that is tailored for VHDL.' + #10 +
-      'The default value is: NO.'),
     (Name: 'OPTIMIZE_OUTPUT_SLICE';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
@@ -533,36 +497,6 @@ const
       'AUTOLINK_SUPPORT. This list does not affect links explicitly created using #' + #10 +
       'or the \link or \ref commands.' + #10 +
       'This tag requires that the tag AUTOLINK_SUPPORT is set to YES.'),
-    (Name: 'BUILTIN_STL_SUPPORT';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If you use STL classes (i.e. std::string, std::vector, etc.) but do not want' + #10 +
-      'to include (a tag file for) the STL sources as input, then you should set this' + #10 +
-      'tag to YES in order to let Doxygen match functions declarations and' + #10 +
-      'definitions whose arguments contain STL classes (e.g. func(std::string);' + #10 +
-      'versus func(std::string) {}). This also makes the inheritance and' + #10 +
-      'collaboration diagrams that involve STL classes more complete and accurate.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'CPP_CLI_SUPPORT';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If you use Microsoft''s C++/CLI language, you should set this option to YES to' + #10 +
-      'enable parsing support.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'SIP_SUPPORT';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Set the SIP_SUPPORT tag to YES if your project consists of sip (see:' + #10 +
-      'https://www.riverbankcomputing.com/software) sources only. Doxygen will parse' + #10 +
-      'them like normal C++ but will assume all classes use public instead of private' + #10 +
-      'inheritance when no explicit protection keyword is present.' + #10 +
-      'The default value is: NO.'),
     (Name: 'IDL_PROPERTY_SUPPORT';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
@@ -1306,24 +1240,18 @@ const
      Kind: okList; OrgKind: okBool; Group: 3;
      Format: 'string'; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '*.c|*.cc|*.cxx|*.cxxm|*.cpp|*.cppm|*.ccm|*.c++|*.c++m|*.java|*.ii|*.ixx|*.ipp|*.i++|*.inl|*.idl|*.ddl|*.odl|*.h|*.hh|*.hxx|*.hpp|*.h++|*.l|*.cs|*.d|*.php|*.php4|*.php5|*.phtml|*.inc|*.m|*.markdown|*.md|*.mm|*.dox|*.py|*.pyw|*.f90|*.f95|*.f03|*.f08|*.f18|*.f|*.for|*.vhd|*.vhdl|*.ucf|*.qsf|*.ice';
+     Values: '*.pas|*.dpr|*.dpk|*.pp|*.p|*.lpr|*.dfm|*.fmx';
      Doc: 'If the value of the INPUT tag contains directories, you can use the' + #10 +
-      'FILE_PATTERNS tag to specify one or more wildcard patterns (like *.cpp and' + #10 +
-      '*.h) to filter out the source-files in the directories.' + #10 +
+      'FILE_PATTERNS tag to specify one or more wildcard patterns (like *.pas and' + #10 +
+      '*.dpr) to filter out the source-files in the directories.' + #10 +
       '' + #10 +
-      'Note that for custom extensions or not directly supported extensions you also' + #10 +
-      'need to set EXTENSION_MAPPING for the extension otherwise the files are not' + #10 +
-      'read by Doxygen.' + #10 +
+      'DoxyPas reads Object Pascal only (Delphi and Free Pascal), so the default list' + #10 +
+      'has the extensions of those source files. The forms (*.dfm, *.fmx) are only' + #10 +
+      'read when PASCAL_PARSE_DFM is set to YES, and the include files (*.inc) are' + #10 +
+      'left out: they are read through the units that include them.' + #10 +
       '' + #10 +
-      'Note the list of default checked file patterns might differ from the list of' + #10 +
-      'default file extension mappings.' + #10 +
-      '' + #10 +
-      'If left blank the following patterns are tested:*.c, *.cc, *.cxx, *.cxxm,' + #10 +
-      '*.cpp, *.cppm, *.ccm, *.c++, *.c++m, *.java, *.ii, *.ixx, *.ipp, *.i++, *.inl,' + #10 +
-      '*.idl, *.ddl, *.odl, *.h, *.hh, *.hxx, *.hpp, *.h++, *.l, *.cs, *.d, *.php,' + #10 +
-      '*.php4, *.php5, *.phtml, *.inc, *.m, *.markdown, *.md, *.mm, *.dox (to be' + #10 +
-      'provided as Doxygen C comment), *.py, *.pyw, *.f90, *.f95, *.f03, *.f08,' + #10 +
-      '*.f18, *.f, *.for, *.vhd, *.vhdl, *.ucf, *.qsf and *.ice.'),
+      'If left blank the following patterns are tested:*.pas, *.dpr, *.dpk, *.pp,' + #10 +
+      '*.p, *.lpr, *.dfm and *.fmx.'),
     (Name: 'RECURSIVE';
      Kind: okBool; OrgKind: okBool; Group: 3;
      Format: ''; Depends: '';
@@ -3672,6 +3600,48 @@ const
      Doc: 'The MSCFILE_DIRS tag can be used to specify one or more directories that' + #10 +
       'contain msc files that are included in the documentation (see the \mscfile' + #10 +
       'command).'),
+    (Name: 'OPTIMIZE_OUTPUT_FOR_C';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'OPTIMIZE_OUTPUT_JAVA';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'OPTIMIZE_FOR_FORTRAN';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'OPTIMIZE_OUTPUT_VHDL';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'BUILTIN_STL_SUPPORT';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'CPP_CLI_SUPPORT';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SIP_SUPPORT';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
     (Name: 'USE_WINDOWS_ENCODING';
      Kind: okObsolete; OrgKind: okBool; Group: 17;
      Format: ''; Depends: '';

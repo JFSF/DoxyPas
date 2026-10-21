@@ -38,6 +38,7 @@ uses
   DoxyPas.Model.Links,
   DoxyPas.Model.Calls,
   DoxyPas.Model.Dirs,
+  DoxyPas.Output.DotGraphs,
   DoxyPas.Output.HtmlTemplate,
   DoxyPas.Output.Translator,
   DoxyPas.Output.HtmlDoc,
@@ -62,21 +63,6 @@ type
     Named: string;    // shown in the expanded list of an ambiguous word
   end;
 
-  /// <summary>Builds the text of one dot graph; stops adding nodes at DOT_GRAPH_MAX_NODES.</summary>
-  TDotBuilder = class
-  strict private
-    FSB: TStringBuilder;
-    FIds: TDictionary<string, Integer>;
-    FMax: Integer;
-  public
-    constructor Create(const AName: string; AMaxNodes: Integer; const ARankDir: string);
-    destructor Destroy; override;
-    function Full: Boolean;
-    function Node(const AKey, ALabel, AUrl, AStyle: string): Integer;
-    procedure Edge(AFrom, ATo: Integer; const AAttrs: string);
-    function Finish: string;
-  end;
-
   THtmlGenerator = class
   strict private
     FProject: TProject;
@@ -98,11 +84,11 @@ type
     FPageFile, FPageTitle: string;
     FHasPages, FHasGroups, FHasClasses, FHasUnits: Boolean;
     FDotGraphs: Boolean;      // HAVE_DOT: draw the graphs (Windows only for now)
-    FPendingGraphs: TList<string>;   // .dot files written, not converted yet
+    FDot: TDotGraphs;
+    FRunner: TDotRunner;
     FDirs: TDirTree;          // SHOW_FILES: the directories of the unit files, nil when there is none
     FBodies: TBodyLocator;    // INLINE_SOURCES / CALL_GRAPH / CALLER_GRAPH: where the bodies are
     FCalls: TCallIndex;       // CALL_GRAPH / CALLER_GRAPH, nil otherwise
-    FDotPath: string;
     FRelations: Boolean;      // REFERENCES_RELATION / REFERENCED_BY_RELATION
     FInline: Boolean;         // INLINE_SOURCES: the body of each routine in its documentation
     FWordCache: TDictionary<string, string>;
@@ -148,13 +134,10 @@ type
     function DetailedBlock(ADef: TDefinition; AWithHeading: Boolean): string;
     function NavPathOf(ADef: TDefinition): string;
     // pages
-    function ClassDot(C: TClassDef; ACollab: Boolean): string;
-    function UnitDot(U: TUnitDef; AUsedBy: Boolean): string;
     function RunGraph(const ABase, ATitle, ADot: string): string;
     procedure FlushGraphs;
     function ClassGraph(C: TClassDef): string;
     function UnitGraph(U: TUnitDef): string;
-    function CallDot(M: TMemberDef; ACallers: Boolean): string;
     function MemberGraphs(M: TMemberDef): string;
     procedure WriteMainPage;
     procedure WriteClass(C: TClassDef);
@@ -218,102 +201,12 @@ const
   CProperties = 8; CGroups = 9; CPages = 10;
 
 {$IFDEF MSWINDOWS}
-// Runs a command line in ADir and waits for it; False when it could not be started or exited with a non-zero code.
-function RunTool(const ACmd, ADir: string): Boolean;
-var
-  SI: TStartupInfo;
-  PI: TProcessInformation;
-  Cmd: string;
-  Code: Cardinal;
-begin
-  Result := False;
-  ZeroMemory(@SI, SizeOf(SI));
-  SI.cb := SizeOf(SI);
-  Cmd := ACmd;
-  UniqueString(Cmd);
-  if CreateProcess(nil, PChar(Cmd), nil, nil, False, CREATE_NO_WINDOW, nil, PChar(ADir), SI, PI) then
-  begin
-    WaitForSingleObject(PI.hProcess, 600000);
-    GetExitCodeProcess(PI.hProcess, Code);
-    Result := Code = 0;
-    CloseHandle(PI.hProcess);
-    CloseHandle(PI.hThread);
-  end;
-end;
-
 // Runs hhc.exe on index.hhp and waits for it (it exits with 1 when the CHM was built).
 procedure RunHhc(const AHhc, ADir: string);
 begin
   RunTool('"' + AHhc + '" index.hhp', ADir);
 end;
 {$ENDIF}
-
-{$IFDEF POSIX}
-// Same for Linux: through the shell (system), in ADir, without output.
-function RunTool(const ACmd, ADir: string): Boolean;
-var
-  M: TMarshaller;
-begin
-  Result := _system(M.AsAnsi('cd ''' + ADir.Replace('''', '''\''''') + ''' && ' + ACmd + ' >/dev/null 2>&1').ToPointer) = 0;
-end;
-{$ENDIF}
-
-function DotQuote(const S: string): string;
-begin
-  Result := '"' + S.Replace('\', '\\').Replace('"', '\"') + '"';
-end;
-
-{ TDotBuilder }
-
-constructor TDotBuilder.Create(const AName: string; AMaxNodes: Integer; const ARankDir: string);
-begin
-  inherited Create;
-  FMax := AMaxNodes;
-  if FMax <= 0 then
-    FMax := MaxInt;
-  FSB := TStringBuilder.Create;
-  FIds := TDictionary<string, Integer>.Create;
-  FSB.Append('digraph ').Append(DotQuote(AName)).Append(' {'#10'  rankdir=').Append(ARankDir).Append(';'#10 +
-    '  bgcolor="transparent";'#10 +
-    '  edge [fontname="Helvetica", fontsize=10, labelfontname="Helvetica", labelfontsize=10];'#10 +
-    '  node [fontname="Helvetica", fontsize=10, shape=box, height=0.2, width=0.4, color="gray40", ' +
-    'fillcolor="white", style=filled];'#10);
-end;
-
-destructor TDotBuilder.Destroy;
-begin
-  FIds.Free;
-  FSB.Free;
-  inherited;
-end;
-
-function TDotBuilder.Full: Boolean;
-begin
-  Result := FIds.Count >= FMax;
-end;
-
-// Existing nodes are reused (AKey); a new one is created even when the graph is full so that edges stay valid.
-function TDotBuilder.Node(const AKey, ALabel, AUrl, AStyle: string): Integer;
-begin
-  if FIds.TryGetValue(AKey, Result) then
-    Exit;
-  Result := FIds.Count;
-  FIds.Add(AKey, Result);
-  FSB.Append('  n').Append(Result).Append(' [label=').Append(DotQuote(ALabel)).Append(AStyle);
-  if AUrl <> '' then
-    FSB.Append(', URL=').Append(DotQuote(AUrl)).Append(', target="_top"');
-  FSB.Append('];'#10);
-end;
-
-procedure TDotBuilder.Edge(AFrom, ATo: Integer; const AAttrs: string);
-begin
-  FSB.Append('  n').Append(AFrom).Append(' -> n').Append(ATo).Append(' [').Append(AAttrs).Append('];'#10);
-end;
-
-function TDotBuilder.Finish: string;
-begin
-  Result := FSB.Append('}'#10).ToString;
-end;
 
 { TNavNode }
 
@@ -357,7 +250,6 @@ begin
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
   FSource := AConfig.GetBool('SOURCE_BROWSER');
   FWordCache := TDictionary<string, string>.Create;
-  FPendingGraphs := TList<string>.Create;
   FDotGraphs := AConfig.GetBool('HAVE_DOT');
   FInline := AConfig.GetBool('INLINE_SOURCES');
   FRelations := AConfig.GetBool('REFERENCES_RELATION') or AConfig.GetBool('REFERENCED_BY_RELATION');
@@ -365,9 +257,12 @@ begin
     FBodies := TBodyLocator.Create(AProject, FLinks);
   if FRelations or (FDotGraphs and (AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH'))) then
     FCalls := TCallIndex.Create(FBodies, FLinks);
-  FDotPath := AConfig.GetString('DOT_PATH');
-  if FDotPath <> '' then
-    FDotPath := IncludeTrailingPathDelimiter(FDotPath);
+  FDot := TDotGraphs.Create(AProject, FLinks, AConfig, FCalls,
+    function(ADef: TDefinition): string
+    begin
+      Result := FDoc.DefUrl(ADef);
+    end);
+  FRunner := TDotRunner.Create(ADir, AConfig.GetString('DOT_PATH'), 'svg', AConfig.GetBool('DOT_CLEANUP'));
   FColors := THtmlColors.Parse(AConfig.GetString('HTML_COLORSTYLE'), AConfig.GetInt('HTML_COLORSTYLE_HUE'),
     AConfig.GetInt('HTML_COLORSTYLE_SAT'), AConfig.GetInt('HTML_COLORSTYLE_GAMMA'));
   FLight := HtmlResourceText('lightmode_settings.css');
@@ -407,11 +302,12 @@ begin
   FNavIndex.Free;
   FNav.Free;
   FDoc.Free;
+  FRunner.Free;
+  FDot.Free;
   FCalls.Free;
   FBodies.Free;
   FWordCache.Free;
   FDirs.Free;
-  FPendingGraphs.Free;
   FLinks.Free;
   inherited;
 end;
@@ -1292,209 +1188,19 @@ end;
 
 { ------------------------------------------------------------------ pages }
 
-// Doxygen's inheritance graph: all ancestors above the class, its descendants (three levels) below it.
-function THtmlGenerator.ClassDot(C: TClassDef; ACollab: Boolean): string;
-const
-  MaxDepth = 3;
-  InheritEdge = 'dir="back", color="midnightblue", style="solid"';
-var
-  G: TDotBuilder;
-
-  function ClassNode(X: TClassDef; ARoot: Boolean): Integer;
-  begin
-    if ARoot then
-      Result := G.Node(X.DiskName, X.Name, '', ', fillcolor="#bfbfbf"')
-    else
-      Result := G.Node(X.DiskName, X.Name, FDoc.DefUrl(X), '');
-  end;
-
-  procedure Ancestors(X: TClassDef; AId: Integer);
-  var
-    B: TBaseRef;
-    P: Integer;
-  begin
-    for B in X.Bases do
-    begin
-      if G.Full then
-        Exit;
-      if (B.ClassDef <> nil) and FLinks.IsLinkable(B.ClassDef) then
-      begin
-        P := ClassNode(B.ClassDef, False);
-        G.Edge(P, AId, InheritEdge);
-        Ancestors(B.ClassDef, P);
-      end
-      else
-      begin
-        P := G.Node('?' + B.Text, B.Text, '', '');
-        G.Edge(P, AId, InheritEdge);
-      end;
-    end;
-  end;
-
-  procedure Descendants(X: TClassDef; AId, ADepth: Integer);
-  var
-    D: TClassDef;
-    N: Integer;
-  begin
-    if ADepth > MaxDepth then
-      Exit;
-    for D in X.Derived do
-      if FLinks.IsLinkable(D) and not G.Full then
-      begin
-        N := ClassNode(D, False);
-        G.Edge(AId, N, InheritEdge);
-        Descendants(D, N, ADepth + 1);
-      end;
-  end;
-
-  // member of C -> project class named in its type
-  procedure Usages(AId: Integer);
-  var
-    Targets: TList<TClassDef>;
-    Labels: TDictionary<TClassDef, string>;
-    M: TMemberDef;
-    Mt: TMatch;
-    T: TLinkTarget;
-    X: TClassDef;
-    S: string;
-  begin
-    Targets := TList<TClassDef>.Create;
-    Labels := TDictionary<TClassDef, string>.Create;
-    try
-      for M in C.Members do
-        if (M.Kind in [memVariable, memProperty]) and (M.Entry.TypeText <> '') then
-          for Mt in TRegEx.Matches(M.Entry.TypeText, '[A-Za-z_][A-Za-z_0-9.]*') do
-          begin
-            T := FLinks.Resolve(Mt.Value, M);
-            if (T.Def is TClassDef) and (T.Def <> C) and FLinks.IsLinkable(T.Def) then
-            begin
-              X := TClassDef(T.Def);
-              if not Labels.TryGetValue(X, S) then
-              begin
-                Targets.Add(X);
-                Labels.Add(X, M.Name);
-              end
-              else if not ('|' + S.Replace(#10, '|') + '|').Contains('|' + M.Name + '|') then
-                Labels[X] := S + #10 + M.Name;
-            end;
-          end;
-      for X in Targets do
-        if not G.Full then
-          G.Edge(AId, ClassNode(X, False), 'color="darkorchid3", style="dashed", arrowhead="open", label=' +
-            DotQuote(Labels[X]));
-    finally
-      Labels.Free;
-      Targets.Free;
-    end;
-  end;
-
-var
-  Root: Integer;
-begin
-  G := TDotBuilder.Create(C.Name, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'TB');
-  try
-    Root := ClassNode(C, True);
-    Ancestors(C, Root);
-    if ACollab then
-      Usages(Root)
-    else
-      Descendants(C, Root, 1);
-    Result := G.Finish;
-  finally
-    G.Free;
-  end;
-end;
-
-// Include graphs of a unit: the units it uses (or, with AUsedBy, the units that use it).
-// shortcut: direct dependencies only (a transitive graph is unreadable beyond a handful of units), add a depth limit if wanted.
-function THtmlGenerator.UnitDot(U: TUnitDef; AUsedBy: Boolean): string;
-var
-  G: TDotBuilder;
-
-  procedure Walk(X: TUnitDef; AId: Integer);
-  var
-    S: string;
-    T: TUnitDef;
-    N: Integer;
-  begin
-    if AUsedBy then
-    begin
-      for T in X.UsedBy do
-        if FLinks.IsLinkable(T) and not G.Full then
-        begin
-          N := G.Node(T.DiskName, T.Name, FDoc.DefUrl(T), '');
-          G.Edge(N, AId, 'color="midnightblue", arrowhead="open"');
-        end;
-      Exit;
-    end;
-    for S in X.UsesInterfaceNames do
-    begin
-      if G.Full then
-        Exit;
-      T := FProject.FindUnit(S);
-      if (T <> nil) and FLinks.IsLinkable(T) then
-      begin
-        N := G.Node(T.DiskName, T.Name, FDoc.DefUrl(T), '');
-        G.Edge(AId, N, 'color="midnightblue", arrowhead="open"');
-      end
-      else
-        G.Edge(AId, G.Node('?' + S, S, '', ', color="gray60"'), 'color="midnightblue", arrowhead="open"');
-    end;
-  end;
-
-begin
-  G := TDotBuilder.Create(U.Name, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'LR');
-  try
-    Walk(U, G.Node(U.DiskName, U.Name, '', ', fillcolor="#bfbfbf"'));
-    Result := G.Finish;
-  finally
-    G.Free;
-  end;
-end;
-
-// Runs dot on ADot and returns the HTML block that shows the resulting SVG, or '' when dot fails.
+// The HTML block that shows the SVG of a graph; dot runs later, over many files at once (FlushGraphs): starting it
+// once per graph takes minutes on a big project.
 function THtmlGenerator.RunGraph(const ABase, ATitle, ADot: string): string;
 begin
-  // dot runs later, over many files at once (FlushGraphs): starting it once per graph takes minutes on a big project
-  TFile.WriteAllText(TPath.Combine(FDir, ABase + '.dot'), ADot, TUTF8Encoding.Create(False)); // dot 2.x rejects a BOM
-  FPendingGraphs.Add(ABase);
+  FRunner.Queue(ABase, ADot);
   Result := '<div class="dynheader">'#10 + ATitle + '</div>'#10'<div class="dyncontent">'#10 +
     '<div class="center"><object type="image/svg+xml" data="' + ABase + '.svg" class="inherit_graph">' +
     ATitle + '</object></div>'#10'</div>'#10;
 end;
 
-// Turns the pending .dot files into .svg: dot -Tsvg -O writes <name>.dot.svg for every file it is given.
 procedure THtmlGenerator.FlushGraphs;
-const
-  Chunk = 25;
-var
-  I, J: Integer;
-  Cmd, Dot, Svg: string;
 begin
-  I := 0;
-  while I < FPendingGraphs.Count do
-  begin
-    Cmd := '"' + FDotPath + 'dot" -Tsvg -O';
-    for J := I to Min(I + Chunk, FPendingGraphs.Count) - 1 do
-      Cmd := Cmd + ' "' + FPendingGraphs[J] + '.dot"';
-    RunTool(Cmd, FDir);
-    for J := I to Min(I + Chunk, FPendingGraphs.Count) - 1 do
-    begin
-      Dot := TPath.Combine(FDir, FPendingGraphs[J] + '.dot');
-      Svg := Dot + '.svg';
-      if TFile.Exists(Svg) then
-      begin
-        if TFile.Exists(TPath.Combine(FDir, FPendingGraphs[J] + '.svg')) then
-          TFile.Delete(TPath.Combine(FDir, FPendingGraphs[J] + '.svg'));
-        TFile.Move(Svg, TPath.Combine(FDir, FPendingGraphs[J] + '.svg'));
-        Inc(FFiles);
-      end;
-      if FConfig.GetBool('DOT_CLEANUP') then
-        TFile.Delete(Dot);
-    end;
-    Inc(I, Chunk);
-  end;
-  FPendingGraphs.Clear;
+  Inc(FFiles, FRunner.Flush);
 end;
 // The graphs of a class: inheritance (CLASS_GRAPH) and collaboration (COLLABORATION_GRAPH).
 function THtmlGenerator.ClassGraph(C: TClassDef): string;
@@ -1512,72 +1218,15 @@ begin
       Uses_ := True;
   if Uses_ and SameText(FConfig.GetString('CLASS_GRAPH'), 'YES') then
     Result := RunGraph(C.DiskName + '_inherit_graph', Format(Tr('Inheritance diagram for %s:'), [HtmlEscape(C.Name)]),
-      ClassDot(C, False));
+      FDot.ClassDot(C, False));
   if FConfig.GetBool('COLLABORATION_GRAPH') then
     for M in C.Members do
       if (M.Kind in [memVariable, memProperty]) and (M.Entry.TypeText <> '') then
       begin
         Result := Result + RunGraph(C.DiskName + '_coll_graph',
-          Format(Tr('Collaboration diagram for %s:'), [HtmlEscape(C.Name)]), ClassDot(C, True));
+          Format(Tr('Collaboration diagram for %s:'), [HtmlEscape(C.Name)]), FDot.ClassDot(C, True));
         Break;
       end;
-end;
-
-// Call graph of a routine (what it calls) or, with ACallers, its caller graph; two levels deep.
-// shortcut: depth 2, deeper chains make the graph unreadable; the calls are found by name (see DoxyPas.Model.Calls).
-function THtmlGenerator.CallDot(M: TMemberDef; ACallers: Boolean): string;
-const
-  MaxDepth = 2;
-var
-  G: TDotBuilder;
-
-  function NodeOf(X: TMemberDef; ARoot: Boolean): Integer;
-  var
-    Name, Style: string;
-  begin
-    Name := X.Name;
-    if X.Scope is TClassDef then
-      Name := X.Scope.Name + '.' + Name;
-    if ARoot then
-      Result := G.Node(X.DiskName, Name, '', ', fillcolor="#bfbfbf"')
-    else
-      Result := G.Node(X.DiskName, Name, FDoc.DefUrl(X), '');
-  end;
-
-  procedure Walk(X: TMemberDef; AId, ADepth: Integer);
-  var
-    L: TList<TMemberDef>;
-    T: TMemberDef;
-    N: Integer;
-  begin
-    if ADepth > MaxDepth then
-      Exit;
-    if ACallers then
-      L := FCalls.CallersOf(X)
-    else
-      L := FCalls.CallsOf(X);
-    if L = nil then
-      Exit;
-    for T in L do
-      if not G.Full then
-      begin
-        N := NodeOf(T, False);
-        if ACallers then
-          G.Edge(N, AId, 'color="midnightblue", arrowhead="open"')
-        else
-          G.Edge(AId, N, 'color="midnightblue", arrowhead="open"');
-        Walk(T, N, ADepth + 1);
-      end;
-  end;
-
-begin
-  G := TDotBuilder.Create(M.Name, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'LR');
-  try
-    Walk(M, NodeOf(M, True), 1);
-    Result := G.Finish;
-  finally
-    G.Free;
-  end;
 end;
 
 // "Here is the call graph for this function:" and the caller graph, when the routine has any.
@@ -1587,10 +1236,10 @@ begin
   if not FDotGraphs or (FCalls = nil) or (M.Kind <> memFunction) then
     Exit;
   if FConfig.GetBool('CALL_GRAPH') and (FCalls.CallsOf(M) <> nil) then
-    Result := RunGraph(M.DiskName + '_cgraph', Tr('Here is the call graph for this function:'), CallDot(M, False));
+    Result := RunGraph(M.DiskName + '_cgraph', Tr('Here is the call graph for this function:'), FDot.CallDot(M, False));
   if FConfig.GetBool('CALLER_GRAPH') and (FCalls.CallersOf(M) <> nil) then
     Result := Result + RunGraph(M.DiskName + '_icgraph', Tr('Here is the caller graph for this function:'),
-      CallDot(M, True));
+      FDot.CallDot(M, True));
 end;
 
 // The dependency graphs of a unit: what it uses and what uses it.
@@ -1604,7 +1253,7 @@ begin
     Exit;
   if FConfig.GetBool('INCLUDE_GRAPH') and (U.UsesInterfaceNames.Count > 0) then
     Result := RunGraph(U.DiskName + '_uses_graph', Format(Tr('Dependency graph for %s:'), [HtmlEscape(U.Name)]),
-      UnitDot(U, False));
+      FDot.UnitDot(U, False));
   Used := False;
   for T in U.UsedBy do
     if FLinks.IsLinkable(T) then
@@ -1612,7 +1261,7 @@ begin
   if Used and FConfig.GetBool('INCLUDED_BY_GRAPH') then
     Result := Result + RunGraph(U.DiskName + '_used_by_graph',
       Format(Tr('This graph shows which units directly or indirectly use this unit (%s):'), [HtmlEscape(U.Name)]),
-      UnitDot(U, True));
+      FDot.UnitDot(U, True));
 end;
 
 procedure THtmlGenerator.WriteMainPage;
@@ -3202,7 +2851,7 @@ var
   D: TDirDef;
 begin
   TDirectory.CreateDirectory(FDir);
-  if FDotGraphs and not RunTool('"' + FDotPath + 'dot" -V', FDir) then
+  if FDotGraphs and not FRunner.Available then
   begin
     FDotGraphs := False;
     Warn('', 0, 'HAVE_DOT = YES, but dot could not be run (set DOT_PATH or put Graphviz on the PATH): no graphs');

@@ -74,7 +74,9 @@ type
     FFiles: Integer;
     FColors: THtmlColors;
     FLight, FDark: string;
-    FTree, FSearch, FNoIndex, FSidebar, FFold, FDynSec, FClip: Boolean;
+    FTree, FSearch, FNoIndex, FDynMenus, FSidebar, FFold, FDynSec, FClip: Boolean;
+    FMenu: TNavNode;          // the tabs, for HTML_DYNAMIC_MENUS = NO
+    FPageMenu: TDictionary<string, TPair<string, string>>;   // page -> the URL bases of its tab and sub-tab
     FSortDocs, FSortBrief: Boolean;
     FProjectName, FProjectNumber, FProjectBrief, FProjectLogo, FProjectIcon, FStyleSheet: string;
     FExtraCss: TArray<string>;
@@ -104,6 +106,9 @@ type
     function SearchBoxHtml: string;
     function ConfigScript: string;
     procedure QuickLinks(AMenu: Boolean);
+    procedure BuildMenu;
+    procedure BuildPageMenu;
+    procedure StaticTabs;
     procedure SplitBar(const AMembersFile: string);
     procedure BeginPage(const AFile, ATitle: string; const AMembersFile: string = '');
     procedure EndPage(const ANavPath: string = '');
@@ -273,6 +278,8 @@ begin
   FTree := AConfig.GetBool('GENERATE_TREEVIEW');
   FSearch := AConfig.GetBool('SEARCHENGINE');
   FNoIndex := AConfig.GetBool('DISABLE_INDEX');
+  FDynMenus := AConfig.GetBool('HTML_DYNAMIC_MENUS');
+  FPageMenu := TDictionary<string, TPair<string, string>>.Create;
   FSidebar := AConfig.GetBool('FULL_SIDEBAR') and FTree;
   FFold := AConfig.GetBool('HTML_CODE_FOLDING');
   FDynSec := AConfig.GetBool('HTML_DYNAMIC_SECTIONS');
@@ -306,6 +313,8 @@ begin
   FNav.Free;
   FDoc.Free;
   FRunner.Free;
+  FMenu.Free;
+  FPageMenu.Free;
   FDot.Free;
   FCalls.Free;
   FBodies.Free;
@@ -464,7 +473,7 @@ function THtmlGenerator.ConfigScript: string;
 begin
   Result := '<script type="application/json" id="doxygen-config">'#10'{'#10'  "relPath": "",'#10 +
     '  "generateTreeView": ' + B(FTree) + ','#10'  "searchEngine": ' + B(FSearch) + ','#10 +
-    '  "serverBasedSearch": false,'#10'  "disableIndex": ' + B(FNoIndex) + ','#10'  "dynamicMenus": true,'#10 +
+    '  "serverBasedSearch": false,'#10'  "disableIndex": ' + B(FNoIndex) + ','#10'  "dynamicMenus": ' + B(FDynMenus) + ','#10 +
     '  "fullSidebar": ' + B(FSidebar) + #10'}'#10'</script>'#10;
 end;
 
@@ -473,6 +482,13 @@ begin
   W(ConfigScript);
   if not AMenu then
     Exit;
+  if not FDynMenus then
+  begin
+    StaticTabs;
+    if FTree and FSidebar then
+      W('<div id="container"><div id="doc-content">'#10);
+    Exit;
+  end;
   W('<script type="text/javascript" src="menudata.js"></script>'#10);
   W('<script type="text/javascript" src="menu.js"></script>'#10);
   W('<div id="main-nav-mobile">'#10);
@@ -488,6 +504,122 @@ begin
   W('    </li>'#10'  </ul>'#10'</div><!-- main-nav -->'#10);
   if FTree and FSidebar then
     W('<div id="container"><div id="doc-content">'#10);
+end;
+
+// The tabs of the menu (the same entries as menudata.js): Main Page, Related Pages, Topics, Units, Classes.
+procedure THtmlGenerator.BuildMenu;
+var
+  N: TNavNode;
+begin
+  FMenu := TNavNode.Create('', '');
+  FMenu.Add(Tr('Main Page'), 'index');
+  if FHasPages then
+    FMenu.Add(Tr('Related Pages'), 'pages');
+  if FHasGroups then
+    FMenu.Add(Tr('Topics'), 'topics');
+  if FHasUnits then
+  begin
+    N := FMenu.Add(Tr('Units'), 'namespaces');
+    N.Add(Tr('Unit List'), 'namespaces');
+    if FDirs <> nil then
+      N.Add(Tr('Directory Hierarchy'), 'dirs');
+  end;
+  if FHasClasses then
+  begin
+    N := FMenu.Add(Tr('Classes'), 'annotated');
+    N.Add(Tr('Class List'), 'annotated');
+    N.Add(Tr('Class Index'), 'classes');
+    N.Add(Tr('Class Hierarchy'), 'hierarchy');
+    N.Add(Tr('Class Members'), 'functions');
+  end;
+end;
+
+// Which tab and which sub-tab a page belongs to: AFile (without the extension) -> the URLs of the entries of the menu.
+procedure THtmlGenerator.BuildPageMenu;
+
+  procedure Put(const AFile, ATop, ASub: string);
+  begin
+    FPageMenu.AddOrSetValue(AFile, TPair<string, string>.Create(ATop, ASub));
+  end;
+
+var
+  P: TPageDef;
+  G: TGroupDef;
+  U: TUnitDef;
+  C: TClassDef;
+  D: TDirDef;
+begin
+  Put('index', 'index', '');
+  Put('pages', 'pages', '');
+  for P in FProject.Pages do
+    if not P.IsMainPage then
+      Put(P.DiskName, 'pages', '');
+  Put('topics', 'topics', '');
+  for G in FProject.Groups do
+    Put(G.DiskName, 'topics', '');
+  Put('namespaces', 'namespaces', 'namespaces');
+  for U in FProject.Units do
+  begin
+    Put(U.DiskName, 'namespaces', 'namespaces');
+    Put(U.DiskName + '_source', 'namespaces', 'namespaces');
+  end;
+  if FDirs <> nil then
+  begin
+    Put('dirs', 'namespaces', 'dirs');
+    for D in FDirs.All do
+      Put(D.DiskName, 'namespaces', 'dirs');
+  end;
+  Put('annotated', 'annotated', 'annotated');
+  Put('classes', 'annotated', 'classes');
+  Put('hierarchy', 'annotated', 'hierarchy');
+  Put('functions', 'annotated', 'functions');
+  for C in FProject.Classes do
+  begin
+    Put(C.DiskName, 'annotated', 'annotated');
+    Put(C.DiskName + '-members', 'annotated', 'annotated');
+  end;
+end;
+
+// HTML_DYNAMIC_MENUS = NO: the tabs are part of every page (navrow1 and, below the current tab, navrow2).
+procedure THtmlGenerator.StaticTabs;
+var
+  Hit: TPair<string, string>;
+  Top, N: TNavNode;
+
+  procedure Row(const AId, AClass: string; AItems: TObjectList<TNavNode>; const ACurrent: string; ASearch: Boolean);
+  var
+    Item: TNavNode;
+  begin
+    W('  <div id="' + AId + '" class="' + AClass + '">'#10'    <ul class="tablist">'#10);
+    for Item in AItems do
+    begin
+      if Item.Url = ACurrent then
+        W('      <li class="current">')
+      else
+        W('      <li>');
+      W('<a href="' + Item.Url + FExt + '"><span>' + HtmlEscape(Item.Name).Replace(' ', '&#160;') + '</span></a></li>'#10);
+    end;
+    if ASearch and FSearch and not (FTree and FSidebar) then
+      W('      <li>'#10 + SearchBoxHtml + '      </li>'#10);
+    W('    </ul>'#10'  </div>'#10);
+  end;
+
+begin
+  if FMenu = nil then
+    BuildMenu;
+  Top := nil;
+  if FPageMenu.TryGetValue(FPageFile, Hit) then
+    for N in FMenu.Kids do
+      if N.Url = Hit.Key then
+        Top := N;
+  W('<div id="main-nav">'#10);
+  if Top <> nil then
+    Row('navrow1', 'tabs', FMenu.Kids, Top.Url, True)
+  else
+    Row('navrow1', 'tabs', FMenu.Kids, '', True);
+  if (Top <> nil) and (Top.Kids.Count > 0) then
+    Row('navrow2', 'tabs2', Top.Kids, Hit.Value, False);
+  W('</div><!-- main-nav -->'#10);
 end;
 
 procedure THtmlGenerator.SplitBar(const AMembersFile: string);
@@ -2292,9 +2424,12 @@ begin
       TFile.Copy(S, TPath.Combine(FDir, ExtractFileName(S)), True);
       Inc(FFiles);
     end;
-  SaveText('tabs.css', ApplyColorStyle(HtmlResourceText('tabs.css'), FColors, FLight, FDark));
+  if FDynMenus then
+    SaveText('tabs.css', ApplyColorStyle(HtmlResourceText('tabs.css'), FColors, FLight, FDark))
+  else
+    SaveText('tabs.css', ApplyColorStyle(HtmlResourceText('fixed_tabs.css'), FColors, FLight, FDark));
   SaveText('navtree.css', ApplyColorStyle(HtmlResourceText('navtree.css'), FColors, FLight, FDark));
-  if not FNoIndex then
+  if FDynMenus and not FNoIndex then
     SaveText('menu.js', HtmlResourceText('menu.js'));
   if FClip then
     SaveText('clipboard.js', HtmlResourceText('clipboard.js').Replace('$copy_to_clipboard_text', Tr('Copy to clipboard')));
@@ -2318,6 +2453,7 @@ begin
       if FColors.Style = csToggle then Css := HtmlResourceText('search_nomenu_toggle.css')
       else Css := HtmlResourceText('search_nomenu.css');
     end
+    else if not FDynMenus then Css := HtmlResourceText('search_fixedtabs.css')
     else Css := HtmlResourceText('search.css');
     Css := Css + HtmlResourceText('search_common.css');
     Dest := Css.Replace('$doxygenversion', DoxyPasVersion);
@@ -2342,7 +2478,7 @@ var
   end;
 
 begin
-  if FNoIndex then
+  if FNoIndex or not FDynMenus then
     Exit;
   SB := TStringBuilder.Create;
   try
@@ -3054,6 +3190,7 @@ begin
     FMathJax := MathJaxScript;
     Warn('', 0, 'latex or dvisvgm not found: the formulas are shown with MathJax (set USE_MATHJAX = YES to silence this)');
   end;
+  BuildPageMenu;
   WriteStatic;
   WriteMainPage;
   for C in FProject.Classes do

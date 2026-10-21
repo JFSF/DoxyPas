@@ -201,6 +201,7 @@ type
     procedure WriteClassIndex;
     function IndexName(const AName: string): string;
     function ShowInitializer(E: TEntry): Boolean;
+    procedure CopyIntoOutput(const AFile: string);
     function MemberCompare(A, B: TMemberDef): Integer;
     procedure WriteHierarchy;
     procedure WriteUnitList;
@@ -286,6 +287,8 @@ begin
   if FExt[1] <> '.' then
     FExt := '.' + FExt;
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
+  FDoc.ObfuscateEmails := AConfig.GetBool('OBFUSCATE_EMAILS');
+  FDoc.ExternalLinksInWindow := AConfig.GetBool('EXT_LINKS_IN_WINDOW');
   FSource := AConfig.GetBool('SOURCE_BROWSER');
   FWordCache := TDictionary<string, string>.Create;
   FDotGraphs := AConfig.GetBool('HAVE_DOT');
@@ -1183,6 +1186,15 @@ end;
 
 // The initial value of a variable or constant is shown unless \hideinitializer, or when it has more lines than
 // MAX_INITIALIZER_LINES (0: never) and there is no \showinitializer.
+// A file of the configuration (style sheet, logo, extra file) copied to the HTML directory; the paths may have "/".
+procedure THtmlGenerator.CopyIntoOutput(const AFile: string);
+var
+  Src: string;
+begin
+  Src := AFile.Replace('/', PathDelim);
+  TFile.Copy(Src, TPath.Combine(FDir, ExtractFileName(Src)), True);
+end;
+
 function THtmlGenerator.ShowInitializer(E: TEntry): Boolean;
 var
   Lines, I: Integer;
@@ -2971,13 +2983,19 @@ begin
   for S in FExtraCss do
     if (S <> '') and TFile.Exists(S) then
     begin
-      TFile.Copy(S, TPath.Combine(FDir, ExtractFileName(S)), True);
+      CopyIntoOutput(S);
+      Inc(FFiles);
+    end;
+  for S in FConfig.GetList('HTML_EXTRA_FILES') do       // copied as they are
+    if (S <> '') and TFile.Exists(S) then
+    begin
+      CopyIntoOutput(S);
       Inc(FFiles);
     end;
   for S in [FProjectLogo, FProjectIcon] do
     if (S <> '') and TFile.Exists(S) then
     begin
-      TFile.Copy(S, TPath.Combine(FDir, ExtractFileName(S)), True);
+      CopyIntoOutput(S);
       Inc(FFiles);
     end;
   if FDynMenus then

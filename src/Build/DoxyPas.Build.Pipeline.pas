@@ -81,6 +81,22 @@ begin
   Result := MatchAt(APattern.Replace('\', '/'), AText.Replace('\', '/'), 1, 1);
 end;
 
+// Is the file, or a directory between it and ARoot, a symbolic link? (EXCLUDE_SYMLINKS)
+function IsUnderSymlink(const AFile, ARoot: string): Boolean;
+var
+  P, R: string;
+begin
+  R := ExcludeTrailingPathDelimiter(TPath.GetFullPath(ARoot));
+  P := TPath.GetFullPath(AFile);
+  while (P <> '') and (Length(P) > Length(R)) do
+  begin
+    if TFileAttribute.faSymLink in TFile.GetAttributes(P) then
+      Exit(True);
+    P := ExtractFileDir(P);
+  end;
+  Result := False;
+end;
+
 function IsExcluded(const APath: string; const AExclude, APatterns: TArray<string>): Boolean;
 var
   E, P, Norm: string;
@@ -101,6 +117,7 @@ var
   Inputs, Patterns, Exclude, ExcludePatterns: TArray<string>;
   Kept: TList<string>;
   Pat: string;
+  NoSymlinks: Boolean;
   Files: TList<string>;
   Seen: TDictionary<string, Boolean>;
   Recursive: Boolean;
@@ -146,6 +163,7 @@ begin
     end;
   end;
   Recursive := AConfig.GetBool('RECURSIVE');
+  NoSymlinks := AConfig.GetBool('EXCLUDE_SYMLINKS');
   Exclude := AConfig.GetList('EXCLUDE');
   ExcludePatterns := AConfig.GetList('EXCLUDE_PATTERNS');
   if Recursive then Opt2 := TSearchOption.soAllDirectories else Opt2 := TSearchOption.soTopDirectoryOnly;
@@ -156,7 +174,7 @@ begin
       if TDirectory.Exists(In_) then
       begin
         for F in TDirectory.GetFiles(In_, '*', Opt2) do
-          if MatchesPatterns(TPath.GetFileName(F)) then
+          if MatchesPatterns(TPath.GetFileName(F)) and not (NoSymlinks and IsUnderSymlink(F, In_)) then
             AddFile(F);
       end
       else if TFile.Exists(In_) then

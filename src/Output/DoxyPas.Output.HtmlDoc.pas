@@ -15,6 +15,7 @@ uses
 type
   THtmlDocWriter = class
   strict private
+    FObfuscateEmails, FExternalInWindow: Boolean;
     FLinks: TLinkResolver;
     FExt: string;
     FScope: TDefinition;
@@ -39,6 +40,10 @@ type
   public
     constructor Create(ALinks: TLinkResolver; const AExt: string);
     destructor Destroy; override;
+    /// <summary>OBFUSCATE_EMAILS: the @ of the e-mail addresses is written as a character reference.</summary>
+    property ObfuscateEmails: Boolean read FObfuscateEmails write FObfuscateEmails;
+    /// <summary>EXT_LINKS_IN_WINDOW: the links to other projects (tag files) open in another window.</summary>
+    property ExternalLinksInWindow: Boolean read FExternalInWindow write FExternalInWindow;
     /// <summary>Formulas are images (formula_N.svg, made from FormulaTex) instead of MathJax markup.</summary>
     property ImageFormulas: Boolean read FImageFormulas write FImageFormulas;
     /// <summary>The TeX of the formulas written so far, in the order of their numbers: 'i' + TeX for an inline formula,
@@ -61,6 +66,7 @@ type
 implementation
 
 uses
+  System.StrUtils,
   System.Classes,
   DoxyPas.Core.Timing,
   DoxyPas.Doc.Parser,
@@ -122,7 +128,8 @@ end;
 function THtmlDocWriter.RefLink(const ADisplay: string; const ATarget: TLinkTarget): string;
 begin
   if ATarget.External then
-    Result := '<a class="elRef" href="' + HtmlEscape(UrlOf(ATarget)) + '">' + HtmlEscape(ADisplay) + '</a>'
+    Result := '<a class="elRef" href="' + HtmlEscape(UrlOf(ATarget)) + '"' + IfThen(FExternalInWindow, ' target="_blank"', '') +
+      '>' + HtmlEscape(ADisplay) + '</a>'
   else
     Result := '<a class="el" href="' + HtmlEscape(UrlOf(ATarget)) + '">' + HtmlEscape(ADisplay) + '</a>';
 end;
@@ -222,7 +229,11 @@ begin
       end;
     dnUrl:
       if ANode.Name = 'email' then
-        Result := '<a href="mailto:' + HtmlEscape(ANode.Text) + '">' + HtmlEscape(ANode.Text) + '</a>'
+        if FObfuscateEmails then
+          Result := '<a href="mailto:' + HtmlEscape(ANode.Text).Replace('@', '&#64;') + '">' +
+            HtmlEscape(ANode.Text).Replace('@', '&#64;') + '</a>'
+        else
+          Result := '<a href="mailto:' + HtmlEscape(ANode.Text) + '">' + HtmlEscape(ANode.Text) + '</a>'
       else
         Result := '<a href="' + HtmlEscape(ANode.Text) + '">' + HtmlEscape(ANode.Text) + '</a>';
     dnLink:

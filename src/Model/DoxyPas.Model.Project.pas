@@ -30,6 +30,7 @@ type
     CaseSenseNames: Boolean;         // file names: keep case (Linux) or escape upper case (Windows)
     UnitScopes: TArray<string>;      // prefixes tried for unit names ("Classes" -> "System.Classes")
     StripFromPath: TArray<string>;   // prefixes removed from file names in the output
+    ExcludeSymbols: TArray<string>;  // EXCLUDE_SYMBOLS: wildcard patterns for qualified names (Unit.TClass.Method)
     FullPathNames: Boolean;          // FULL_PATH_NAMES: the path before the file names (after STRIP_FROM_PATH)
     SortGroupNames: Boolean;         // SORT_GROUP_NAMES: the topics by title
     AutolinkSupport: Boolean;        // link words that match a class or unit name
@@ -95,6 +96,7 @@ function PlainName(const AName: string): string;
 implementation
 
 uses
+  System.Masks,
   System.SysUtils;
 
 function PlainName(const AName: string): string;
@@ -173,6 +175,7 @@ begin
   if Length(Result.StripFromPath) = 0 then
     Result.StripFromPath := [GetCurrentDir];        // blank: the directory the program is run from (like Doxygen)
   Result.FullPathNames := AConfig.GetBool('FULL_PATH_NAMES');
+  Result.ExcludeSymbols := AConfig.GetList('EXCLUDE_SYMBOLS');
   Result.SortGroupNames := AConfig.GetBool('SORT_GROUP_NAMES');
   Result.AutolinkSupport := AConfig.GetBool('AUTOLINK_SUPPORT');
 end;
@@ -482,6 +485,7 @@ end;
 
 function TProject.IsVisible(ADef: TDefinition): Boolean;
 var
+  P: string;
   E: TDefinition;
   M: TMemberDef;
   C: TClassDef;
@@ -491,6 +495,9 @@ begin
     Exit;
   if (ADef.Entry <> nil) and (efInternal in ADef.Entry.Flags) and not Options.InternalDocs then
     Exit;
+  for P in Options.ExcludeSymbols do
+    if MatchesMask(ADef.QualifiedName, P) then
+      Exit;
   if ADef is TUnitDef then
   begin
     if Options.ExtractAll or ADef.IsDocumented then

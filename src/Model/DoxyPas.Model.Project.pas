@@ -48,7 +48,10 @@ type
     FOwned: TObjectList<TDefinition>;
     FExternals: TDictionary<string, TExternalRef>;
     FUnitByName: TDictionary<string, TUnitDef>;
+    FGlobal: TDictionary<string, TDefinition>;   // GlobalSymbol: the first symbol of every name in any unit
+    FGlobalVersion: Integer;
     FGroupByName: TDictionary<string, TGroupDef>;
+    function GlobalSymbol(const AName: string): TDefinition;
     function LookupSimple(const AName: string; AScope: TDefinition): TDefinition;
     function LookupMember(AScope: TDefinition; const AName: string; AVisited: TList<TDefinition>): TDefinition;
   public
@@ -184,6 +187,7 @@ end;
 
 destructor TProject.Destroy;
 begin
+  FGlobal.Free;
   Warnings.Free;
   Pages.Free;
   Groups.Free;
@@ -239,6 +243,27 @@ begin
   Own(APage);
   Pages.Add(APage);
   Result := APage;
+end;
+
+// The first definition called AName among the symbols of all units, in the order of the units. The index is made when
+// it is first needed and again when a symbol has been added since: looking at every unit for every word of a text that
+// is not a name (most of them) took more time than anything else when the project has thousands of units.
+function TProject.GlobalSymbol(const AName: string): TDefinition;
+var
+  U: TUnitDef;
+begin
+  if (FGlobal = nil) or (FGlobalVersion <> TScopeDef.SymbolVersion) then
+  begin
+    if FGlobal = nil then
+      FGlobal := TDictionary<string, TDefinition>.Create
+    else
+      FGlobal.Clear;
+    for U in Units do
+      U.FirstSymbolsInto(FGlobal);
+    FGlobalVersion := TScopeDef.SymbolVersion;
+  end;
+  if not FGlobal.TryGetValue(LowerCase(AName), Result) then
+    Result := nil;
 end;
 
 function TProject.FindUnit(const AName: string): TUnitDef;
@@ -387,12 +412,7 @@ begin
     Result := FindUnit(AName);
     if Result = nil then
       // search everywhere as a last resort (documentation often refers to types of units that are not "used")
-      for U in Units do
-      begin
-        L := U.Find(AName);
-        if (L <> nil) and (L.Count > 0) then
-          Exit(L[0]);
-      end;
+      Result := GlobalSymbol(AName);
   finally
     Visited.Free;
   end;

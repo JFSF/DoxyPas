@@ -15,6 +15,7 @@ uses
   System.Classes,
   System.IOUtils,
   DoxyPas.Core.Version,
+  DoxyPas.Core.Timing,
   DoxyPas.Resources.Layout,
   DoxyPas.Core.Log,
   DoxyPas.Config,
@@ -183,7 +184,9 @@ begin
   Out_ := TPath.GetFullPath(Out_);
   if not Quiet then
     Writeln('Searching for source files...');
+  Lap('start');
   Files := CollectInputFiles(AConfig);
+  Lap('collect input files');
   if Length(Files) = 0 then
   begin
     Error('', 0, 'no input files found (check INPUT, FILE_PATTERNS and RECURSIVE)');
@@ -199,6 +202,7 @@ begin
       if not Quiet then
         Writeln('Generating XML output...');
       Count := GenerateXml(Project, AConfig, Xml);
+      Lap('output: xml');
       if not Quiet then
         Writeln(Format('%d files written to %s', [Count, Xml]));
     end;
@@ -217,6 +221,7 @@ begin
       if not Quiet then
         Writeln('Generating HTML output...');
       Count := GenerateHtml(Project, AConfig, Xml);
+      Lap('output: html');
       if not Quiet then
         Writeln(Format('%d files written to %s', [Count, Xml]));
     end;
@@ -226,6 +231,7 @@ begin
       if not Quiet then
         Writeln('Generating LaTeX output...');
       Count := GenerateLatex(Project, AConfig, Xml);
+      Lap('output: latex');
       if not Quiet then
         Writeln(Format('%d files written to %s', [Count, Xml]));
     end;
@@ -235,6 +241,7 @@ begin
       if not Quiet then
         Writeln('Generating SQLite script...');
       Count := GenerateSqlite(Project, AConfig, Xml);
+      Lap('output: sqlite');
       if not Quiet then
         Writeln(Format('%d files written to %s', [Count, Xml]));
     end;

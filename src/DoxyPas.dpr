@@ -6,6 +6,7 @@ uses
   System.SysUtils,
   DoxyPas.Core.Version in 'Core\DoxyPas.Core.Version.pas',
   DoxyPas.Core.Log in 'Core\DoxyPas.Core.Log.pas',
+  DoxyPas.Core.Timing in 'Core\DoxyPas.Core.Timing.pas',
   DoxyPas.Config.Options in 'Config\DoxyPas.Config.Options.pas',
   DoxyPas.Config in 'Config\DoxyPas.Config.pas',
   DoxyPas.Config.Reader in 'Config\DoxyPas.Config.Reader.pas',

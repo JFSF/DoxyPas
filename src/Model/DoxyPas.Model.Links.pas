@@ -7,6 +7,7 @@ interface
 
 uses
   System.Generics.Collections,
+  System.RegularExpressions,
   DoxyPas.Model.Defs,
   DoxyPas.Model.Project;
 
@@ -28,7 +29,10 @@ type
   strict private
     FProject: TProject;
     FSections: TDictionary<string, string>;  // \section / \anchor label -> refid
+    FCache: TDictionary<string, TLinkTarget>;  // what Resolve answered: the same words come back all the time
+    FWord: TRegEx;                             // compiled once (TRegEx.Match compiles at every call)
     procedure CollectSections;
+    function ResolveUncached(const AText: string; AScope: TDefinition): TLinkTarget;
   public
     constructor Create(AProject: TProject);
     destructor Destroy; override;
@@ -50,7 +54,6 @@ implementation
 uses
   System.SysUtils,
   System.Character,
-  System.RegularExpressions,
   DoxyPas.Doc.Nodes,
   DoxyPas.Doc.Parser;
 
@@ -59,11 +62,14 @@ begin
   inherited Create;
   FProject := AProject;
   FSections := TDictionary<string, string>.Create;
+  FCache := TDictionary<string, TLinkTarget>.Create;
+  FWord := TRegEx.Create('[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\(\))?', [roCompiled]);
   CollectSections;
 end;
 
 destructor TLinkResolver.Destroy;
 begin
+  FCache.Free;
   FSections.Free;
   inherited;
 end;
@@ -132,7 +138,20 @@ begin
   for D in FProject.Members do Scan(D);
 end;
 
+// The answers depend only on the project, which does not change while the outputs are made.
 function TLinkResolver.Resolve(const AText: string; AScope: TDefinition): TLinkTarget;
+var
+  Key: string;
+begin
+  Key := IntToStr(NativeInt(AScope)) + '|' + AText;
+  if not FCache.TryGetValue(Key, Result) then
+  begin
+    Result := ResolveUncached(AText, AScope);
+    FCache.Add(Key, Result);
+  end;
+end;
+
+function TLinkResolver.ResolveUncached(const AText: string; AScope: TDefinition): TLinkTarget;
 var
   D: TDefinition;
   Ext: TExternalRef;
@@ -209,7 +228,7 @@ begin
     Exit;
   end;
   Pos1 := 1;
-  M := TRegEx.Match(AText, '[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\(\))?');
+  M := FWord.Match(AText);
   while M.Success do
   begin
     Word := M.Value;

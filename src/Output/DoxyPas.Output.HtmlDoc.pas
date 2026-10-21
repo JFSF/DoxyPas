@@ -62,6 +62,7 @@ implementation
 
 uses
   System.Classes,
+  DoxyPas.Core.Timing,
   DoxyPas.Doc.Parser,
   DoxyPas.Output.HtmlCode,
   DoxyPas.Output.Translator,
@@ -529,9 +530,13 @@ begin
 end;
 
 function THtmlDocWriter.Prepare(const AText: string; AScope: TDefinition): TDocNode;
+var
+  T0: Int64;
 begin
   FScope := AScope;
+  T0 := Tick;
   Result := ParseDoc(AText);
+  Add('doc: ParseDoc', T0);
 end;
 
 function THtmlDocWriter.Render(const AText: string; AScope: TDefinition): string;
@@ -555,18 +560,21 @@ end;
 function THtmlDocWriter.RenderBrief(const AText: string; AScope: TDefinition): string;
 var
   Root, C: TDocNode;
+  T0: Int64;
 begin
   Result := '';
   if Trim(AText) = '' then
     Exit;
   Root := Prepare(AText, AScope);
   try
+    T0 := Tick;
     for C in Root.Children do
       if C.Kind = dnPara then
       begin
         Result := Trim(InlineChildren(C, True));
         Break;
       end;
+    Add('doc: brief inline html', T0);
   finally
     Root.Free;
   end;

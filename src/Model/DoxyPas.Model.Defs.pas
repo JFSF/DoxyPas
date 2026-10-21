@@ -45,11 +45,15 @@ type
   strict private
     FSymbols: TObjectDictionary<string, TList<TDefinition>>;
   public
+    /// <summary>Counts the symbols added to any scope: an index over many scopes is out of date when it changes.</summary>
+    class var SymbolVersion: Integer;
     constructor Create(const AName: string; AEntry: TEntry);
     destructor Destroy; override;
     procedure AddSymbol(ADef: TDefinition);
     /// <summary>Definitions with this (case-insensitive) name declared directly in this scope.</summary>
     function Find(const AName: string): TList<TDefinition>;
+    /// <summary>Adds the first symbol of every name to ATarget (names it already has are kept).</summary>
+    procedure FirstSymbolsInto(ATarget: TDictionary<string, TDefinition>);
   end;
 
   TBaseRef = record
@@ -211,6 +215,7 @@ var
   L: TList<TDefinition>;
   Key: string;
 begin
+  Inc(SymbolVersion);
   Key := LowerCase(ADef.Name);
   if not FSymbols.TryGetValue(Key, L) then
   begin
@@ -224,6 +229,15 @@ function TScopeDef.Find(const AName: string): TList<TDefinition>;
 begin
   if not FSymbols.TryGetValue(LowerCase(AName), Result) then
     Result := nil;
+end;
+
+procedure TScopeDef.FirstSymbolsInto(ATarget: TDictionary<string, TDefinition>);
+var
+  P: TPair<string, TList<TDefinition>>;
+begin
+  for P in FSymbols do
+    if (P.Value.Count > 0) and not ATarget.ContainsKey(P.Key) then
+      ATarget.Add(P.Key, P.Value[0]);
 end;
 
 { TUnitDef }

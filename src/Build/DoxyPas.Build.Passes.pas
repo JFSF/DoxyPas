@@ -19,6 +19,7 @@ function ConvertNameToFile(const AName: string; ACaseSense: Boolean; AAllowDots:
 implementation
 
 uses
+  DoxyPas.Core.Timing,
   System.SysUtils,
   System.Classes,
   System.Generics.Collections,
@@ -525,18 +526,37 @@ var
   Item: TInheritedMember;
   M: TMemberDef;
   Hidden: Boolean;
-  X: TInheritedMember;
+  X: TMemberDef;
+  ByName: TObjectDictionary<string, TList<TMemberDef>>;   // the members of the list so far, by name
+  L: TList<TMemberDef>;
+
+  procedure Note(AMember: TMemberDef);
+  var
+    Key: string;
+  begin
+    Key := LowerCase(AMember.Name);
+    if not ByName.TryGetValue(Key, L) then
+    begin
+      L := TList<TMemberDef>.Create;
+      ByName.Add(Key, L);
+    end;
+    L.Add(AMember);
+  end;
+
 begin
   if ADone.IndexOf(AClass) >= 0 then
     Exit;
   if AInProgress.IndexOf(AClass) >= 0 then
     Exit; // cycle
   AInProgress.Add(AClass);
+  ByName := TObjectDictionary<string, TList<TMemberDef>>.Create([doOwnsValues]);
+  try
   for M in AClass.Members do
   begin
     Item.Member := M;
     Item.From := AClass;
     AClass.AllMembers.Add(Item);
+    Note(M);
   end;
   for B in AClass.Bases do
     if B.ClassDef <> nil then
@@ -551,18 +571,25 @@ begin
         if IM.Member.Protection = prStrictPrivate then
           Continue;
         Hidden := False;
-        for X in AClass.AllMembers do
-          if SameText(X.Member.Name, IM.Member.Name) and (X.Member.Kind = IM.Member.Kind) then
-            if (IM.Member.Kind <> memFunction) or SameSignature(X.Member, IM.Member) or
-              not (efOverload in X.Member.Entry.Flags) then
-            begin
-              Hidden := True;
-              Break;
-            end;
+        if ByName.TryGetValue(LowerCase(IM.Member.Name), L) then
+          for X in L do
+            if X.Kind = IM.Member.Kind then
+              if (IM.Member.Kind <> memFunction) or SameSignature(X, IM.Member) or
+                not (efOverload in X.Entry.Flags) then
+              begin
+                Hidden := True;
+                Break;
+              end;
         if not Hidden then
+        begin
           AClass.AllMembers.Add(IM);
+          Note(IM.Member);
+        end;
       end;
     end;
+  finally
+    ByName.Free;
+  end;
   AInProgress.Remove(AClass);
   ADone.Add(AClass);
 end;
@@ -700,6 +727,9 @@ var
     Cmd, Target, Rep: string;
   begin
     Result := AText;
+    // almost no text has one of the commands: without this the regular expression is compiled twice per definition
+    if (Pos('copy', AText) = 0) and (Pos('inheritdoc', AText) = 0) then
+      Exit;
     for Pass := 1 to 10 do
     begin
       M := TRegEx.Match(Result, '[\\@](copydoc|copybrief|copydetails|inheritdoc)\b[ \t]*([^\s]*)');
@@ -1005,16 +1035,27 @@ begin
   finally
     B.Free;
   end;
+  Lap('model: builder');
   ResolveUses(AProject);
+  Lap('model: uses');
   ResolveBases(AProject);
+  Lap('model: bases');
   ResolveAccessors(AProject);
+  Lap('model: accessors');
   BuildMemberLists(AProject);
+  Lap('model: member lists');
   ResolveReimplementations(AProject);
+  Lap('model: reimplementations');
   InheritDocs(AProject);
+  Lap('model: inherit docs');
   ResolveCopyDocs(AProject);
+  Lap('model: copydoc');
   AssignGroups(AProject);
+  Lap('model: groups');
   AssignDiskNames(AProject);
+  Lap('model: disk names');
   ValidateDocs(AProject);
+  Lap('model: validate docs');
 end;
 
 end.

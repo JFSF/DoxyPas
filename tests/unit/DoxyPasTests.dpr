@@ -8,6 +8,7 @@ uses
   DUnitX.Loggers.Console,
   DoxyPas.Core.Version in '..\..\src\Core\DoxyPas.Core.Version.pas',
   DoxyPas.Core.Log in '..\..\src\Core\DoxyPas.Core.Log.pas',
+  DoxyPas.Core.Timing in '..\..\src\Core\DoxyPas.Core.Timing.pas',
   DoxyPas.Config.Options in '..\..\src\Config\DoxyPas.Config.Options.pas',
   DoxyPas.Config in '..\..\src\Config\DoxyPas.Config.pas',
   DoxyPas.Config.Reader in '..\..\src\Config\DoxyPas.Config.Reader.pas',

@@ -33,6 +33,7 @@ uses
   System.Generics.Defaults,
   DoxyPas.Core.Version,
   DoxyPas.Core.Log,
+  DoxyPas.Core.Timing,
   DoxyPas.Model.Entry,
   DoxyPas.Model.Defs,
   DoxyPas.Model.Links,
@@ -1240,14 +1241,19 @@ function THtmlGenerator.MemberRows(M: TMemberDef; const AInheritClass: string): 
 var
   Cls, Brief, More: string;
   Id: string;
+  T1: Int64;
 begin
   Id := M.DiskName;
   Cls := 'memitem:' + Id;
   if AInheritClass <> '' then
     Cls := Cls + ' ' + AInheritClass;
+  T1 := Tick;
   Result := '<tr class="' + Cls + '" id="r_' + Id + '"><td class="memItemLeft" align="right" valign="top">' +
     LeftHtml(M) + '</td><td class="memItemRight" valign="bottom">' + RightHtml(M) + '</td></tr>'#10;
+  Add('rows: Left+Right', T1);
+  T1 := Tick;
   Brief := BriefOf(M);
+  Add('rows: BriefOf', T1);
   if Brief <> '' then
   begin
     More := '';
@@ -1268,6 +1274,7 @@ var
   Order: TList<string>;
   Key, P, K, Title: string;
   M: TMemberDef;
+  T0: Int64;
   Any: Boolean;
   MD, E: TLayoutEntry;
 begin
@@ -1316,7 +1323,11 @@ begin
       ASummary.Append('<a href="#' + Key + '">' + HtmlEscape(Title) + '</a>');
       for M in AMembers do
         if SectionKey(M, AInUnit) = Key then
+        begin
+          T0 := Tick;
           ARows.Append(MemberRows(M, ''));
+          Add('decl: MemberRows', T0);
+        end;
     end;
   finally
     Order.Free;
@@ -1883,6 +1894,7 @@ var
   Text, Brief, Detail, List, NestedTitle: string;
   HasDetail, ShowNested: Boolean;
   E: TLayoutEntry;
+  T0: Int64;
 begin
   ShowNested := True;
   NestedTitle := Tr('Classes');
@@ -1898,8 +1910,12 @@ begin
   Rows := TStringBuilder.Create;
   Summary := TStringBuilder.Create;
   try
+    T0 := Tick;
     Detail := DetailedBlock(C, True);
+    Add('class: DetailedBlock', T0);
+    T0 := Tick;
     Brief := BriefOf(C);
+    Add('class: BriefOf', T0);
     if not LayoutShows('class', 'briefdescription') then
       Brief := '';
     // nested classes
@@ -1917,8 +1933,12 @@ begin
         HtmlEscape(NestedTitle) + '</h2></td></tr>'#10).Append(List);
       Summary.Append('<a href="#nested-classes">' + HtmlEscape(NestedTitle) + '</a>');
     end;
+    T0 := Tick;
     DeclSections(Vis, False, Rows, Summary);
+    Add('class: DeclSections', T0);
+    T0 := Tick;
     InheritedSections(C, Rows);
+    Add('class: InheritedSections', T0);
     if Detail <> '' then
     begin
       if Summary.Length > 0 then
@@ -1959,8 +1979,12 @@ begin
     if Rows.Length > 0 then
       W('<table class="memberdecls">'#10 + Rows.ToString + '</table>'#10);
     W(Detail);
+    T0 := Tick;
     W(DocSections(Vis, False));
+    Add('class: DocSections', T0);
+    T0 := Tick;
     EndPage(NavPathOf(C));
+    Add('class: EndPage', T0);
   finally
     Summary.Free;
     Rows.Free;
@@ -3534,6 +3558,7 @@ var
   G: TGroupDef;
   P: TPageDef;
   D: TDirDef;
+  T0: Int64;
 begin
   TDirectory.CreateDirectory(FDir);
   if FDotGraphs and not FRunner.Available then
@@ -3570,12 +3595,18 @@ begin
   BuildPageMenu;
   WriteStatic;
   WriteMainPage;
+  Lap('html: static + main page');
   for C in FProject.Classes do
     if FLinks.IsLinkable(C) then
     begin
+      T0 := Tick;
       WriteClass(C);
+      Add('WriteClass (all)', T0);
+      T0 := Tick;
       WriteMembersPage(C);
+      Add('WriteMembersPage', T0);
     end;
+  Lap('html: class pages');
   for U in FProject.Units do
     if FLinks.IsLinkable(U) then
     begin
@@ -3607,9 +3638,12 @@ begin
     WriteHierarchy;
     WriteFunctionsIndex;
   end;
+  Lap('html: units, groups, pages, indices');
   WriteMenuData;
   WriteNavTree;
+  Lap('html: menu + navigation tree');
   WriteSearchData;
+  Lap('html: search data');
   FlushGraphs;
   if FDoc.ImageFormulas then
     WriteFormulas;

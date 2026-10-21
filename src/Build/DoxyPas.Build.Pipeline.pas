@@ -23,6 +23,7 @@ function BuildProject(AConfig: TConfig; const AFiles: TArray<string>; AParallel:
 implementation
 
 uses
+  DoxyPas.Core.Timing,
   System.SysUtils,
   System.IOUtils,
   System.Types,
@@ -190,6 +191,7 @@ var
   Local: TStringList;
   Form: TEntry;
   Err: string;
+  T0: Int64;
 begin
   Local := TStringList.Create;
   Parsed[AIndex].Warnings := Local;
@@ -206,7 +208,9 @@ begin
     Exit;
   end;
   try
+    T0 := Tick;
     R := ParsePascalFile(Files[AIndex], PascalOptions);
+    Add('parse: ParsePascalFile (cpu)', T0);
   except
     on E: Exception do
     begin
@@ -218,7 +222,9 @@ begin
     Local.Add(Format('%s:%d: error: %s', [Files[AIndex], R.ErrorLine, R.ErrorMessage]));
   if R.Root <> nil then
   begin
+    T0 := Tick;
     ScanEntryDocs(R.Root, DocOptions, Local);
+    Add('parse: ScanEntryDocs (cpu)', T0);
     Parsed[AIndex].Root := R.Root;
   end;
 end;
@@ -246,6 +252,7 @@ begin
     else
       for I := 0 to Last do
         Job.ParseOne(I);
+    Lap('parse (all files)');
     Result := TProject.Create(TProjectOptions.FromConfig(AConfig));
     try
       for I := 0 to Last do
@@ -257,6 +264,7 @@ begin
           Result.Roots.Add(Job.Parsed[I].Root);
       end;
       ReadTagFiles(Result, AConfig.GetList('TAGFILES'));
+      Lap('tag files');
       BuildModel(Result);
     except
       Result.Free;

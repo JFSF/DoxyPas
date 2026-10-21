@@ -39,6 +39,7 @@ type
   public
     [Test] procedure FormBecomesComponentTreePage;
     [Test] procedure BinaryFormIsRejected;
+    [Test] procedure ListsThePropertyValues;
     [Test] procedure DprojGivesSourcesAndDefines;
     [Test] procedure GroupProjIsTheUnionOfItsProjects;
     [Test] procedure LazarusProjectGivesSourcesDefinesAndPaths;
@@ -495,6 +496,38 @@ begin
   end;
 end;
 
+procedure TDelphiExtrasTests.ListsThePropertyValues;
+var
+  F, Err: string;
+  E: TEntry;
+begin
+  F := TPath.Combine(TPath.GetTempPath, 'dp_t5.dfm');
+  TFile.WriteAllText(F, 'object F: TF'#13#10'  Caption = ''Main '' +'#13#10'    ''window'''#13#10'  Left = 8'#13#10 +
+    '  object M: TMemo'#13#10'    Lines.Strings = ('#13#10'      ''one'''#13#10'      ''it''#39''s'')'#13#10'    Data = {'#13#10'      0A0B}'#13#10 +
+    '    Cols = <'#13#10'      item'#13#10'      end'#13#10'      item'#13#10'      end>'#13#10'  end'#13#10'end'#13#10);
+  try
+    E := ParseDfmFile(F, True, Err);
+    try
+      Assert.IsNotNull(E, Err);
+      Assert.Contains(E.Doc, 'Left = 8');
+      Assert.Contains(E.Doc, 'TF "Main window"', 'caption of the form, string continued on the next line');
+      Assert.Contains(E.Doc, 'Lines.Strings = ''[one / it''s]''');
+      Assert.Contains(E.Doc, 'Data = (binary data)');
+      Assert.Contains(E.Doc, 'Cols = (2 items)');
+    finally
+      E.Free;
+    end;
+    E := ParseDfmFile(F, False, Err);
+    try
+      Assert.IsFalse(E.Doc.Contains('Left = 8'), 'without PASCAL_DFM_PROPERTIES');
+      Assert.Contains(E.Doc, 'Main window');
+    finally
+      E.Free;
+    end;
+  finally
+    TFile.Delete(F);
+  end;
+end;
 procedure TDelphiExtrasTests.BinaryFormIsRejected;
 var
   F, Err: string;

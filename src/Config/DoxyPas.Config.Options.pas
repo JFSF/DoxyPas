@@ -27,7 +27,7 @@ type
 
 const
   ConfigGroupCount = 19;
-  ConfigOptionCount = 358;
+  ConfigOptionCount = 359;
 
   ConfigHeader =
       'This file describes the settings to be used by the documentation system' + #10 +
@@ -3926,6 +3926,16 @@ const
      Values: '';
      Doc: 'If the PASCAL_PARSE_DFM tag is set to YES then DoxyPas will read .dfm and .fmx' + #10 +
       'files and document the component tree of each form.' + #10 +
+      'The default value is: YES.'),
+    (Name: 'PASCAL_DFM_PROPERTIES';
+     Kind: okBool; OrgKind: okBool; Group: 18;
+     Format: ''; Depends: '';
+     Default: '1'; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: 'If the PASCAL_DFM_PROPERTIES tag is set to YES then the page of each form also' + #10 +
+      'lists the values of the properties of every component (position, size, fonts,' + #10 +
+      'strings, ...); if it is NO only the class, the caption and the event handlers' + #10 +
+      'are listed. This tag requires that the tag PASCAL_PARSE_DFM is set to YES.' + #10 +
       'The default value is: YES.'),
     (Name: 'DELPHI_PROJECT';
      Kind: okList; OrgKind: okBool; Group: 18;

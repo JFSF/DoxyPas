@@ -63,6 +63,16 @@
 ]]>
       </docs>
     </option>
+    <option type='bool' id='PASCAL_DFM_PROPERTIES' defval='1'>
+      <docs>
+<![CDATA[
+ If the \c PASCAL_DFM_PROPERTIES tag is set to \c YES then the page of each form also lists the
+ values of the properties of every component (position, size, fonts, strings, ...);
+ if it is \c NO only the class, the caption and the event handlers are listed.
+ This tag requires that the tag \c PASCAL_PARSE_DFM is set to \c YES.
+]]>
+      </docs>
+    </option>
     <option type='list' id='DELPHI_PROJECT' format='file'>
       <docs>
 <![CDATA[

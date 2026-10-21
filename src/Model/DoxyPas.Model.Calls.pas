@@ -77,9 +77,12 @@ begin
   Bytes := TFile.ReadAllBytes(AFile);
   Enc := nil;
   Skip := TEncoding.GetBufferEncoding(Bytes, Enc, TEncoding.UTF8);
-  Result := Enc.GetString(Bytes, Skip, Length(Bytes) - Skip);
-  if Result.Contains(#$FFFD) then
-    Result := TEncoding.ANSI.GetString(Bytes, Skip, Length(Bytes) - Skip);
+  try
+    Result := Enc.GetString(Bytes, Skip, Length(Bytes) - Skip);   // UTF-8 raises on an invalid sequence
+  except
+    on EEncodingError do
+      Result := TEncoding.ANSI.GetString(Bytes, Skip, Length(Bytes) - Skip);
+  end;
 end;
 
 const

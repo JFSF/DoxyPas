@@ -40,6 +40,8 @@ type
     [Test] procedure FormBecomesComponentTreePage;
     [Test] procedure BinaryFormIsRejected;
     [Test] procedure ListsThePropertyValues;
+    [Test] procedure CollectionItemsAreComponents;
+    [Test] procedure BinaryFormGivesTheSamePageAsTheTextForm;
     [Test] procedure DprojGivesSourcesAndDefines;
     [Test] procedure GroupProjIsTheUnionOfItsProjects;
     [Test] procedure LazarusProjectGivesSourcesDefinesAndPaths;
@@ -513,7 +515,8 @@ begin
       Assert.Contains(E.Doc, 'TF "Main window"', 'caption of the form, string continued on the next line');
       Assert.Contains(E.Doc, 'Lines.Strings = ''[one / it''s]''');
       Assert.Contains(E.Doc, 'Data = (binary data)');
-      Assert.Contains(E.Doc, 'Cols = (2 items)');
+      Assert.Contains(E.Doc, '<b>Cols</b>: collection');
+      Assert.Contains(E.Doc, '<b>Cols[1]</b>: item');
     finally
       E.Free;
     end;
@@ -526,6 +529,69 @@ begin
     end;
   finally
     TFile.Delete(F);
+  end;
+end;
+procedure TDelphiExtrasTests.CollectionItemsAreComponents;
+var
+  F, Err: string;
+  E: TEntry;
+begin
+  F := TPath.Combine(TPath.GetTempPath, 'dp_t6.dfm');
+  TFile.WriteAllText(F, 'object F: TF'#13#10'  object G: TGrid'#13#10'    Columns = <'#13#10'      item'#13#10'        Title.Caption = ''A'''#13#10 +
+    '        Width = 50'#13#10'      end'#13#10'      item'#13#10'        Title.Caption = ''B'''#13#10'      end>'#13#10'    OnClick = GClick'#13#10 +
+    '  end'#13#10'end'#13#10);
+  try
+    E := ParseDfmFile(F, True, Err);
+    try
+      Assert.IsNotNull(E, Err);
+      Assert.Contains(E.Doc, '<b>G.Columns</b>'.Replace('G.', ''));
+      Assert.Contains(E.Doc, '<b>Columns[0]</b>: item');
+      Assert.Contains(E.Doc, 'Width = 50');
+      Assert.Contains(E.Doc, '<b>Columns[1]</b>: item "B"'.Replace(' "B"', ''));
+      Assert.Contains(E.Doc, 'OnClick = GClick');
+    finally
+      E.Free;
+    end;
+  finally
+    TFile.Delete(F);
+  end;
+end;
+
+procedure TDelphiExtrasTests.BinaryFormGivesTheSamePageAsTheTextForm;
+var
+  Txt, Bin: string;
+  Src, Dst: TFileStream;
+  A, B: TEntry;
+  Err: string;
+begin
+  Txt := TPath.Combine(TPath.GetTempPath, 'dp_t7.dfm');
+  Bin := TPath.Combine(TPath.GetTempPath, 'dp_t7b.dfm');
+  TFile.WriteAllText(Txt, 'object F: TF'#13#10'  Left = 0'#13#10'  Caption = ''Hi '' +'#13#10'    ''there'''#13#10'  Scale = 1.5'#13#10 +
+    '  Font.Style = [fsBold, fsItalic]'#13#10'  Big = 123456789012'#13#10'  Lines.Strings = ('#13#10'    ''a'''#13#10'    ''b'')'#13#10 +
+    '  Data = {'#13#10'    0A0B}'#13#10'  OnCreate = FCreate'#13#10'  Flag = True'#13#10'  object B: TB'#13#10'    Caption = ''caf''#233'#13#10 +
+    '    Items = <'#13#10'      item'#13#10'        Text = ''x'''#13#10'      end>'#13#10'  end'#13#10'end'#13#10);
+  Src := TFileStream.Create(Txt, fmOpenRead);
+  Dst := TFileStream.Create(Bin, fmCreate);
+  try
+    ObjectTextToBinary(Src, Dst);
+  finally
+    Dst.Free;
+    Src.Free;
+  end;
+  try
+    A := ParseDfmFile(Txt, True, Err);
+    B := ParseDfmFile(Bin, True, Err);
+    try
+      Assert.IsNotNull(A);
+      Assert.IsNotNull(B, Err);
+      Assert.AreEqual(A.Doc.Replace('dp_t7.dfm', ''), B.Doc.Replace('dp_t7b.dfm', ''));
+    finally
+      B.Free;
+      A.Free;
+    end;
+  finally
+    TFile.Delete(Bin);
+    TFile.Delete(Txt);
   end;
 end;
 procedure TDelphiExtrasTests.BinaryFormIsRejected;

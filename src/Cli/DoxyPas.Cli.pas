@@ -15,6 +15,7 @@ uses
   System.Classes,
   System.IOUtils,
   DoxyPas.Core.Version,
+  DoxyPas.Resources.Layout,
   DoxyPas.Core.Log,
   DoxyPas.Config,
   DoxyPas.Config.Reader,
@@ -39,7 +40,7 @@ uses
   DoxyPas.Output.TagFile;
 
 type
-  TCommand = (cmdRun, cmdGenerate, cmdUpdate, cmdDiff);
+  TCommand = (cmdRun, cmdGenerate, cmdUpdate, cmdDiff, cmdLayout);
 
 const
   DefaultConfigName = 'Doxyfile';
@@ -54,6 +55,7 @@ begin
   Writeln('  doxypas -s -g [configName]  same, without explanatory comments');
   Writeln('  doxypas -u [configName]     update a configuration file to this version (-s: strip comments)');
   Writeln('  doxypas -x [configName]     show the options that differ from the defaults');
+  Writeln('  doxypas -l [layoutName]     generate a layout file (default: DoxygenLayout.xml, "-" = stdout)');
   Writeln('  doxypas --parse <path> [configName] [--docs] [--verbose] [--interface-only]');
   Writeln('                              developer: parse a Pascal file/folder and dump the entries');
   Writeln('  doxypas --model <path> [configName] [--verbose]');
@@ -360,6 +362,7 @@ begin
     else if Arg = '-g' then Cmd := cmdGenerate
     else if Arg = '-u' then Cmd := cmdUpdate
     else if Arg = '-x' then Cmd := cmdDiff
+    else if Arg = '-l' then Cmd := cmdLayout
     else if Arg = '-s' then Short := True
     else if (Arg = '--parse') and (I < Length(AArgs)) then
     begin
@@ -412,6 +415,20 @@ begin
         Exit(1);
       end;
     end;
+  end;
+  if Cmd = cmdLayout then
+  begin
+    if Name = '' then
+      Name := 'DoxygenLayout.xml';
+    if (Name <> '-') and TFile.Exists(Name) then
+    begin
+      Error('', 0, Format('file ''%s'' already exists; remove it or use "-" to write to stdout', [Name]));
+      Exit(1);
+    end;
+    WriteText(Name, LayoutResourceText('DoxygenLayout.xml').Replace('$doxygenversion', DoxyPasVersion));
+    if Name <> '-' then
+      Writeln('Layout file ''', Name, ''' created.');
+    Exit(0);
   end;
   if Name = '' then
     Name := DefaultConfigName;

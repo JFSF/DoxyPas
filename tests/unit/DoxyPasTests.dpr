@@ -46,6 +46,8 @@ uses
   DoxyPas.Output.HtmlGen in '..\..\src\Output\DoxyPas.Output.HtmlGen.pas',
   DoxyPas.Resources.Html in '..\..\src\Resources\DoxyPas.Resources.Html.pas',
   DoxyPas.Resources.Lang in '..\..\src\Resources\DoxyPas.Resources.Lang.pas',
+  DoxyPas.Resources.Layout in '..\..\src\Resources\DoxyPas.Resources.Layout.pas',
+  DoxyPas.Config.Layout in '..\..\src\Config\DoxyPas.Config.Layout.pas',
   DoxyPas.Output.TagFile in '..\..\src\Output\DoxyPas.Output.TagFile.pas',
   DoxyPas.Resources.Xml in '..\..\src\Resources\DoxyPas.Resources.Xml.pas',
   DoxyPas.Build.Passes in '..\..\src\Build\DoxyPas.Build.Passes.pas',

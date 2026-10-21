@@ -26,6 +26,7 @@ type
     [Test] procedure ReplacesColorMarkers;
     [Test] procedure HighlightsPascalKeywords;
     [Test] procedure NumbersAndLinksSourceLines;
+    [Test] procedure ParsesLayoutFiles;
     [Test] procedure StripsDocComments;
     [Test] procedure FindsBodyEnds;
     [Test] procedure EscapesLatex;
@@ -72,6 +73,7 @@ uses
   DoxyPas.Model.Project,
   DoxyPas.Model.Links,
   DoxyPas.Model.Calls,
+  DoxyPas.Config.Layout,
   DoxyPas.Build.Pipeline,
   DoxyPas.Output.XmlWriter,
   DoxyPas.Output.XmlGen,
@@ -388,6 +390,25 @@ begin
   Assert.Contains(Html, '<a id="l00002" name="l00002"></a><span class="lineno">&#160;&#160;&#160;&#160;2</span>');
   Assert.Contains(Html, '<a class="code" href="b.html">B</a>');
   Assert.IsFalse(Html.Contains('href="b.html">A<'));
+end;
+
+procedure THtmlTemplateTests.ParsesLayoutFiles;
+var
+  Root: TLayoutEntry;
+begin
+  Root := ParseLayoutText('<?xml version="1.0"?><!-- c --><doxygenlayout version="2.0"><navindex>' +
+    '<tab type="classes" title="T&#231;&amp;"><tab type="classlist" visible="no"/></tab></navindex>' +
+    '<class><memberdecl><publicmethods title="M"/></memberdecl></class></doxygenlayout>');
+  try
+    Assert.AreEqual('doxygenlayout', Root.Name);
+    Assert.AreEqual('classes', Root.Child('navindex').Children[0].Attr('type'));
+    Assert.AreEqual('T'#231'&', Root.Child('navindex').Children[0].Attr('title'));
+    Assert.AreEqual('no', Root.Child('navindex').Children[0].Children[0].Attr('visible'));
+    Assert.AreEqual('M', Root.Child('class').Child('memberdecl').Child('publicmethods').Attr('title'));
+    Assert.IsNull(Root.Child('file'));
+  finally
+    Root.Free;
+  end;
 end;
 
 procedure THtmlTemplateTests.StripsDocComments;

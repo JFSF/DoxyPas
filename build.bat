@@ -59,3 +59,5 @@ rem Packs resources\lang\* (texts of the output languages) into src\Resources\Do
 set LANGRES=
 for %%F in ("%ROOT%resources\lang\*") do call set LANGRES=%%LANGRES%% "%%F"
 "%ROOT%build\tools\PackResources.exe" -b64 "%ROOT%src\Resources\DoxyPas.Resources.Lang.pas" DoxyPas.Resources.Lang LangResource %LANGRES%
+rem Packs resources\layout\* (the default layout file) into src\Resources\DoxyPas.Resources.Layout.pas
+"%ROOT%build\tools\PackResources.exe" -b64 "%ROOT%src\Resources\DoxyPas.Resources.Layout.pas" DoxyPas.Resources.Layout LayoutResource "%ROOT%resources\layout\DoxygenLayout.xml"

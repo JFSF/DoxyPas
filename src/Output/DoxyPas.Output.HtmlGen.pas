@@ -38,6 +38,7 @@ uses
   DoxyPas.Model.Links,
   DoxyPas.Model.Calls,
   DoxyPas.Model.Dirs,
+  DoxyPas.Config.Layout,
   DoxyPas.Output.DotGraphs,
   DoxyPas.Output.HtmlTemplate,
   DoxyPas.Output.Translator,
@@ -75,6 +76,8 @@ type
     FColors: THtmlColors;
     FLight, FDark: string;
     FTree, FSearch, FNoIndex, FDynMenus, FSidebar, FFold, FDynSec, FClip: Boolean;
+    FLayout: TLayout;         // LAYOUT_FILE
+    FTabs: TDictionary<string, TLayoutEntry>;   // type of tab -> its <tab> element
     FMenu: TNavNode;          // the tabs, for HTML_DYNAMIC_MENUS = NO
     FPageMenu: TDictionary<string, TPair<string, string>>;   // page -> the URL bases of its tab and sub-tab
     FSortDocs, FSortBrief: Boolean;
@@ -107,6 +110,12 @@ type
     function ConfigScript: string;
     procedure QuickLinks(AMenu: Boolean);
     procedure BuildMenu;
+    function TabUrl(const AType: string; out AAvailable: Boolean): string;
+    function TabHref(const AUrl: string): string;
+    function NavTitle(const AType: string): string;
+    function NavIntro(const AType, ADefault: string): string;
+    procedure CollectTabs(AParent: TLayoutEntry);
+    procedure AddTabs(AParent: TNavNode; ALayout: TLayoutEntry);
     procedure BuildPageMenu;
     procedure StaticTabs;
     procedure SplitBar(const AMembersFile: string);
@@ -280,6 +289,10 @@ begin
   FNoIndex := AConfig.GetBool('DISABLE_INDEX');
   FDynMenus := AConfig.GetBool('HTML_DYNAMIC_MENUS');
   FPageMenu := TDictionary<string, TPair<string, string>>.Create;
+  FLayout := TLayout.Create(AConfig);
+  FTabs := TDictionary<string, TLayoutEntry>.Create;
+  if FLayout.NavIndex <> nil then
+    CollectTabs(FLayout.NavIndex);
   FSidebar := AConfig.GetBool('FULL_SIDEBAR') and FTree;
   FFold := AConfig.GetBool('HTML_CODE_FOLDING');
   FDynSec := AConfig.GetBool('HTML_DYNAMIC_SECTIONS');
@@ -314,6 +327,8 @@ begin
   FDoc.Free;
   FRunner.Free;
   FMenu.Free;
+  FTabs.Free;
+  FLayout.Free;
   FPageMenu.Free;
   FDot.Free;
   FCalls.Free;
@@ -506,32 +521,152 @@ begin
     W('<div id="container"><div id="doc-content">'#10);
 end;
 
-// The tabs of the menu (the same entries as menudata.js): Main Page, Related Pages, Topics, Units, Classes.
+// Default title of the entries of the navigation index (the types of the <tab> elements of the layout).
+function DefaultTabTitle(const AType: string): string;
+begin
+  if AType = 'mainpage' then Result := 'Main Page'
+  else if AType = 'pages' then Result := 'Related Pages'
+  else if AType = 'topics' then Result := 'Topics'
+  else if AType = 'namespaces' then Result := 'Units'
+  else if AType = 'namespacelist' then Result := 'Unit List'
+  else if AType = 'classes' then Result := 'Classes'
+  else if AType = 'classlist' then Result := 'Class List'
+  else if AType = 'classindex' then Result := 'Class Index'
+  else if AType = 'hierarchy' then Result := 'Class Hierarchy'
+  else if AType = 'classmembers' then Result := 'Class Members'
+  else if AType = 'files' then Result := 'Files'
+  else if AType = 'filelist' then Result := 'Directory Hierarchy'
+  else Result := '';
+end;
+
+// The URL (without the extension) of a type of tab and whether there is something to show.
+function THtmlGenerator.TabUrl(const AType: string; out AAvailable: Boolean): string;
+begin
+  AAvailable := True;
+  Result := '';
+  if AType = 'mainpage' then Result := 'index'
+  else if AType = 'pages' then begin Result := 'pages'; AAvailable := FHasPages; end
+  else if AType = 'topics' then begin Result := 'topics'; AAvailable := FHasGroups; end
+  else if (AType = 'namespaces') or (AType = 'namespacelist') then begin Result := 'namespaces'; AAvailable := FHasUnits; end
+  else if (AType = 'classes') or (AType = 'classlist') then begin Result := 'annotated'; AAvailable := FHasClasses; end
+  else if AType = 'classindex' then begin Result := 'classes'; AAvailable := FHasClasses; end
+  else if AType = 'hierarchy' then begin Result := 'hierarchy'; AAvailable := FHasClasses; end
+  else if AType = 'classmembers' then begin Result := 'functions'; AAvailable := FHasClasses; end
+  else if (AType = 'files') or (AType = 'filelist') then begin Result := 'dirs'; AAvailable := FDirs <> nil; end
+  else AAvailable := False;
+end;
+
+// Title of a type of tab (the title of the layout, else the default, translated).
+function THtmlGenerator.NavTitle(const AType: string): string;
+var
+  E: TLayoutEntry;
+begin
+  if FTabs.TryGetValue(AType, E) and (E.Attr('title') <> '') then
+    Result := E.Attr('title')
+  else
+    Result := Tr(DefaultTabTitle(AType));
+end;
+
+// The text before the list of an index page (intro="..." of the layout, else the default, translated).
+function THtmlGenerator.NavIntro(const AType, ADefault: string): string;
+var
+  E: TLayoutEntry;
+begin
+  if FTabs.TryGetValue(AType, E) and (E.Attr('intro') <> '') then
+    Result := E.Attr('intro')
+  else
+    Result := Tr(ADefault);
+end;
+
+procedure THtmlGenerator.CollectTabs(AParent: TLayoutEntry);
+var
+  E: TLayoutEntry;
+begin
+  for E in AParent.Children do
+    if SameText(E.Name, 'tab') then
+    begin
+      if not FTabs.ContainsKey(E.Attr('type')) then
+        FTabs.Add(E.Attr('type'), E);
+      CollectTabs(E);
+    end;
+end;
+
+// The visible tabs of a layout (navindex or a usergroup), with their sub-tabs.
+procedure THtmlGenerator.AddTabs(AParent: TNavNode; ALayout: TLayoutEntry);
+var
+  E: TLayoutEntry;
+  Typ, Url, Title: string;
+  Avail: Boolean;
+  N: TNavNode;
+begin
+  for E in ALayout.Children do
+  begin
+    if not SameText(E.Name, 'tab') or not FLayout.Visible(E) then
+      Continue;
+    Typ := E.Attr('type');
+    if (Typ = 'user') or (Typ = 'usergroup') then
+    begin
+      Title := E.Attr('title');
+      Url := E.Attr('url');
+      if Title = '' then
+        Continue;
+      N := AParent.Add(Title, Url);
+      if Typ = 'usergroup' then
+      begin
+        AddTabs(N, E);
+        if (N.Url = '') and (N.Kids.Count > 0) then
+          N.Url := N.Kids[0].Url;
+      end;
+      Continue;
+    end;
+    Url := TabUrl(Typ, Avail);
+    if (Url = '') or not Avail then
+      Continue;
+    N := AParent.Add(NavTitle(Typ), Url);
+    AddTabs(N, E);
+  end;
+end;
+
+// The tabs of the menu: the navigation index of the layout, else Main Page, Related Pages, Topics, Units, Classes.
 procedure THtmlGenerator.BuildMenu;
 var
   N: TNavNode;
 begin
   FMenu := TNavNode.Create('', '');
-  FMenu.Add(Tr('Main Page'), 'index');
+  if (FLayout.NavIndex <> nil) then
+  begin
+    AddTabs(FMenu, FLayout.NavIndex);
+    Exit;
+  end;
+  FMenu.Add(NavTitle('mainpage'), 'index');
   if FHasPages then
-    FMenu.Add(Tr('Related Pages'), 'pages');
+    FMenu.Add(NavTitle('pages'), 'pages');
   if FHasGroups then
-    FMenu.Add(Tr('Topics'), 'topics');
+    FMenu.Add(NavTitle('topics'), 'topics');
   if FHasUnits then
   begin
-    N := FMenu.Add(Tr('Units'), 'namespaces');
-    N.Add(Tr('Unit List'), 'namespaces');
+    N := FMenu.Add(NavTitle('namespaces'), 'namespaces');
+    N.Add(NavTitle('namespacelist'), 'namespaces');
     if FDirs <> nil then
-      N.Add(Tr('Directory Hierarchy'), 'dirs');
+      N.Add(NavTitle('filelist'), 'dirs');
   end;
   if FHasClasses then
   begin
-    N := FMenu.Add(Tr('Classes'), 'annotated');
-    N.Add(Tr('Class List'), 'annotated');
-    N.Add(Tr('Class Index'), 'classes');
-    N.Add(Tr('Class Hierarchy'), 'hierarchy');
-    N.Add(Tr('Class Members'), 'functions');
+    N := FMenu.Add(NavTitle('classes'), 'annotated');
+    N.Add(NavTitle('classlist'), 'annotated');
+    N.Add(NavTitle('classindex'), 'classes');
+    N.Add(NavTitle('hierarchy'), 'hierarchy');
+    N.Add(NavTitle('classmembers'), 'functions');
   end;
+end;
+
+// A tab URL: a page of the output (no extension yet) or the address a user gave (it has a dot or a colon).
+function THtmlGenerator.TabHref(const AUrl: string): string;
+begin
+  if (Pos('.', AUrl) > 0) or (Pos(':', AUrl) > 0) or (AUrl = '') then
+    Result := AUrl
+  else
+    Result := AUrl + FExt;
 end;
 
 // Which tab and which sub-tab a page belongs to: AFile (without the extension) -> the URLs of the entries of the menu.
@@ -597,7 +732,7 @@ var
         W('      <li class="current">')
       else
         W('      <li>');
-      W('<a href="' + Item.Url + FExt + '"><span>' + HtmlEscape(Item.Name).Replace(' ', '&#160;') + '</span></a></li>'#10);
+      W('<a href="' + TabHref(Item.Url) + '"><span>' + HtmlEscape(Item.Name).Replace(' ', '&#160;') + '</span></a></li>'#10);
     end;
     if ASearch and FSearch and not (FTree and FSidebar) then
       W('      <li>'#10 + SearchBoxHtml + '      </li>'#10);
@@ -1588,7 +1723,7 @@ begin
     Body := '';
   end;
   if Title = '' then
-    Title := Tr('Main Page');
+    Title := NavTitle('mainpage');
   BeginPage('index', Title);
   W('<div class="header">'#10'  <div class="headertitle"><div class="title">' + HtmlEscape(Title) +
     '</div></div>'#10'</div><!--header-->'#10'<div class="contents">'#10);
@@ -2036,9 +2171,9 @@ procedure THtmlGenerator.WriteDirsIndex;
 var
   Row: Integer;
 begin
-  BeginPage('dirs', Tr('Directory Hierarchy'));
-  PageHeader(Tr('Directory Hierarchy'));
-  W('<div class="textblock">' + Tr('Here is the directory hierarchy of the source files:') + '</div>'#10 +
+  BeginPage('dirs', NavTitle('filelist'));
+  PageHeader(NavTitle('filelist'));
+  W('<div class="textblock">' + NavIntro('filelist', 'Here is the directory hierarchy of the source files:') + '</div>'#10 +
     '<div class="directory">'#10'<table class="directory">'#10);
   Row := 0;
   DirTreeRows(FDirs.Root, 0, Row);
@@ -2177,9 +2312,9 @@ var
 begin
   SB := TStringBuilder.Create;
   try
-    BeginPage('annotated', Tr('Class List'));
-    PageHeader(Tr('Class List'));
-    W('<div class="textblock">Here are the classes, records and interfaces with brief descriptions:</div><div class="directory">'#10 +
+    BeginPage('annotated', NavTitle('classlist'));
+    PageHeader(NavTitle('classlist'));
+    W('<div class="textblock">' + NavIntro('classlist', 'Here are the classes, records and interfaces with brief descriptions:') + '</div><div class="directory">'#10 +
       '<table class="directory">'#10);
     Row := 0;
     for U in FProject.Units do
@@ -2216,8 +2351,8 @@ begin
         if Result = 0 then
           Result := CompareText(A.QualifiedName, B.QualifiedName);
       end));
-    BeginPage('classes', Tr('Class Index'));
-    PageHeader(Tr('Class Index'));
+    BeginPage('classes', NavTitle('classindex'));
+    PageHeader(NavTitle('classindex'));
     W('<div class="classindex">'#10);
     Cur := '';
     Row := 0;
@@ -2258,9 +2393,9 @@ var
 begin
   SB := TStringBuilder.Create;
   try
-    BeginPage('hierarchy', Tr('Class Hierarchy'));
-    PageHeader(Tr('Class Hierarchy'));
-    W('<div class="textblock">This inheritance list is sorted roughly, but not completely, alphabetically:</div>'#10 +
+    BeginPage('hierarchy', NavTitle('hierarchy'));
+    PageHeader(NavTitle('hierarchy'));
+    W('<div class="textblock">' + NavIntro('hierarchy', 'This inheritance list is sorted roughly, but not completely, alphabetically:') + '</div>'#10 +
       '<div class="directory">'#10'<table class="directory">'#10);
     Row := 0;
     for C in FProject.Classes do
@@ -2285,9 +2420,9 @@ var
   U: TUnitDef;
   Row: Integer;
 begin
-  BeginPage('namespaces', Tr('Unit List'));
-  PageHeader(Tr('Unit List'));
-  W('<div class="textblock">Here is a list of all documented units with brief descriptions:</div>'#10 +
+  BeginPage('namespaces', NavTitle('namespacelist'));
+  PageHeader(NavTitle('namespacelist'));
+  W('<div class="textblock">' + NavIntro('namespacelist', 'Here is a list of all documented units with brief descriptions:') + '</div>'#10 +
     '<div class="directory">'#10'<table class="directory">'#10);
   Row := 0;
   for U in FProject.Units do
@@ -2305,9 +2440,9 @@ var
 begin
   SB := TStringBuilder.Create;
   try
-    BeginPage('topics', Tr('Topics'));
-    PageHeader(Tr('Topics'));
-    W('<div class="textblock">Here is a list of all topics with brief descriptions:</div>'#10 +
+    BeginPage('topics', NavTitle('topics'));
+    PageHeader(NavTitle('topics'));
+    W('<div class="textblock">' + NavIntro('topics', 'Here is a list of all topics with brief descriptions:') + '</div>'#10 +
       '<div class="directory">'#10'<table class="directory">'#10);
     Row := 0;
     for G in FProject.Groups do
@@ -2325,9 +2460,9 @@ var
   P: TPageDef;
   Row: Integer;
 begin
-  BeginPage('pages', Tr('Related Pages'));
-  PageHeader(Tr('Related Pages'));
-  W('<div class="textblock">Here is a list of all related documentation pages:</div>'#10 +
+  BeginPage('pages', NavTitle('pages'));
+  PageHeader(NavTitle('pages'));
+  W('<div class="textblock">' + NavIntro('pages', 'Here is a list of all related documentation pages:') + '</div>'#10 +
     '<div class="directory">'#10'<table class="directory">'#10);
   Row := 0;
   for P in FProject.Pages do
@@ -2367,9 +2502,9 @@ begin
       if Letters.IndexOf(Letter) < 0 then
         Letters.Add(Letter);
     end;
-    BeginPage('functions', Tr('Class Members'));
-    PageHeader(Tr('Class Members'));
-    W('<div class="textblock">Here is a list of all documented class members with links to the class documentation for each member:</div>'#10);
+    BeginPage('functions', NavTitle('classmembers'));
+    PageHeader(NavTitle('classmembers'));
+    W('<div class="textblock">' + NavIntro('classmembers', 'Here is a list of all documented class members with links to the class documentation for each member:') + '</div>'#10);
     S := '';
     for Letter in Letters do
       S := S + '<a class="qindex" href="#index_' + LowerCase(Letter) + '">' + HtmlEscape(Letter) + '</a>&#160;';
@@ -2465,59 +2600,43 @@ end;
 procedure THtmlGenerator.WriteMenuData;
 var
   SB: TStringBuilder;
-  First: Boolean;
 
-  procedure Item(const AText, AUrl: string; AOpen: Boolean);
+  procedure Items(AItems: TObjectList<TNavNode>);
+  var
+    I: Integer;
+    N: TNavNode;
   begin
-    if not First then
-      SB.Append(','#10);
-    First := False;
-    SB.Append('{text:"' + JsString(AText) + '",url:"' + JsString(AUrl) + '"');
-    if not AOpen then
+    for I := 0 to AItems.Count - 1 do
+    begin
+      N := AItems[I];
+      if I > 0 then
+        SB.Append(','#10);
+      SB.Append('{text:"' + JsString(N.Name) + '",url:"' + JsString(TabHref(N.Url)) + '"');
+      if N.Kids.Count > 0 then
+      begin
+        SB.Append(',children:['#10);
+        Items(N.Kids);
+        SB.Append(']');
+      end;
       SB.Append('}');
+    end;
   end;
 
 begin
   if FNoIndex or not FDynMenus then
     Exit;
+  if FMenu = nil then
+    BuildMenu;
   SB := TStringBuilder.Create;
   try
     SB.Append(LicenseText).Append('var menudata={children:['#10);
-    First := True;
-    Item(Tr('Main Page'), 'index' + FExt, False);
-    if FHasPages then
-      Item(Tr('Related Pages'), 'pages' + FExt, False);
-    if FHasGroups then
-      Item(Tr('Topics'), 'topics' + FExt, False);
-    if FHasUnits then
-    begin
-      Item(Tr('Units'), 'namespaces' + FExt, True);
-      SB.Append(',children:['#10);
-      First := True;
-      Item(Tr('Unit List'), 'namespaces' + FExt, False);
-      if FDirs <> nil then
-        Item(Tr('Directory Hierarchy'), 'dirs' + FExt, False);
-      SB.Append(']}');
-      First := False;
-    end;
-    if FHasClasses then
-    begin
-      Item(Tr('Classes'), 'annotated' + FExt, True);
-      SB.Append(',children:['#10);
-      First := True;
-      Item(Tr('Class List'), 'annotated' + FExt, False);
-      Item(Tr('Class Index'), 'classes' + FExt, False);
-      Item(Tr('Class Hierarchy'), 'hierarchy' + FExt, False);
-      Item(Tr('Class Members'), 'functions' + FExt, False);
-      SB.Append(']}');
-    end;
+    Items(FMenu.Kids);
     SB.Append(']}'#10);
     SaveText('menudata.js', SB.ToString);
   finally
     SB.Free;
   end;
 end;
-
 { ------------------------------------------------------------------ navigation tree }
 
 procedure THtmlGenerator.BuildNav;
@@ -2568,7 +2687,7 @@ begin
       FNav.Add(TNavNode.Create(P.Title, Url(P.DiskName)));
   if FHasGroups then
   begin
-    Topics := TNavNode.Create(Tr('Topics'), Url('topics'));
+    Topics := TNavNode.Create(NavTitle('topics'), Url('topics'));
     FNav.Add(Topics);
     for G in FProject.Groups do
       if G.Parent = nil then
@@ -2576,7 +2695,7 @@ begin
   end;
   if FHasUnits then
   begin
-    Units := TNavNode.Create(Tr('Units'), Url('namespaces'));
+    Units := TNavNode.Create(NavTitle('namespaces'), Url('namespaces'));
     FNav.Add(Units);
     for U in FProject.Units do
       if FLinks.IsLinkable(U) then
@@ -2584,13 +2703,13 @@ begin
   end;
   if FDirs <> nil then
   begin
-    Dirs := TNavNode.Create(Tr('Directory Hierarchy'), Url('dirs'));
+    Dirs := TNavNode.Create(NavTitle('filelist'), Url('dirs'));
     FNav.Add(Dirs);
     AddDir(Dirs, FDirs.Root);
   end;
   if FHasClasses then
   begin
-    Classes := TNavNode.Create(Tr('Classes'), Url('annotated'));
+    Classes := TNavNode.Create(NavTitle('classes'), Url('annotated'));
     FNav.Add(Classes);
     List := Classes.Add('Class List', Url('annotated'));
     for U in FProject.Units do

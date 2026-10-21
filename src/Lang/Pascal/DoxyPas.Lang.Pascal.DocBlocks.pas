@@ -340,6 +340,8 @@ begin
         Continue;
       if B.IsAfter then
         Target := FindPrev(ARoot, B, AFileName)
+      else if (ARoot.Line > 0) and SameText(ARoot.FileName, AFileName) and Before(B.Line, B.Col, ARoot.Line, ARoot.Col) then
+        Target := ARoot             // before the unit, program, library or package keyword: the documentation of the unit
       else
       begin
         Target := FindNext(ARoot, B, AFileName);

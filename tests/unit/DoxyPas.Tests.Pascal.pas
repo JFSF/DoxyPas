@@ -28,6 +28,7 @@ type
     [Test] procedure Utf8AndAnsiSourcesAreDecoded;
     [Test] procedure ClassMembersKeepVisibilityAndFlags;
     [Test] procedure ClassConstantsAndNestedTypes;
+    [Test] procedure UnitDocBeforeTheKeyword;
     [Test] procedure PropertyDetails;
     [Test] procedure DocCommentStyles;
     [Test] procedure PlainCommentsAreNotDocumentation;
@@ -316,6 +317,21 @@ begin
     Assert.IsTrue(C.Children[2].MethodKind = rkFunction);
     Assert.AreEqual('TA', C.Children[2].TypeText);
     Assert.IsTrue(C.Children[3].Protection = prPublished);
+  finally
+    Root.Free;
+  end;
+end;
+
+procedure TPascalParserTests.UnitDocBeforeTheKeyword;
+var
+  Err: string;
+  Root: TEntry;
+begin
+  Root := ParseText('{** Brief of the unit. }'#10'unit U; interface /// A proc.'#10'procedure P; implementation end.',
+    TPascalParseOptions.Default, Err);
+  try
+    Assert.AreEqual('Brief of the unit.', Root.Doc);
+    Assert.AreEqual('A proc.', Root.Children[0].Doc);
   finally
     Root.Free;
   end;

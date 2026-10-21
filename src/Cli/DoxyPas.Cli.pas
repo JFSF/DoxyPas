@@ -173,11 +173,24 @@ function RunGenerate(AConfig: TConfig): Integer;
 var
   Files: TArray<string>;
   Project: TProject;
-  Out_, Xml, Tag, Msg: string;
-  Quiet: Boolean;
+  Out_, Xml, Tag, Msg, AsError: string;
+  Quiet, Warned: Boolean;
   Count: Integer;
+
+  // the warnings of the model, in the format of WARN_FORMAT
+  procedure PrintWarnings;
+  var
+    M: string;
+  begin
+    if AConfig.GetBool('WARNINGS') then
+      for M in Project.Warnings do
+        Emit(ReformatMessage(M));
+  end;
+
 begin
   Quiet := AConfig.GetBool('QUIET');
+  ConfigureLog(AConfig.GetString('WARN_FORMAT'), AConfig.GetString('WARN_LOGFILE'));
+  AsError := AConfig.GetString('WARN_AS_ERROR');
   Out_ := AConfig.GetString('OUTPUT_DIRECTORY');
   if Out_ = '' then
     Out_ := GetCurrentDir;
@@ -194,8 +207,15 @@ begin
   end;
   if not Quiet then
     Writeln(Format('Parsing %d files...', [Length(Files)]));
+  Warned := False;
   Project := BuildProject(AConfig, Files);
   try
+    if SameText(AsError, 'YES') and (Project.Warnings.Count + MessageCount > 0) then
+    begin
+      // WARN_AS_ERROR = YES: the first warning stops the run
+      PrintWarnings;
+      Exit(1);
+    end;
     if AConfig.GetBool('GENERATE_XML') then
     begin
       Xml := TPath.Combine(Out_, AConfig.GetString('XML_OUTPUT'));
@@ -245,9 +265,8 @@ begin
       if not Quiet then
         Writeln(Format('%d files written to %s', [Count, Xml]));
     end;
-    if AConfig.GetBool('WARNINGS') then
-      for Msg in Project.Warnings do
-        Writeln(ErrOutput, Msg);
+    PrintWarnings;
+    Warned := Project.Warnings.Count + MessageCount > 0;
   finally
     // The process ends right after: the operating system gives the memory back at once, freeing the millions of
     // objects of a big project one by one took 5 s of the 28 s of the RTL + VCL + FMX. DOXYPAS_FREE: free them (to
@@ -257,6 +276,10 @@ begin
     Lap('end of the run');
   end;
   Result := 0;
+  // FAIL_ON_WARNINGS: the run is complete but the status says that there were warnings
+  if SameText(AsError, 'FAIL_ON_WARNINGS') or SameText(AsError, 'FAIL_ON_WARNINGS_PRINT') then
+    if Warned then
+      Result := 1;
 end;
 
 { Developer command: build the semantic model of AInput (file or folder, searched recursively) and dump it. }

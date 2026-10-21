@@ -969,6 +969,13 @@ begin
         All.Add(D);
     for D in AProject.Groups do All.Add(D);
     for D in AProject.Pages do All.Add(D);
+    // WARN_IF_UNDOC_ENUM_VAL: the values of the enumerations (the other members are in the list above)
+    if AProject.Options.WarnIfUndocEnumVal and not AProject.Options.ExtractAll then
+      for D in AProject.Members do
+        if TMemberDef(D).Kind = memEnumeration then
+          for M in TMemberDef(D).EnumValues do
+            if (M.Entry <> nil) and AProject.IsVisible(M) and not M.IsDocumented then
+              AProject.Warn(M.Entry.FileName, M.Entry.Line, Format('enumeration value %s is not documented.', [DescribeWhere(M)]));
     for D in All do
     begin
       if (D.Entry = nil) or not AProject.IsVisible(D) then
@@ -1011,7 +1018,14 @@ begin
               AProject.Warn(File_, Line, Format('argument ''%s'' of command @param is not found in the argument list of %s%s',
                 [N, M.QualifiedName, M.Signature]));
           end;
-          if AProject.Options.WarnNoParamDoc and (Names.Count > 0) then
+          // WARN_NO_PARAMDOC: none of the parameters is documented; WARN_IF_INCOMPLETE_DOC: only some of them
+          if (Names.Count = 0) and (M.Entry.Args.Count > 0) then
+          begin
+            if AProject.Options.WarnNoParamDoc then
+              for A in M.Entry.Args do
+                AProject.Warn(File_, Line, Format('parameter ''%s'' of %s is not documented', [A.Name, M.QualifiedName]));
+          end
+          else if AProject.Options.WarnIfIncompleteDoc then
             for A in M.Entry.Args do
               if Names.IndexOf(A.Name) < 0 then
                 AProject.Warn(File_, Line, Format('parameter ''%s'' of %s is not documented', [A.Name, M.QualifiedName]));

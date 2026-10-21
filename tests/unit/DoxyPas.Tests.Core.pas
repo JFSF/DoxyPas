@@ -17,6 +17,8 @@ type
     procedure FormatMessageWithoutLocation;
     [Test]
     procedure InputEncodings;
+    [Test]
+    procedure MessageFormat;
   end;
 
 implementation
@@ -41,6 +43,22 @@ end;
 procedure TCoreTests.FormatMessageWithoutLocation;
 begin
   Assert.AreEqual('error: bad', FormatMessage(mkError, '', 0, 'bad'));
+end;
+
+procedure TCoreTests.MessageFormat;
+begin
+  try
+    ConfigureLog('[$file] $line => $text', '');
+    Assert.AreEqual('[a.pas] 12 => warning: oops', FormatMessage(mkWarning, 'a.pas', 12, 'oops'));
+    Assert.AreEqual('warning: oops', FormatMessage(mkWarning, '', 0, 'oops'));
+    // the warnings of the model come as "file:line: text"
+    Assert.AreEqual('[C:\x\a.pas] 7 => warning: bad', ReformatMessage('C:\x\a.pas:7: warning: bad'));
+    Assert.AreEqual('[a.pas] 3 => warning: no kind', ReformatMessage('a.pas:3: no kind'));
+    Assert.AreEqual('warning: no file', ReformatMessage('warning: no file'));
+  finally
+    ConfigureLog('', '');
+  end;
+  Assert.AreEqual('a.pas:12: warning: oops', FormatMessage(mkWarning, 'a.pas', 12, 'oops'));
 end;
 
 procedure TCoreTests.InputEncodings;

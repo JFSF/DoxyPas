@@ -25,6 +25,8 @@ type
     WarnIfUndocumented: Boolean;
     WarnIfDocError: Boolean;
     WarnNoParamDoc: Boolean;
+    WarnIfIncompleteDoc: Boolean;   // some parameters documented and others not
+    WarnIfUndocEnumVal: Boolean;
     CaseSenseNames: Boolean;         // file names: keep case (Linux) or escape upper case (Windows)
     UnitScopes: TArray<string>;      // prefixes tried for unit names ("Classes" -> "System.Classes")
     StripFromPath: TArray<string>;   // prefixes removed from file names in the output
@@ -156,6 +158,8 @@ begin
   Result.WarnIfUndocumented := AConfig.GetBool('WARN_IF_UNDOCUMENTED');
   Result.WarnIfDocError := AConfig.GetBool('WARN_IF_DOC_ERROR');
   Result.WarnNoParamDoc := AConfig.GetBool('WARN_NO_PARAMDOC');
+  Result.WarnIfIncompleteDoc := AConfig.GetBool('WARN_IF_INCOMPLETE_DOC');
+  Result.WarnIfUndocEnumVal := AConfig.GetBool('WARN_IF_UNDOC_ENUM_VAL');
   Cs := AConfig.GetString('CASE_SENSE_NAMES');
   if SameText(Cs, 'SYSTEM') then
     Result.CaseSenseNames := Default.CaseSenseNames

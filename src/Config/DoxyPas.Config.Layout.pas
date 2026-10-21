@@ -52,7 +52,8 @@ implementation
 
 uses
   System.SysUtils,
-  System.IOUtils;
+  System.IOUtils,
+  DoxyPas.Core.Log;
 
 { TLayoutEntry }
 
@@ -276,8 +277,14 @@ begin
     FRoot := ParseLayoutText(TFile.ReadAllText(Name, TEncoding.UTF8));
     FLoadedFlag := (FRoot <> nil) and SameText(FRoot.Name, 'doxygenlayout');
     if not FLoadedFlag then
+    begin
       FreeAndNil(FRoot);
-  end;
+      if AConfig.GetBool('WARN_LAYOUT_FILE') then
+        Warn(Name, 1, 'the layout file is not a valid layout (the root element must be doxygenlayout): ignored');
+    end;
+  end
+  else if (Name <> '') and AConfig.GetBool('WARN_LAYOUT_FILE') then
+    Warn('', 0, Format('layout file ''%s'' not found: ignored', [Name]));
 end;
 
 destructor TLayout.Destroy;

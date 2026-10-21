@@ -25,6 +25,8 @@ uses
   System.Generics.Collections,
   DoxyPas.Core.Version,
   DoxyPas.Core.Log,
+  DoxyPas.Model.Calls,
+  DoxyPas.Output.DotGraphs,
   DoxyPas.Output.Translator,
   DoxyPas.Doc.Nodes,
   DoxyPas.Doc.Parser,
@@ -69,6 +71,15 @@ type
     FLinks: TLinkResolver;
     FDir: string;
     FFiles: Integer;
+    FDotOn: Boolean;          // HAVE_DOT and dot runs: the graphs are PDF files included with \includegraphics
+    FDot: TDotGraphs;
+    FRunner: TDotRunner;
+    FBodies: TBodyLocator;
+    FCalls: TCallIndex;
+    function GraphBlock(const ABase, ATitle, ADot: string): string;
+    function ClassGraphs(C: TClassDef): string;
+    function UnitGraphs(U: TUnitDef): string;
+    function MemberGraphs(M: TMemberDef): string;
     function Inline_(ANode: TDocNode): string;
     function Children_(ANode: TDocNode): string;
     function Block(ANode: TDocNode): string;
@@ -107,10 +118,25 @@ begin
     SetOutputLanguage('English');
     Warn('', 0, 'OUTPUT_LANGUAGE: the LaTeX output is in English for this language');
   end;
+  FDotOn := AConfig.GetBool('HAVE_DOT');
+  if FDotOn then
+  begin
+    if AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH') then
+    begin
+      FBodies := TBodyLocator.Create(AProject, FLinks);
+      FCalls := TCallIndex.Create(FBodies, FLinks);
+    end;
+    FDot := TDotGraphs.Create(AProject, FLinks, AConfig, FCalls, nil);
+    FRunner := TDotRunner.Create(ADir, AConfig.GetString('DOT_PATH'), 'pdf', AConfig.GetBool('DOT_CLEANUP'));
+  end;
 end;
 
 destructor TLatexGenerator.Destroy;
 begin
+  FRunner.Free;
+  FDot.Free;
+  FCalls.Free;
+  FBodies.Free;
   FLinks.Free;
   inherited;
 end;
@@ -380,6 +406,71 @@ begin
   else
     Result := Tr(KindsUnit[AOrder mod 10]);
 end;
+// A graph as a figure: dot makes ABase.pdf later (FlushGraphs of Run), one run for many graphs.
+function TLatexGenerator.GraphBlock(const ABase, ATitle, ADot: string): string;
+begin
+  FRunner.Queue(ABase, ADot);
+  Result := '\par\noindent\textit{' + LatexEscape(ATitle) + '}\par'#10'\begin{center}'#10 +
+    '\includegraphics[max width=\linewidth,max height=0.55\textheight]{' + ABase + '.pdf}'#10'\end{center}'#10;
+end;
+
+function TLatexGenerator.ClassGraphs(C: TClassDef): string;
+var
+  D: TClassDef;
+  M: TMemberDef;
+  Related: Boolean;
+begin
+  Result := '';
+  if not FDotOn then
+    Exit;
+  Related := C.Bases.Count > 0;
+  for D in C.Derived do
+    if FLinks.IsLinkable(D) then
+      Related := True;
+  if Related and SameText(FConfig.GetString('CLASS_GRAPH'), 'YES') then
+    Result := GraphBlock(C.DiskName + '_inherit_graph', Format(Tr('Inheritance diagram for %s:'), [C.Name]),
+      FDot.ClassDot(C, False));
+  if FConfig.GetBool('COLLABORATION_GRAPH') then
+    for M in C.Members do
+      if (M.Kind in [memVariable, memProperty]) and (M.Entry.TypeText <> '') then
+      begin
+        Result := Result + GraphBlock(C.DiskName + '_coll_graph', Format(Tr('Collaboration diagram for %s:'), [C.Name]),
+          FDot.ClassDot(C, True));
+        Break;
+      end;
+end;
+
+function TLatexGenerator.UnitGraphs(U: TUnitDef): string;
+var
+  T: TUnitDef;
+  Used: Boolean;
+begin
+  Result := '';
+  if not FDotOn then
+    Exit;
+  if FConfig.GetBool('INCLUDE_GRAPH') and (U.UsesInterfaceNames.Count > 0) then
+    Result := GraphBlock(U.DiskName + '_uses_graph', Format(Tr('Dependency graph for %s:'), [U.Name]),
+      FDot.UnitDot(U, False));
+  Used := False;
+  for T in U.UsedBy do
+    if FLinks.IsLinkable(T) then
+      Used := True;
+  if Used and FConfig.GetBool('INCLUDED_BY_GRAPH') then
+    Result := Result + GraphBlock(U.DiskName + '_used_by_graph',
+      Format(Tr('This graph shows which units directly use this unit (%s):'), [U.Name]), FDot.UnitDot(U, True));
+end;
+
+function TLatexGenerator.MemberGraphs(M: TMemberDef): string;
+begin
+  Result := '';
+  if not FDotOn or (FCalls = nil) or (M.Kind <> memFunction) then
+    Exit;
+  if FConfig.GetBool('CALL_GRAPH') and (FCalls.CallsOf(M) <> nil) then
+    Result := GraphBlock(M.DiskName + '_cgraph', Tr('Here is the call graph for this function:'), FDot.CallDot(M, False));
+  if FConfig.GetBool('CALLER_GRAPH') and (FCalls.CallersOf(M) <> nil) then
+    Result := Result + GraphBlock(M.DiskName + '_icgraph', Tr('Here is the caller graph for this function:'),
+      FDot.CallDot(M, True));
+end;
 function TLatexGenerator.Visible(AList: TList<TMemberDef>): TList<TMemberDef>;
 var
   M: TMemberDef;
@@ -440,7 +531,7 @@ begin
     begin
       Body := Render(M.Brief + #10#10 + M.Detailed);
       Result := Result + '\DoxySubsection{' + LatexEscape(M.Name) + '}'#10'\label{' + LabelOf(M) + '}'#10 +
-        IndexEntry(M.Name, AParent) + #10'\DoxyProto{' + LatexEscape(MemberText(M)) + '}'#10 + Body + #10;
+        IndexEntry(M.Name, AParent) + #10'\DoxyProto{' + LatexEscape(MemberText(M)) + '}'#10 + Body + MemberGraphs(M) + #10;
     end;
   finally
     Vis.Free;
@@ -486,6 +577,7 @@ begin
     end;
   if Text <> '' then
     Result := Result + '\noindent ' + LatexEscape(Tr('Inherited by')) + ' ' + Text + '.\par'#10;
+  Result := Result + ClassGraphs(C);
   Vis := Visible(C.Members);
   try
     if Vis.Count > 0 then
@@ -525,6 +617,7 @@ begin
   end;
   if Text <> '' then
     Result := Result + '\noindent ' + LatexEscape(Tr('Uses')) + ' ' + Text + '.\par'#10;
+  Result := Result + UnitGraphs(U);
   Text := '';
   for C in U.Classes do
     if FLinks.IsLinkable(C) and (C.Scope = U) then
@@ -573,6 +666,7 @@ const
     '\RequirePackage{fvextra}'#10 +
     '\RequirePackage{makeidx}'#10 +
     '\RequirePackage{multicol}'#10 +
+    '\RequirePackage[export]{adjustbox}'#10 +
     '\definecolor{doxyblue}{HTML}{354C7B}'#10 +
     '\definecolor{doxyframe}{HTML}{C4CFE5}'#10 +
     '\definecolor{doxyback}{HTML}{F9FAFC}'#10 +
@@ -680,6 +774,11 @@ var
 
 begin
   TDirectory.CreateDirectory(FDir);
+  if FDotOn and not FRunner.Available then
+  begin
+    FDotOn := False;
+    Warn('', 0, 'HAVE_DOT = YES, but dot could not be run (set DOT_PATH or put Graphviz on the PATH): no graphs');
+  end;
   Compact := FConfig.GetBool('COMPACT_LATEX');
   Hyper := FConfig.GetBool('PDF_HYPERLINKS');
   HideIndex := FConfig.GetBool('LATEX_HIDE_INDICES');
@@ -802,6 +901,8 @@ begin
     Main := Main + Footer;
     Save('refman.tex', Main);
     Save('doxypas.sty', StyleText);
+    if FRunner <> nil then
+      Inc(FFiles, FRunner.Flush);
     Extra := CopyList('LATEX_EXTRA_FILES');
     Cmd := FConfig.GetString('LATEX_CMD_NAME');
     if Cmd = '' then

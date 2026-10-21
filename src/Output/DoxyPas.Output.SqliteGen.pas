@@ -31,6 +31,7 @@ uses
   DoxyPas.Doc.Parser,
   DoxyPas.Model.Entry,
   DoxyPas.Model.Defs,
+  DoxyPas.Model.Calls,
   DoxyPas.Model.Links;
 
 const
@@ -94,6 +95,12 @@ const
     'WHERE path.type=1 AND path.local=1 AND path.found=1;'#10 +
     'CREATE VIEW IF NOT EXISTS external_file (rowid, found, name) AS SELECT path.rowid, path.found, path.name FROM ' +
     'path WHERE path.type=1 AND path.local=0;'#10 +
+    'CREATE VIEW IF NOT EXISTS inline_xrefs (rowid, src_rowid, dst_rowid) AS SELECT xrefs.rowid, xrefs.src_rowid, ' +
+    'xrefs.dst_rowid FROM xrefs WHERE xrefs.context=''inline'';'#10 +
+    'CREATE VIEW IF NOT EXISTS argument_xrefs (rowid, src_rowid, dst_rowid) AS SELECT xrefs.rowid, xrefs.src_rowid, ' +
+    'xrefs.dst_rowid FROM xrefs WHERE xrefs.context=''argument'';'#10 +
+    'CREATE VIEW IF NOT EXISTS initializer_xrefs (rowid, src_rowid, dst_rowid) AS SELECT xrefs.rowid, xrefs.src_rowid, ' +
+    'xrefs.dst_rowid FROM xrefs WHERE xrefs.context=''initializer'';'#10 +
     'CREATE VIEW IF NOT EXISTS inner_outer AS SELECT inner.*, outer.* FROM def AS inner JOIN contains ON ' +
     'inner.rowid=contains.inner_rowid JOIN def AS outer ON outer.rowid=contains.outer_rowid;'#10;
 
@@ -117,6 +124,9 @@ type
     FNext: Integer;
     function Plain(const AText: string): string;
     function PathId(const AFile: string): Integer;
+    function ExternalPathId(const AName: string): Integer;
+    procedure Includes;
+    procedure Xrefs;
     function IdOf(ADef: TDefinition): Integer;
     function Prot(AProt: TProtection): Integer;
     function Virt(M: TMemberDef): Integer;
@@ -181,6 +191,81 @@ begin
     Result := FPaths.Count + 1;
     FPaths.Add(Name, Result);
     Exec('INSERT INTO path (rowid, type, local, found, name) VALUES (' + Result.ToString + ',1,1,1,' + '''' + Name.Replace('''', '''''') + ''');');
+  end;
+end;
+
+// A unit that is not part of the project (System.SysUtils...): a path that is not local and was not found.
+function TSqliteGenerator.ExternalPathId(const AName: string): Integer;
+begin
+  if not FPaths.TryGetValue('?' + AName, Result) then
+  begin
+    Result := FPaths.Count + 1;
+    FPaths.Add('?' + AName, Result);
+    Exec('INSERT INTO path (rowid, type, local, found, name) VALUES (' + Result.ToString + ',1,0,0,' + SqlText(AName) + ');');
+  end;
+end;
+
+// The uses clauses as Doxygen's #include relations: the file of a unit includes the files of the units it uses.
+procedure TSqliteGenerator.Includes;
+var
+  U, T: TUnitDef;
+  S: string;
+  Names: TList<string>;
+begin
+  for U in FProject.Units do
+    if FLinks.IsLinkable(U) and (U.FileName <> '') then
+    begin
+      Names := TList<string>.Create;
+      try
+        Names.AddRange(U.UsesInterfaceNames);
+        for S in U.UsesImplementationNames do
+          if not Names.Contains(S) then
+            Names.Add(S);
+        for S in Names do
+        begin
+          T := FProject.FindUnit(S);
+          if (T <> nil) and (T.FileName <> '') then
+            Exec('INSERT OR IGNORE INTO includes (local, src_id, dst_id) VALUES (1,' + PathId(U.FileName).ToString + ',' +
+              PathId(T.FileName).ToString + ');')
+          else
+            Exec('INSERT OR IGNORE INTO includes (local, src_id, dst_id) VALUES (0,' + PathId(U.FileName).ToString + ',' +
+              ExternalPathId(S).ToString + ');');
+        end;
+      finally
+        Names.Free;
+      end;
+    end;
+end;
+
+// REFERENCES_RELATION / REFERENCED_BY_RELATION: what the body of a routine uses (the "inline" context of Doxygen).
+procedure TSqliteGenerator.Xrefs;
+var
+  Bodies: TBodyLocator;
+  Calls: TCallIndex;
+  M, T: TMemberDef;
+  L: TList<TMemberDef>;
+begin
+  if not (FConfig.GetBool('REFERENCES_RELATION') or FConfig.GetBool('REFERENCED_BY_RELATION')) then
+    Exit;
+  Bodies := TBodyLocator.Create(FProject, FLinks);
+  try
+    Calls := TCallIndex.Create(Bodies, FLinks);
+    try
+      for M in Bodies.Routines do
+        if FIds.ContainsKey(M) then
+        begin
+          L := Calls.ReferencesOf(M);
+          if L <> nil then
+            for T in L do
+              if FIds.ContainsKey(T) then
+                Exec('INSERT OR IGNORE INTO xrefs (src_rowid, dst_rowid, context) VALUES (' + IdOf(M).ToString + ',' +
+                  IdOf(T).ToString + ',''inline'');');
+        end;
+    finally
+      Calls.Free;
+    end;
+  finally
+    Bodies.Free;
   end;
 end;
 
@@ -391,6 +476,8 @@ begin
     if (M.Reimplements <> nil) and FIds.ContainsKey(M) and FIds.ContainsKey(M.Reimplements) then
       Exec('INSERT OR IGNORE INTO reimplements (memberdef_rowid, reimplemented_rowid) VALUES (' +
         IdOf(M).ToString + ',' + IdOf(M.Reimplements).ToString + ');');
+  Includes;
+  Xrefs;
   Exec('COMMIT;');
   FSB.Append(Views);
   Result := FSB.ToString;

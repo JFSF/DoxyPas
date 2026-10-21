@@ -294,7 +294,10 @@ begin
     begin
       Result := FDoc.DefUrl(ADef);
     end);
-  FRunner := TDotRunner.Create(ADir, AConfig.GetString('DOT_PATH'), 'svg', AConfig.GetBool('DOT_CLEANUP'));
+  FRunner := TDotRunner.Create(ADir, AConfig.GetString('DOT_PATH'), AConfig.GetString('DOT_IMAGE_FORMAT'),
+    AConfig.GetBool('DOT_CLEANUP'));
+  FRunner.BatchSize := AConfig.GetInt('DOT_BATCH_SIZE');
+  FRunner.Threads := AConfig.GetInt('DOT_NUM_THREADS');
   FColors := THtmlColors.Parse(AConfig.GetString('HTML_COLORSTYLE'), AConfig.GetInt('HTML_COLORSTYLE_HUE'),
     AConfig.GetInt('HTML_COLORSTYLE_SAT'), AConfig.GetInt('HTML_COLORSTYLE_GAMMA'));
   FLight := HtmlResourceText('lightmode_settings.css');
@@ -1857,9 +1860,13 @@ end;
 function THtmlGenerator.RunGraph(const ABase, ATitle, ADot: string): string;
 begin
   FRunner.Queue(ABase, ADot);
-  Result := '<div class="dynheader">'#10 + ATitle + '</div>'#10'<div class="dyncontent">'#10 +
-    '<div class="center"><object type="image/svg+xml" data="' + ABase + '.svg" class="inherit_graph">' +
-    ATitle + '</object></div>'#10'</div>'#10;
+  Result := '<div class="dynheader">'#10 + ATitle + '</div>'#10'<div class="dyncontent">'#10;
+  if FRunner.Extension = 'svg' then
+    Result := Result + '<div class="center"><object type="image/svg+xml" data="' + ABase + '.svg" class="inherit_graph">' +
+      ATitle + '</object></div>'#10'</div>'#10
+  else
+    Result := Result + '<div class="center"><img src="' + ABase + '.' + FRunner.Extension + '" alt="' + HtmlEscape(ATitle) +
+      '" class="inherit_graph"/></div>'#10'</div>'#10;
 end;
 
 procedure THtmlGenerator.FlushGraphs;

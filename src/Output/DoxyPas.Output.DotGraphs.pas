@@ -25,6 +25,8 @@ type
     FIds: TDictionary<string, Integer>;
     FMax: Integer;
   public
+    /// <summary>DOT_COMMON_ATTR, DOT_NODE_ATTR and DOT_EDGE_ATTR (set by TDotGraphs).</summary>
+    class var CommonAttr, NodeAttr, EdgeAttr: string;
     constructor Create(const AName: string; AMaxNodes: Integer; const ARankDir: string);
     destructor Destroy; override;
     function Full: Boolean;
@@ -41,6 +43,7 @@ type
     FConfig: TConfig;
     FCalls: TCallIndex;
     FUrl: TDefUrl;
+    FMaxDepth: Integer;           // MAX_DOT_GRAPH_DEPTH
     function UrlOf(ADef: TDefinition): string;
   public
     /// <summary>ACalls (CALL_GRAPH / CALLER_GRAPH) and AUrl may be nil.</summary>
@@ -59,10 +62,16 @@ type
   strict private
     FDir: string;
     FPath: string;
-    FFormat: string;
+    FFormat: string;      // as dot knows it (png:cairo)
+    FExt: string;         // the extension of the images (png)
     FCleanup: Boolean;
     FPending: TList<string>;
   public
+    /// <summary>DOT_BATCH_SIZE: the graphs of each run of dot; DOT_NUM_THREADS: the runs at the same time (0: one for each processor).</summary>
+    BatchSize: Integer;
+    Threads: Integer;
+    /// <summary>The extension of the images (svg, png, ...).</summary>
+    property Extension: string read FExt;
     /// <summary>ADotPath: DOT_PATH; AFormat: svg, pdf, png...</summary>
     constructor Create(const ADir, ADotPath, AFormat: string; ACleanup: Boolean);
     destructor Destroy; override;
@@ -92,6 +101,8 @@ uses
   System.IOUtils,
   System.Math,
   System.RegularExpressions,
+  System.Threading,
+  DoxyPas.Core.Env,
   DoxyPas.Model.Entry;
 
 {$IFDEF MSWINDOWS}
@@ -134,6 +145,14 @@ end;
 
 { TDotBuilder }
 
+// Two lists of attributes as one (either may be empty).
+function Join(const A, B: string): string;
+begin
+  if A = '' then Result := B
+  else if B = '' then Result := A
+  else Result := A + ',' + B;
+end;
+
 constructor TDotBuilder.Create(const AName: string; AMaxNodes: Integer; const ARankDir: string);
 begin
   inherited Create;
@@ -144,9 +163,8 @@ begin
   FIds := TDictionary<string, Integer>.Create;
   FSB.Append('digraph ').Append(DotQuote(AName)).Append(' {'#10'  rankdir=').Append(ARankDir).Append(';'#10 +
     '  bgcolor="transparent";'#10 +
-    '  edge [fontname="Helvetica", fontsize=10, labelfontname="Helvetica", labelfontsize=10];'#10 +
-    '  node [fontname="Helvetica", fontsize=10, shape=box, height=0.2, width=0.4, color="gray40", ' +
-    'fillcolor="white", style=filled];'#10);
+    '  edge [' + Join(CommonAttr, EdgeAttr) + '];'#10 +   // DOT_COMMON_ATTR goes to the nodes and to the edges
+    '  node [' + Join(CommonAttr, NodeAttr) + ', color="gray40", fillcolor="white", style=filled];'#10);
 end;
 
 destructor TDotBuilder.Destroy;
@@ -196,6 +214,12 @@ begin
   FConfig := AConfig;
   FCalls := ACalls;
   FUrl := AUrl;
+  FMaxDepth := AConfig.GetInt('MAX_DOT_GRAPH_DEPTH');
+  TDotBuilder.CommonAttr := AConfig.GetString('DOT_COMMON_ATTR');
+  TDotBuilder.NodeAttr := AConfig.GetString('DOT_NODE_ATTR');
+  TDotBuilder.EdgeAttr := AConfig.GetString('DOT_EDGE_ATTR');
+  if AConfig.GetString('DOT_FONTPATH') <> '' then
+    SetEnv('DOTFONTPATH', AConfig.GetString('DOT_FONTPATH'));
 end;
 
 function TDotGraphs.UrlOf(ADef: TDefinition): string;
@@ -209,10 +233,10 @@ end;
 // Doxygen's inheritance graph: all ancestors above the class, its descendants (three levels) below it.
 function TDotGraphs.ClassDot(C: TClassDef; ACollab: Boolean): string;
 const
-  MaxDepth = 3;
   InheritEdge = 'dir="back", color="midnightblue", style="solid"';
 var
   G: TDotBuilder;
+  MaxDepth: Integer;
 
   function ClassNode(X: TClassDef; ARoot: Boolean): Integer;
   begin
@@ -222,11 +246,13 @@ var
       Result := G.Node(X.DiskName, X.Name, UrlOf(X), '');
   end;
 
-  procedure Ancestors(X: TClassDef; AId: Integer);
+  procedure Ancestors(X: TClassDef; AId, ADepth: Integer);
   var
     B: TBaseRef;
     P: Integer;
   begin
+    if (FMaxDepth > 0) and (ADepth > FMaxDepth) then
+      Exit;
     for B in X.Bases do
     begin
       if G.Full then
@@ -235,7 +261,7 @@ var
       begin
         P := ClassNode(B.ClassDef, False);
         G.Edge(P, AId, InheritEdge);
-        Ancestors(B.ClassDef, P);
+        Ancestors(B.ClassDef, P, ADepth + 1);
       end
       else
       begin
@@ -305,10 +331,14 @@ var
 var
   Root: Integer;
 begin
+  // the descendants: three levels, or MAX_DOT_GRAPH_DEPTH
+  MaxDepth := 3;
+  if FMaxDepth > 0 then
+    MaxDepth := FMaxDepth;
   G := TDotBuilder.Create(C.Name, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'TB');
   try
     Root := ClassNode(C, True);
-    Ancestors(C, Root);
+    Ancestors(C, Root, 1);
     if ACollab then
       Usages(Root)
     else
@@ -370,10 +400,9 @@ end;
 // Call graph of a routine (what it calls) or, with ACallers, its caller graph; two levels deep.
 // shortcut: depth 2, deeper chains make the graph unreadable; the calls are found by name (see DoxyPas.Model.Calls).
 function TDotGraphs.CallDot(M: TMemberDef; ACallers: Boolean): string;
-const
-  MaxDepth = 2;
 var
   G: TDotBuilder;
+  MaxDepth: Integer;
 
   function NodeOf(X: TMemberDef; ARoot: Boolean): Integer;
   var
@@ -415,6 +444,9 @@ var
   end;
 
 begin
+  MaxDepth := 2;                             // or MAX_DOT_GRAPH_DEPTH
+  if FMaxDepth > 0 then
+    MaxDepth := FMaxDepth;
   G := TDotBuilder.Create(M.Name, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'LR');
   try
     Walk(M, NodeOf(M, True), 1);
@@ -435,7 +467,10 @@ begin
   if FPath <> '' then
     FPath := IncludeTrailingPathDelimiter(FPath);
   FFormat := AFormat;
+  FExt := Copy(AFormat, 1, Pos(':', AFormat + ':') - 1);
   FCleanup := ACleanup;
+  BatchSize := 25;
+  Threads := 1;
   FPending := TList<string>.Create;
 end;
 
@@ -456,40 +491,69 @@ begin
   FPending.Add(ABase);
 end;
 
-// dot -T<format> -O writes <name>.dot.<format> for every file it is given; they are renamed to <name>.<format>.
+// dot -T<format> -O writes <name>.dot.<extension> for every file it is given; they are renamed to <name>.<extension>.
 function TDotRunner.Flush: Integer;
-const
-  Chunk = 25;
 var
-  I, J: Integer;
+  I, J, N: Integer;
   Cmd, Dot, Img, Target: string;
+  Cmds: TList<string>;
+  Pool: TThreadPool;
 begin
   Result := 0;
-  I := 0;
-  while I < FPending.Count do
-  begin
-    Cmd := '"' + FPath + 'dot" -T' + FFormat + ' -O';
-    for J := I to Min(I + Chunk, FPending.Count) - 1 do
-      Cmd := Cmd + ' "' + FPending[J] + '.dot"';
-    RunTool(Cmd, FDir);
-    for J := I to Min(I + Chunk, FPending.Count) - 1 do
+  if FPending.Count = 0 then
+    Exit;
+  Cmds := TList<string>.Create;
+  try
+    I := 0;
+    while I < FPending.Count do
     begin
-      Dot := TPath.Combine(FDir, FPending[J] + '.dot');
-      Img := Dot + '.' + FFormat;
-      Target := TPath.Combine(FDir, FPending[J] + '.' + FFormat);
-      if TFile.Exists(Img) then
-      begin
-        if TFile.Exists(Target) then
-          TFile.Delete(Target);
-        TFile.Move(Img, Target);
-        Inc(Result);
-      end;
-      if FCleanup then
-        TFile.Delete(Dot);
+      Cmd := '"' + FPath + 'dot" -T' + FFormat + ' -O';
+      for J := I to Min(I + Max(BatchSize, 1), FPending.Count) - 1 do
+        Cmd := Cmd + ' "' + FPending[J] + '.dot"';
+      Cmds.Add(Cmd);
+      Inc(I, Max(BatchSize, 1));
     end;
-    Inc(I, Chunk);
+    // the runs of dot are independent: several at the same time (the work is the one of dot, in other processes)
+    N := Threads;
+    if N <= 0 then
+      N := TThread.ProcessorCount;
+    N := Min(N, Cmds.Count);
+    if N <= 1 then
+      for I := 0 to Cmds.Count - 1 do
+        RunTool(Cmds[I], FDir)
+    else
+    begin
+      Pool := TThreadPool.Create;
+      try
+        Pool.SetMinWorkerThreads(N);
+        Pool.SetMaxWorkerThreads(N);
+        TParallel.For(0, Cmds.Count - 1,
+          procedure(AIndex: Integer)
+          begin
+            RunTool(Cmds[AIndex], FDir);
+          end, Pool);
+      finally
+        Pool.Free;
+      end;
+    end;
+  finally
+    Cmds.Free;
+  end;
+  for J := 0 to FPending.Count - 1 do
+  begin
+    Dot := TPath.Combine(FDir, FPending[J] + '.dot');
+    Img := Dot + '.' + FExt;
+    Target := TPath.Combine(FDir, FPending[J] + '.' + FExt);
+    if TFile.Exists(Img) then
+    begin
+      if TFile.Exists(Target) then
+        TFile.Delete(Target);
+      TFile.Move(Img, Target);
+      Inc(Result);
+    end;
+    if FCleanup then
+      TFile.Delete(Dot);
   end;
   FPending.Clear;
 end;
-
 end.

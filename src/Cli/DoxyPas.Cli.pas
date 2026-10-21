@@ -8,6 +8,7 @@ function RunCli(const AArgs: TArray<string>): Integer;
 implementation
 
 uses
+  DoxyPas.Core.Env,
 {$IFDEF MSWINDOWS}
   Winapi.Windows,
 {$ENDIF}
@@ -190,6 +191,7 @@ var
 begin
   Quiet := AConfig.GetBool('QUIET');
   ConfigureLog(AConfig.GetString('WARN_FORMAT'), AConfig.GetString('WARN_LOGFILE'));
+  PrependToPath(AConfig.GetList('EXTERNAL_TOOL_PATH'));        // where dot, latex... are looked for
   AsError := AConfig.GetString('WARN_AS_ERROR');
   Out_ := AConfig.GetString('OUTPUT_DIRECTORY');
   if Out_ = '' then

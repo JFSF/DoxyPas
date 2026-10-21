@@ -97,6 +97,8 @@ begin
   Add('Here is the directory hierarchy of the source files:', 'Segue a hierarquia de diretórios dos ficheiros de código:',
     '', 'Esta es la jerarquía de directorios de los archivos de código:',
     'Voici la hiérarchie des répertoires des fichiers source :', 'Hier ist die Verzeichnishierarchie der Quelldateien:');
+  Add('References', 'Referencia', '', 'Hace referencia a', 'Référence', 'Verweist auf');
+  Add('Referenced by', 'Referenciado por', '', 'Referenciado por', 'Référencé par', 'Wird referenziert von');
   Add('Collaboration diagram for %s:', 'Diagrama de colaboração para %s:', '', 'Diagrama de colaboración para %s:',
     'Graphe de collaboration de %s :', 'Zusammenarbeitsdiagramm für %s:');
   Add('Dependency graph for %s:', 'Grafo de dependências para %s:', '', 'Gráfico de dependencias para %s:',

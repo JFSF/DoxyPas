@@ -99,6 +99,7 @@ type
     FBodies: TBodyLocator;    // INLINE_SOURCES / CALL_GRAPH / CALLER_GRAPH: where the bodies are
     FCalls: TCallIndex;       // CALL_GRAPH / CALLER_GRAPH, nil otherwise
     FDotPath: string;
+    FRelations: Boolean;      // REFERENCES_RELATION / REFERENCED_BY_RELATION
     FInline: Boolean;         // INLINE_SOURCES: the body of each routine in its documentation
     FWordCache: TDictionary<string, string>;
     FSource: Boolean;         // SOURCE_BROWSER: a highlighted page with line numbers for every unit
@@ -165,6 +166,7 @@ type
     procedure WriteSource(U: TUnitDef);
     function WordLinker(AScope: TDefinition): TWordLinker;
     function InlineSource(M: TMemberDef): string;
+    function Relations(M: TMemberDef): string;
     procedure WriteGroup(G: TGroupDef);
     procedure WritePage(P: TPageDef);
     // index pages
@@ -344,9 +346,10 @@ begin
   FPendingGraphs := TList<string>.Create;
   FDotGraphs := AConfig.GetBool('HAVE_DOT');
   FInline := AConfig.GetBool('INLINE_SOURCES');
-  if FInline or (FDotGraphs and (AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH'))) then
+  FRelations := AConfig.GetBool('REFERENCES_RELATION') or AConfig.GetBool('REFERENCED_BY_RELATION');
+  if FRelations or FInline or (FDotGraphs and (AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH'))) then
     FBodies := TBodyLocator.Create(AProject, FLinks);
-  if FDotGraphs and (AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH')) then
+  if FRelations or (FDotGraphs and (AConfig.GetBool('CALL_GRAPH') or AConfig.GetBool('CALLER_GRAPH'))) then
     FCalls := TCallIndex.Create(FBodies, FLinks);
   FDotPath := AConfig.GetString('DOT_PATH');
   if FDotPath <> '' then
@@ -1203,7 +1206,7 @@ begin
     '<h2 class="memtitle"><span class="permalink"><a href="#' + M.DiskName + '">&#9670;&#160;</a></span>' + Title +
     '</h2>'#10#10'<div class="memitem">'#10'<div class="memproto">'#10 +
     '      <table class="memname">'#10'        <tr>'#10'          <td class="memname">' + ProtoHtml(M) +
-    '</td>'#10'        </tr>'#10'      </table>'#10'</div><div class="memdoc">'#10 + Body + Tail + DefinedAt(M) + InlineSource(M) + MemberGraphs(M) +
+    '</td>'#10'        </tr>'#10'      </table>'#10'</div><div class="memdoc">'#10 + Body + Tail + DefinedAt(M) + InlineSource(M) + Relations(M) + MemberGraphs(M) +
     #10'</div>'#10'</div>'#10;
 end;
 
@@ -1579,7 +1582,7 @@ end;
 function THtmlGenerator.MemberGraphs(M: TMemberDef): string;
 begin
   Result := '';
-  if (FCalls = nil) or (M.Kind <> memFunction) then
+  if not FDotGraphs or (FCalls = nil) or (M.Kind <> memFunction) then
     Exit;
   if FConfig.GetBool('CALL_GRAPH') and (FCalls.CallsOf(M) <> nil) then
     Result := RunGraph(M.DiskName + '_cgraph', Tr('Here is the call graph for this function:'), CallDot(M, False));
@@ -1896,6 +1899,56 @@ begin
   end;
 end;
 
+// REFERENCES_RELATION / REFERENCED_BY_RELATION: "References a, b." and "Referenced by x, y." below a member.
+function THtmlGenerator.Relations(M: TMemberDef): string;
+
+  function Names(AList: TList<TMemberDef>): string;
+  var
+    Sorted: TList<TMemberDef>;
+    X: TMemberDef;
+    Text: string;
+  begin
+    Result := '';
+    Sorted := TList<TMemberDef>.Create(AList);
+    try
+      Sorted.Sort(TComparer<TMemberDef>.Construct(
+        function(const A, B: TMemberDef): Integer
+        begin
+          Result := CompareText(A.QualifiedName, B.QualifiedName);
+        end));
+      for X in Sorted do
+      begin
+        Text := X.Name;
+        if X.Scope is TClassDef then
+          Text := X.Scope.Name + '.' + Text;
+        if Result <> '' then
+          Result := Result + ', ';
+        Result := Result + FDoc.Link(X, Text);
+      end;
+    finally
+      Sorted.Free;
+    end;
+  end;
+
+var
+  L: TList<TMemberDef>;
+begin
+  Result := '';
+  if FCalls = nil then
+    Exit;
+  if FConfig.GetBool('REFERENCES_RELATION') then
+  begin
+    L := FCalls.ReferencesOf(M);
+    if L <> nil then
+      Result := '<p>' + Tr('References') + ' ' + Names(L) + '.</p>'#10;
+  end;
+  if FConfig.GetBool('REFERENCED_BY_RELATION') then
+  begin
+    L := FCalls.ReferencedBy(M);
+    if L <> nil then
+      Result := Result + '<p>' + Tr('Referenced by') + ' ' + Names(L) + '.</p>'#10;
+  end;
+end;
 // Doxygen's "source file" page: the unit's text with line numbers and links from identifiers to their pages.
 procedure THtmlGenerator.WriteSource(U: TUnitDef);
 var

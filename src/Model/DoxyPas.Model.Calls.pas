@@ -1,8 +1,10 @@
 ﻿unit DoxyPas.Model.Calls;
 
-{ Who calls whom, for CALL_GRAPH / CALLER_GRAPH. There is no type information, so the bodies of the routines are
-  scanned for identifiers: a plain identifier is resolved from the routine's scope, "Obj.Name" by "Type.Name" when
-  Obj names a class and otherwise by the name alone when the project has exactly one routine with that name. }
+{ Who calls and references whom, for CALL_GRAPH / CALLER_GRAPH and REFERENCES_RELATION / REFERENCED_BY_RELATION. There is
+  no type information, so the bodies of the routines are scanned for identifiers: a plain identifier is resolved from the
+  routine's scope (unless the routine's own header, i.e. a parameter or a local, uses the same name), "Obj.Name" by
+  "Type.Name" when Obj names a class and otherwise by the name alone when the project has exactly one member with that
+  name. }
 
 interface
 
@@ -18,6 +20,7 @@ type
   TBodyLocator = class
   strict private
     FRoutines: TList<TMemberDef>;
+    FMembers: TList<TMemberDef>;
     FFiles: TDictionary<string, TArray<string>>;
     FStarts: TObjectDictionary<string, TList<Integer>>;   // per file: the sorted first lines of the bodies
     function BodyEntry(AMember: TMemberDef): TEntry;
@@ -26,13 +29,18 @@ type
     destructor Destroy; override;
     /// <summary>The routines that have a body in the project's files.</summary>
     property Routines: TList<TMemberDef> read FRoutines;
+    /// <summary>The routines, variables, constants and properties: what a body can refer to.</summary>
+    property Members: TList<TMemberDef> read FMembers;
     function Lines(const AFile: string): TArray<string>;
     function Find(AMember: TMemberDef; out AFile: string; out AFirst, ALast: Integer): Boolean;
   end;
+
   TCallIndex = class
   strict private
     FCalls: TObjectDictionary<TMemberDef, TList<TMemberDef>>;
     FCallers: TObjectDictionary<TMemberDef, TList<TMemberDef>>;
+    FRefs: TObjectDictionary<TMemberDef, TList<TMemberDef>>;
+    FReferrers: TObjectDictionary<TMemberDef, TList<TMemberDef>>;
     procedure Link(AFrom, ATo: TMemberDef);
   public
     constructor Create(ALocator: TBodyLocator; ALinks: TLinkResolver);
@@ -41,6 +49,10 @@ type
     function CallsOf(AMember: TMemberDef): TList<TMemberDef>;
     /// <summary>The routines that call AMember (nil when none).</summary>
     function CallersOf(AMember: TMemberDef): TList<TMemberDef>;
+    /// <summary>The routines, variables, constants and properties the body of AMember uses (nil when none).</summary>
+    function ReferencesOf(AMember: TMemberDef): TList<TMemberDef>;
+    /// <summary>The routines whose body uses AMember (nil when none).</summary>
+    function ReferencedBy(AMember: TMemberDef): TList<TMemberDef>;
   end;
 
 /// <summary>The line of the "end" that closes the routine starting at AStart (searching up to ALimit); -1 when there
@@ -70,15 +82,18 @@ begin
     Result := TEncoding.ANSI.GetString(Bytes, Skip, Length(Bytes) - Skip);
 end;
 
+const
+  Referable = [memFunction, memVariable, memConstant, memProperty];
+
 type
   TWord = record
     Text: string;
     Prev: string;       // the identifier before a '.', '' when the word is not qualified
   end;
 
-// The identifiers of the code after the first "begin" (the header and local declarations are skipped), with
-// comments and strings left out.
-function BodyWords(const AText: string): TArray<TWord>;
+// The identifiers of the code after the first "begin", with comments and strings left out; AShadow gets the ones used
+// before it (the header and the local declarations).
+function BodyWords(const AText: string; AShadow: THashSet<string>): TArray<TWord>;
 var
   L: TList<TWord>;
   I, N, J: Integer;
@@ -136,7 +151,10 @@ begin
           Inc(J);
         W.Text := Copy(AText, I, J - I);
         if not Started then
-          Started := SameText(W.Text, 'begin')
+        begin
+          Started := SameText(W.Text, 'begin');
+          AShadow.Add(LowerCase(W.Text));       // a parameter, a local or a type of the header
+        end
         else
         begin
           if AfterDot then
@@ -305,16 +323,20 @@ var
     X: TMemberDef;
   begin
     for X in AList do
-      if (X.Kind = memFunction) and ALinks.IsLinkable(X) and not Seen.ContainsKey(X) then
+      if (X.Kind in [memFunction, memVariable, memConstant, memProperty]) and ALinks.IsLinkable(X) and
+        not Seen.ContainsKey(X) then
       begin
         Seen.Add(X, True);
-        FRoutines.Add(X);
+        FMembers.Add(X);
+        if X.Kind = memFunction then
+          FRoutines.Add(X);
       end;
   end;
 
 begin
   inherited Create;
   FRoutines := TList<TMemberDef>.Create;
+  FMembers := TList<TMemberDef>.Create;
   FFiles := TDictionary<string, TArray<string>>.Create;
   FStarts := TObjectDictionary<string, TList<Integer>>.Create([doOwnsValues]);
   Seen := TDictionary<TMemberDef, Boolean>.Create;
@@ -346,6 +368,7 @@ destructor TBodyLocator.Destroy;
 begin
   FStarts.Free;
   FFiles.Free;
+  FMembers.Free;
   FRoutines.Free;
   inherited;
 end;
@@ -409,6 +432,7 @@ var
   M: TMemberDef;
   W: TWord;
   Target: TMemberDef;
+  Shadow: THashSet<string>;
 
   function BodyOf(AMember: TMemberDef): string;
   var
@@ -445,13 +469,13 @@ var
     if AWord.Prev = '' then
     begin
       T := ALinks.Resolve(AWord.Text, AFrom);
-      if (T.Def is TMemberDef) and (TMemberDef(T.Def).Kind = memFunction) then
+      if (T.Def is TMemberDef) and (TMemberDef(T.Def).Kind in Referable) then
         Result := TMemberDef(T.Def);
     end
     else
     begin
       T := ALinks.Resolve(AWord.Prev + '.' + AWord.Text, AFrom);
-      if (T.Def is TMemberDef) and (TMemberDef(T.Def).Kind = memFunction) then
+      if (T.Def is TMemberDef) and (TMemberDef(T.Def).Kind in Referable) then
         Result := TMemberDef(T.Def)
       else if ByName.TryGetValue(LowerCase(AWord.Text), L) and (L.Count = 1) then
         Result := L[0];
@@ -467,10 +491,12 @@ begin
   inherited Create;
   FCalls := TObjectDictionary<TMemberDef, TList<TMemberDef>>.Create([doOwnsValues]);
   FCallers := TObjectDictionary<TMemberDef, TList<TMemberDef>>.Create([doOwnsValues]);
+  FRefs := TObjectDictionary<TMemberDef, TList<TMemberDef>>.Create([doOwnsValues]);
+  FReferrers := TObjectDictionary<TMemberDef, TList<TMemberDef>>.Create([doOwnsValues]);
   ByName := TObjectDictionary<string, TList<TMemberDef>>.Create([doOwnsValues]);
   Cache := TDictionary<string, TMemberDef>.Create;
   try
-    for M in ALocator.Routines do
+    for M in ALocator.Members do
     begin
       if not ByName.TryGetValue(LowerCase(M.Name), L) then
       begin
@@ -479,13 +505,23 @@ begin
       end;
       L.Add(M);
     end;
-    for M in ALocator.Routines do
-      for W in BodyWords(BodyOf(M)) do
+    Shadow := THashSet<string>.Create;
+    try
+      for M in ALocator.Routines do
       begin
-        Target := TargetOf(M, W);
-        if (Target <> nil) and (Target <> M) then
-          Link(M, Target);
+        Shadow.Clear;
+        for W in BodyWords(BodyOf(M), Shadow) do
+        begin
+          if (W.Prev = '') and Shadow.Contains(LowerCase(W.Text)) then
+            Continue;
+          Target := TargetOf(M, W);
+          if (Target <> nil) and (Target <> M) then
+            Link(M, Target);
+        end;
       end;
+    finally
+      Shadow.Free;
+    end;
   finally
     Cache.Free;
     ByName.Free;
@@ -494,31 +530,48 @@ end;
 
 destructor TCallIndex.Destroy;
 begin
+  FReferrers.Free;
+  FRefs.Free;
   FCallers.Free;
   FCalls.Free;
   inherited;
 end;
 
-procedure TCallIndex.Link(AFrom, ATo: TMemberDef);
+procedure Append(ADict: TObjectDictionary<TMemberDef, TList<TMemberDef>>; AKey, AValue: TMemberDef);
 var
   L: TList<TMemberDef>;
 begin
-  if not FCalls.TryGetValue(AFrom, L) then
+  if not ADict.TryGetValue(AKey, L) then
   begin
     L := TList<TMemberDef>.Create;
-    FCalls.Add(AFrom, L);
+    ADict.Add(AKey, L);
   end;
-  if L.Contains(ATo) then
-    Exit;
-  L.Add(ATo);
-  if not FCallers.TryGetValue(ATo, L) then
-  begin
-    L := TList<TMemberDef>.Create;
-    FCallers.Add(ATo, L);
-  end;
-  L.Add(AFrom);
+  if not L.Contains(AValue) then
+    L.Add(AValue);
 end;
 
+procedure TCallIndex.Link(AFrom, ATo: TMemberDef);
+begin
+  Append(FRefs, AFrom, ATo);
+  Append(FReferrers, ATo, AFrom);
+  if ATo.Kind = memFunction then
+  begin
+    Append(FCalls, AFrom, ATo);
+    Append(FCallers, ATo, AFrom);
+  end;
+end;
+
+function TCallIndex.ReferencesOf(AMember: TMemberDef): TList<TMemberDef>;
+begin
+  if not FRefs.TryGetValue(AMember, Result) then
+    Result := nil;
+end;
+
+function TCallIndex.ReferencedBy(AMember: TMemberDef): TList<TMemberDef>;
+begin
+  if not FReferrers.TryGetValue(AMember, Result) then
+    Result := nil;
+end;
 function TCallIndex.CallsOf(AMember: TMemberDef): TList<TMemberDef>;
 begin
   if not FCalls.TryGetValue(AMember, Result) then

@@ -7,6 +7,7 @@ interface
 
 uses
   System.SysUtils,
+  System.Generics.Collections,
   DoxyPas.Doc.Nodes,
   DoxyPas.Model.Defs,
   DoxyPas.Model.Links;
@@ -18,6 +19,8 @@ type
     FExt: string;
     FScope: TDefinition;
     FFormulas: Integer;
+    FFormulaTex: TList<string>;
+    FImageFormulas: Boolean;
     function IsBlock(ANode: TDocNode): Boolean;
     function Inline_(ANode: TDocNode; AAutoLink: Boolean): string;
     function InlineChildren(ANode: TDocNode; AAutoLink: Boolean): string;
@@ -35,6 +38,12 @@ type
     function Prepare(const AText: string; AScope: TDefinition): TDocNode;
   public
     constructor Create(ALinks: TLinkResolver; const AExt: string);
+    destructor Destroy; override;
+    /// <summary>Formulas are images (formula_N.svg, made from FormulaTex) instead of MathJax markup.</summary>
+    property ImageFormulas: Boolean read FImageFormulas write FImageFormulas;
+    /// <summary>The TeX of the formulas written so far, in the order of their numbers: 'i' + TeX for an inline formula,
+    /// 'd' + TeX for a display formula.</summary>
+    property FormulaTex: TList<string> read FFormulaTex;
     /// <summary>"file.html#anchor" of a link target.</summary>
     function UrlOf(const ATarget: TLinkTarget): string;
     function DefUrl(ADef: TDefinition): string;
@@ -53,7 +62,6 @@ implementation
 
 uses
   System.Classes,
-  System.Generics.Collections,
   DoxyPas.Doc.Parser,
   DoxyPas.Output.HtmlCode,
   DoxyPas.Output.Translator,
@@ -64,6 +72,13 @@ begin
   inherited Create;
   FLinks := ALinks;
   FExt := AExt;
+  FFormulaTex := TList<string>.Create;
+end;
+
+destructor THtmlDocWriter.Destroy;
+begin
+  FFormulaTex.Free;
+  inherited;
 end;
 
 function THtmlDocWriter.Anchor(const AAnchor: string): string;
@@ -243,7 +258,18 @@ begin
     dnFormula:
       begin
         Inc(FFormulas);
-        if ANode.Name = 'inline' then
+        if FImageFormulas then
+        begin
+          if ANode.Name = 'inline' then
+            FFormulaTex.Add('i' + ANode.Text)
+          else
+            FFormulaTex.Add('d' + ANode.Text);
+          Result := '<img class="formulaInl" alt="' + HtmlEscape(ANode.Text) + '" src="formula_' + FFormulas.ToString +
+            '.svg" style="vertical-align:middle"/>';
+          if ANode.Name <> 'inline' then
+            Result := '<p class="formulaDsp">' + Result + '</p>';
+        end
+        else if ANode.Name = 'inline' then
           Result := '<span class="tex2jax_process">\(' + HtmlEscape(ANode.Text) + '\)</span>'
         else
           Result := '<p class="formulaDsp"><span class="tex2jax_process">\[' + HtmlEscape(ANode.Text) +

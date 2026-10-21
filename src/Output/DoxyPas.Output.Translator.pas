@@ -103,6 +103,17 @@ begin
     'Voici la hiérarchie des répertoires des fichiers source :', 'Hier ist die Verzeichnishierarchie der Quelldateien:');
   Add('References', 'Referencia', '', 'Hace referencia a', 'Référence', 'Verweist auf');
   Add('Referenced by', 'Referenciado por', '', 'Referenciado por', 'Référencé par', 'Wird referenziert von');
+  Add('Published', 'visibilidade publicada', '', 'visibilidad publicada', 'visibilité publiée', 'published');
+  Add('Strict Protected', 'visibilidade estritamente protegida', '', 'visibilidad estrictamente protegida', 'visibilité strictement protégée', 'streng geschützt');
+  Add('Strict Private', 'visibilidade estritamente privada', '', 'visibilidad estrictamente privada', 'visibilité strictement privée', 'streng privat');
+  Add('Constants', 'Constantes', '', 'Constantes', 'Constantes', 'Konstanten');
+  Add('Member Overview', 'Resumo dos Membros', '', 'Resumen de miembros', 'Aperçu des membres', 'Elementübersicht');
+  Add('Member Documentation', 'Documentação dos Membros', '', 'Documentación de miembros', 'Documentation des membres', 'Elementdokumentation');
+  Add('Introduction', 'Introdução', '', 'Introducción', 'Introduction', 'Einführung');
+  Add('Topic Documentation', 'Documentação dos Tópicos', '', 'Documentación de temas', 'Documentation des thèmes', 'Themendokumentation');
+  Add('Unit Documentation', 'Documentação das Units', '', 'Documentación de unidades', 'Documentation des unités', 'Unit-Dokumentation');
+  Add('Class Documentation', 'Documentação das Classes', '', 'Documentación de clases', 'Documentation des classes', 'Klassendokumentation');
+  Add('Index', 'Índice Remissivo', '', 'Índice', 'Index', 'Index');
   Add('Collaboration diagram for %s:', 'Diagrama de colaboração para %s:', '', 'Diagrama de colaboración para %s:',
     'Graphe de collaboration de %s :', 'Zusammenarbeitsdiagramm für %s:');
   Add('Dependency graph for %s:', 'Grafo de dependências para %s:', '', 'Gráfico de dependencias para %s:',

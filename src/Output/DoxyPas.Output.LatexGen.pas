@@ -21,8 +21,11 @@ uses
   System.SysUtils,
   System.Classes,
   System.IOUtils,
+  System.StrUtils,
   System.Generics.Collections,
   DoxyPas.Core.Version,
+  DoxyPas.Core.Log,
+  DoxyPas.Output.Translator,
   DoxyPas.Doc.Nodes,
   DoxyPas.Doc.Parser,
   DoxyPas.Model.Entry,
@@ -47,7 +50,8 @@ begin
         '|': SB.Append('\textbar{}');
         #$D800..#$DBFF: SB.Append('?');   // emoji and the like: not available in pdflatex's T1 fonts
         #$DC00..#$DFFF: ;
-        #$0180..#$200F, #$2023..#$2025, #$2027..#$20AB, #$20AD..#$D7FF, #$E000..#$FFFF: SB.Append('?');
+        #$0400..#$04FF: SB.Append(C);   // Cyrillic: needs the T2A encoding, loaded for Russian
+        #$0180..#$03FF, #$0500..#$200F, #$2023..#$2025, #$2027..#$20AB, #$20AD..#$D7FF, #$E000..#$FFFF: SB.Append('?');
       else
         SB.Append(C);
       end;
@@ -80,6 +84,8 @@ type
     function ClassKind(C: TClassDef): string;
     function ClassChapter(C: TClassDef): string;
     function UnitChapter(U: TUnitDef): string;
+    function Template(const AOption, ADefault: string; const AVars: array of string): string;
+    function CopyList(const AOption: string): TArray<string>;
     procedure Save(const AName, AText: string);
   public
     constructor Create(AProject: TProject; AConfig: TConfig; const ADir: string);
@@ -94,6 +100,13 @@ begin
   FConfig := AConfig;
   FDir := ADir;
   FLinks := TLinkResolver.Create(AProject);
+  SetOutputLanguage(AConfig.GetString('OUTPUT_LANGUAGE'));
+  if OutputLanguage in [lgChinese, lgJapanese] then
+  begin
+    // pdflatex has no CJK fonts: the LaTeX output stays in English for these languages
+    SetOutputLanguage('English');
+    Warn('', 0, 'OUTPUT_LANGUAGE: the LaTeX output is in English for this language');
+  end;
 end;
 
 destructor TLatexGenerator.Destroy;
@@ -260,8 +273,8 @@ var
   C: TDocNode;
   Cmd: string;
 begin
-  if ALevel <= 1 then Cmd := '\subsection*'
-  else if ALevel = 2 then Cmd := '\subsubsection*'
+  if ALevel <= 1 then Cmd := '\DoxySubsection'
+  else if ALevel = 2 then Cmd := '\DoxySubsubsection'
   else Cmd := '\paragraph*';
   Result := Cmd + '{' + LatexEscape(ANode.Text) + '}'#10 + Paras(ANode);
   for C in ANode.Children do
@@ -363,11 +376,10 @@ const
   KindsUnit: array[0..4] of string = ('Types', 'Constants', 'Functions', 'Variables', 'Properties');
 begin
   if AInClass then
-    Result := Prot[AOrder div 10] + ' ' + KindsClass[AOrder mod 10]
+    Result := TrSection(Prot[AOrder div 10], KindsClass[AOrder mod 10])
   else
-    Result := KindsUnit[AOrder mod 10];
+    Result := Tr(KindsUnit[AOrder mod 10]);
 end;
-
 function TLatexGenerator.Visible(AList: TList<TMemberDef>): TList<TMemberDef>;
 var
   M: TMemberDef;
@@ -397,7 +409,7 @@ begin
     Orders.Sort;
     for O in Orders do
     begin
-      Result := Result + '\subsection*{' + GroupTitle(O, AInClass) + '}'#10'\begin{DoxyCompactItemize}'#10;
+      Result := Result + '\DoxySubsection{' + LatexEscape(GroupTitle(O, AInClass)) + '}'#10'\begin{DoxyCompactItemize}'#10;
       for M in Vis do
         if GroupOrder(M, AInClass) = O then
         begin
@@ -427,7 +439,7 @@ begin
     for M in Vis do
     begin
       Body := Render(M.Brief + #10#10 + M.Detailed);
-      Result := Result + '\subsection*{' + LatexEscape(M.Name) + '}'#10'\label{' + LabelOf(M) + '}'#10 +
+      Result := Result + '\DoxySubsection{' + LatexEscape(M.Name) + '}'#10'\label{' + LabelOf(M) + '}'#10 +
         IndexEntry(M.Name, AParent) + #10'\DoxyProto{' + LatexEscape(MemberText(M)) + '}'#10 + Body + #10;
     end;
   finally
@@ -437,7 +449,7 @@ end;
 
 function TLatexGenerator.Chapter(ADef: TDefinition; const ATitle: string): string;
 begin
-  Result := '\chapter{' + LatexEscape(ATitle) + '}'#10'\label{' + LabelOf(ADef) + '}'#10 +
+  Result := '\DoxyChapter{' + LatexEscape(ATitle) + '}'#10'\label{' + LabelOf(ADef) + '}'#10 +
     Render(ADef.Brief + #10#10 + ADef.Detailed);
 end;
 
@@ -448,7 +460,7 @@ var
   Text, Detail: string;
   Vis: TList<TMemberDef>;
 begin
-  Result := '\chapter{' + LatexEscape(C.QualifiedName) + ' ' + ClassKind(C) + ' Reference}'#10'\label{' + LabelOf(C) + '}'#10 +
+  Result := '\DoxyChapter{' + LatexEscape(Format(Tr('%0:s %1:s Reference'), [C.QualifiedName, Tr(ClassKind(C))])) + '}'#10'\label{' + LabelOf(C) + '}'#10 +
     IndexEntry(C.Name) + #10;
   if Trim(C.Brief) <> '' then
     Result := Result + Render(C.Brief);
@@ -463,7 +475,7 @@ begin
       Text := Text + LatexEscape(B.Text);
   end;
   if Text <> '' then
-    Result := Result + '\noindent Inherits ' + Text + '.\par'#10;
+    Result := Result + '\noindent ' + LatexEscape(Tr('Inherits')) + ' ' + Text + '.\par'#10;
   Text := '';
   for D in C.Derived do
     if FLinks.IsLinkable(D) then
@@ -473,20 +485,20 @@ begin
       Text := Text + '\hyperref[' + LabelOf(D) + ']{' + LatexEscape(D.Name) + '}';
     end;
   if Text <> '' then
-    Result := Result + '\noindent Inherited by ' + Text + '.\par'#10;
+    Result := Result + '\noindent ' + LatexEscape(Tr('Inherited by')) + ' ' + Text + '.\par'#10;
   Vis := Visible(C.Members);
   try
     if Vis.Count > 0 then
-      Result := Result + '\section*{Member Overview}'#10 + Summary(C.Members, True);
+      Result := Result + '\DoxySection{' + LatexEscape(Tr('Member Overview')) + '}'#10 + Summary(C.Members, True);
   finally
     Vis.Free;
   end;
   Detail := Render(C.Detailed);
   if Detail <> '' then
-    Result := Result + '\section*{Detailed Description}'#10 + Detail;
+    Result := Result + '\DoxySection{' + LatexEscape(Tr('Detailed Description')) + '}'#10 + Detail;
   Text := Members(C.Members, C.Name);
   if Text <> '' then
-    Result := Result + '\section*{Member Documentation}'#10 + Text;
+    Result := Result + '\DoxySection{' + LatexEscape(Tr('Member Documentation')) + '}'#10 + Text;
 end;
 
 function TLatexGenerator.UnitChapter(U: TUnitDef): string;
@@ -496,7 +508,7 @@ var
   C: TClassDef;
   Vis: TList<TMemberDef>;
 begin
-  Result := '\chapter{Unit ' + LatexEscape(U.Name) + ' Reference}'#10'\label{' + LabelOf(U) + '}'#10 +
+  Result := '\DoxyChapter{' + LatexEscape(Format(Tr('%0:s %1:s Reference'), [U.Name, Tr('Unit')])) + '}'#10'\label{' + LabelOf(U) + '}'#10 +
     IndexEntry(U.Name) + #10;
   if Trim(U.Brief) <> '' then
     Result := Result + Render(U.Brief);
@@ -512,13 +524,13 @@ begin
       Text := Text + LatexEscape(S);
   end;
   if Text <> '' then
-    Result := Result + '\noindent Uses ' + Text + '.\par'#10;
+    Result := Result + '\noindent ' + LatexEscape(Tr('Uses')) + ' ' + Text + '.\par'#10;
   Text := '';
   for C in U.Classes do
     if FLinks.IsLinkable(C) and (C.Scope = U) then
       Text := Text + '\item \hyperref[' + LabelOf(C) + ']{\texttt{' + LatexEscape(C.Name) + '}}'#10;
   if Text <> '' then
-    Result := Result + '\subsection*{Classes}'#10'\begin{DoxyCompactItemize}'#10 + Text + '\end{DoxyCompactItemize}'#10;
+    Result := Result + '\DoxySubsection{' + LatexEscape(Tr('Classes')) + '}'#10'\begin{DoxyCompactItemize}'#10 + Text + '\end{DoxyCompactItemize}'#10;
   Vis := Visible(U.Members);
   try
     if Vis.Count > 0 then
@@ -528,10 +540,10 @@ begin
   end;
   Detail := Render(U.Detailed);
   if Detail <> '' then
-    Result := Result + '\section*{Detailed Description}'#10 + Detail;
+    Result := Result + '\DoxySection{' + LatexEscape(Tr('Detailed Description')) + '}'#10 + Detail;
   Text := Members(U.Members, U.Name);
   if Text <> '' then
-    Result := Result + '\section*{Member Documentation}'#10 + Text;
+    Result := Result + '\DoxySection{' + LatexEscape(Tr('Member Documentation')) + '}'#10 + Text;
 end;
 
 function TLatexGenerator.ClassKind(C: TClassDef): string;
@@ -550,7 +562,10 @@ const
   StyleText =
     '\NeedsTeXFormat{LaTeX2e}'#10 +
     '\ProvidesPackage{doxypas}[2026/10/21 Style of the LaTeX output of DoxyPas]'#10 +
-    '\RequirePackage[a4paper,margin=2.5cm]{geometry}'#10 +
+    '\newif\ifdoxycompact'#10 +
+    '\DeclareOption{compact}{\doxycompacttrue}'#10 +
+    '\ProcessOptions\relax'#10 +
+    '\RequirePackage[margin=2.5cm]{geometry}'#10 +
     '\RequirePackage{xcolor}'#10 +
     '\RequirePackage{fancyhdr}'#10 +
     '\RequirePackage{titlesec}'#10 +
@@ -567,10 +582,22 @@ const
     '\setlength{\parindent}{0pt}'#10 +
     '\setlength{\parskip}{0.6ex plus 0.2ex}'#10 +
     '\titleformat{\part}[display]{\normalfont\Huge\bfseries\color{doxyblue}}{}{0pt}{}'#10 +
-    '\titleformat{\chapter}[hang]{\normalfont\huge\bfseries\color{doxyblue}}{}{0pt}{}[\vspace{2pt}\color{doxyframe}\titlerule]'#10 +
+    '\ifdoxycompact'#10 +
+    '  \newcommand{\DoxyChapter}{\section}'#10 +
+    '  \newcommand{\DoxySection}{\subsection*}'#10 +
+    '  \newcommand{\DoxySubsection}{\subsubsection*}'#10 +
+    '  \newcommand{\DoxySubsubsection}{\paragraph*}'#10 +
+    '\else'#10 +
+    '  \newcommand{\DoxyChapter}{\chapter}'#10 +
+    '  \newcommand{\DoxySection}{\section*}'#10 +
+    '  \newcommand{\DoxySubsection}{\subsection*}'#10 +
+    '  \newcommand{\DoxySubsubsection}{\subsubsection*}'#10 +
+    '  \titleformat{\chapter}[hang]{\normalfont\huge\bfseries\color{doxyblue}}{}{0pt}{}[\vspace{2pt}\color{doxyframe}\titlerule]'#10 +
+    '  \titlespacing*{\chapter}{0pt}{0pt}{20pt}'#10 +
+    '\fi'#10 +
     '\titleformat{\section}{\normalfont\Large\bfseries\color{doxyblue}}{}{0pt}{}'#10 +
     '\titleformat{\subsection}{\normalfont\large\bfseries\color{doxyblue}}{}{0pt}{}'#10 +
-    '\titlespacing*{\chapter}{0pt}{0pt}{20pt}'#10 +
+    '\titleformat{\subsubsection}{\normalfont\normalsize\bfseries\color{doxyblue}}{}{0pt}{}'#10 +
     '\pagestyle{fancy}'#10 +
     '\fancyhf{}'#10 +
     '\fancyhead[LE,RO]{\bfseries\thepage}'#10 +
@@ -588,11 +615,46 @@ const
     '\makeindex'#10 +
     '\endinput'#10;
 
-  MakeBat =
-    '@echo off'#13#10'pdflatex refman'#13#10'makeindex refman.idx'#13#10'pdflatex refman'#13#10'pdflatex refman'#13#10;
-  MakeFile =
-    'all: refman.pdf'#10#10'refman.pdf: refman.tex'#10#9'pdflatex refman'#10#9'makeindex refman.idx'#10 +
-    #9'pdflatex refman'#10#9'pdflatex refman'#10#10'clean:'#10#9'rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out refman.pdf'#10;
+function TLatexGenerator.Template(const AOption, ADefault: string; const AVars: array of string): string;
+var
+  Name: string;
+  I: Integer;
+begin
+  Name := FConfig.GetString(AOption);
+  if (Name <> '') and TFile.Exists(Name) then
+    Result := TFile.ReadAllText(Name, TEncoding.UTF8)
+  else
+    Result := ADefault;
+  I := 0;
+  while I < Length(AVars) do
+  begin
+    Result := Result.Replace('$' + AVars[I], AVars[I + 1]);
+    Inc(I, 2);
+  end;
+end;
+
+// Copies the files of a list option (LATEX_EXTRA_STYLESHEET, LATEX_EXTRA_FILES) into the output; returns their names.
+function TLatexGenerator.CopyList(const AOption: string): TArray<string>;
+var
+  F: string;
+  Names: TList<string>;
+begin
+  Names := TList<string>.Create;
+  try
+    for F in FConfig.GetList(AOption) do
+      if TFile.Exists(F) then
+      begin
+        TFile.Copy(F, TPath.Combine(FDir, ExtractFileName(F)), True);
+        Inc(FFiles);
+        Names.Add(ExtractFileName(F));
+      end
+      else
+        Warn('', 0, AOption + ': file not found: ' + F);
+    Result := Names.ToArray;
+  finally
+    Names.Free;
+  end;
+end;
 
 function TLatexGenerator.Run: Integer;
 var
@@ -600,8 +662,10 @@ var
   C: TClassDef;
   G: TGroupDef;
   P: TPageDef;
-  Main, Name, Title, Brief: string;
+  Main, Name, Title, Brief, Packages, TitlePage, Opts, Logo, Pkg, Cmd, Idx, Footer: string;
   Pages, Topics, Units, Classes: TStringList;
+  Compact, Hyper, HideIndex: Boolean;
+  Extra: TArray<string>;
 
   procedure Part(const ATitle: string; AList: TStringList);
   var
@@ -609,13 +673,16 @@ var
   begin
     if AList.Count = 0 then
       Exit;
-    Main := Main + '\part{' + ATitle + '}'#10;
+    Main := Main + '\part{' + LatexEscape(ATitle) + '}'#10;
     for N in AList do
       Main := Main + '\input{' + N + '}'#10;
   end;
 
 begin
   TDirectory.CreateDirectory(FDir);
+  Compact := FConfig.GetBool('COMPACT_LATEX');
+  Hyper := FConfig.GetBool('PDF_HYPERLINKS');
+  HideIndex := FConfig.GetBool('LATEX_HIDE_INDICES');
   Pages := TStringList.Create;
   Topics := TStringList.Create;
   Units := TStringList.Create;
@@ -623,7 +690,7 @@ begin
   try
     for P in FProject.Pages do
     begin
-      if P.IsMainPage then Title := 'Introduction' else Title := P.Title;
+      if P.IsMainPage then Title := Tr('Introduction') else Title := P.Title;
       if Title = '' then Title := P.Name;
       Name := 'page_' + P.DiskName;
       Save(Name + '.tex', Chapter(P, Title));
@@ -646,28 +713,109 @@ begin
         Save(C.DiskName + '.tex', ClassChapter(C));
         Classes.Add(C.DiskName);
       end;
+
+    // packages: the style, EXTRA_PACKAGES, LATEX_EXTRA_STYLESHEET and hyperref (or what stands in for it)
+    if Compact then Opts := 'compact' else Opts := '';
+    if OutputLanguage = lgRussian then Pkg := 'T1,T2A' else Pkg := 'T1';
+    Packages := '\usepackage[utf8]{inputenc}'#10'\usepackage[' + Pkg + ']{fontenc}'#10'\usepackage{lmodern}'#10 +
+      '\usepackage[' + Opts + ']{doxypas}'#10'\usepackage{graphicx}'#10;
+    for Pkg in FConfig.GetList('EXTRA_PACKAGES') do
+      if Pkg.StartsWith('\') then
+        Packages := Packages + Pkg + #10
+      else
+        Packages := Packages + '\usepackage{' + Pkg + '}'#10;
+    for Pkg in CopyList('LATEX_EXTRA_STYLESHEET') do
+      Packages := Packages + '\usepackage{' + ChangeFileExt(Pkg, '') + '}'#10;
+    if Hyper then
+      Packages := Packages + '\usepackage[colorlinks=true,linkcolor=doxyblue,urlcolor=doxyblue]{hyperref}'#10
+    else
+      Packages := Packages + '\providecommand{\hyperref}[2][]{#2}'#10'\providecommand{\phantomsection}{}'#10;
+    Packages := Packages + '\renewcommand{\indexname}{' + LatexEscape(Tr('Index')) + '}'#10;
+
+    // title page and contents
     Brief := FConfig.GetString('PROJECT_BRIEF');
-    Main := '\documentclass[a4paper,11pt]{report}'#10'\usepackage[utf8]{inputenc}'#10'\usepackage[T1]{fontenc}'#10 +
-      '\usepackage{lmodern}'#10'\usepackage{doxypas}'#10'\usepackage[colorlinks=true,linkcolor=doxyblue,urlcolor=doxyblue]{hyperref}'#10 +
-      '\begin{document}'#10'\begin{titlepage}'#10'\vspace*{3cm}'#10'\begin{center}'#10 +
-      '{\Huge\bfseries\color{doxyblue} ' + LatexEscape(FConfig.GetString('PROJECT_NAME')) + '}\par\vspace{1ex}'#10;
+    Logo := FConfig.GetString('PROJECT_LOGO');
+    TitlePage := '\begin{titlepage}'#10'\vspace*{3cm}'#10'\begin{center}'#10;
+    if (Logo <> '') and TFile.Exists(Logo) and MatchText(ExtractFileExt(Logo), ['.png', '.jpg', '.jpeg', '.pdf']) then
+    begin
+      TFile.Copy(Logo, TPath.Combine(FDir, 'logo' + ExtractFileExt(Logo)), True);
+      Inc(FFiles);
+      TitlePage := TitlePage + '\includegraphics[height=3cm]{logo' + ExtractFileExt(Logo) + '}\par\vspace{3ex}'#10;
+    end
+    else if Logo <> '' then
+      Warn('', 0, 'PROJECT_LOGO: only png, jpg and pdf files can be used in the LaTeX output: ' + Logo);
+    TitlePage := TitlePage + '{\Huge\bfseries\color{doxyblue} ' + LatexEscape(FConfig.GetString('PROJECT_NAME')) +
+      '}\par\vspace{1ex}'#10;
     if FConfig.GetString('PROJECT_NUMBER') <> '' then
-      Main := Main + '{\Large ' + LatexEscape(FConfig.GetString('PROJECT_NUMBER')) + '}\par\vspace{3ex}'#10;
+      TitlePage := TitlePage + '{\Large ' + LatexEscape(FConfig.GetString('PROJECT_NUMBER')) + '}\par\vspace{3ex}'#10;
     if Brief <> '' then
-      Main := Main + '{\large\itshape ' + LatexEscape(Brief) + '}\par\vspace{3ex}'#10;
-    Main := Main + '\rule{0.6\linewidth}{0.6pt}\par\vspace{3ex}'#10'\today\par\vspace{1ex}'#10'{\small Generated by DoxyPas ' +
-      LatexEscape(DoxyPasVersion) + '}'#10'\end{center}'#10'\end{titlepage}'#10'\pagenumbering{roman}'#10 +
-      '\tableofcontents'#10'\clearpage'#10'\pagenumbering{arabic}'#10;
-    Part('Introduction', Pages);
-    Part('Topic Documentation', Topics);
-    Part('Unit Documentation', Units);
-    Part('Class Documentation', Classes);
-    Main := Main + '\cleardoublepage'#10'\phantomsection'#10'\addcontentsline{toc}{chapter}{Index}'#10 +
-      '\printindex'#10'\end{document}'#10;
+      TitlePage := TitlePage + '{\large\itshape ' + LatexEscape(Brief) + '}\par\vspace{3ex}'#10;
+    TitlePage := TitlePage + '\rule{0.6\linewidth}{0.6pt}\par\vspace{3ex}'#10'{\small ' + LatexEscape(Tr('Generated by')) +
+      ' DoxyPas ' + LatexEscape(DoxyPasVersion) + '}'#10'\end{center}'#10'\end{titlepage}'#10 +
+      '\pagenumbering{roman}'#10'\tableofcontents'#10'\clearpage'#10'\pagenumbering{arabic}'#10;
+
+    // the paper is a class option; the batch mode a first line
+    Name := LowerCase(FConfig.GetString('PAPER_TYPE'));
+    if Name = '' then Name := 'a4';
+    if Name = 'letter' then Name := 'letterpaper'
+    else if Name = 'legal' then Name := 'legalpaper'
+    else if Name = 'executive' then Name := 'executivepaper'
+    else Name := Name + 'paper';
+    Cmd := '';
+    if SameText(FConfig.GetString('LATEX_BATCHMODE'), 'YES') or SameText(FConfig.GetString('LATEX_BATCHMODE'), 'BATCH') then
+      Cmd := '\batchmode'#10
+    else if SameText(FConfig.GetString('LATEX_BATCHMODE'), 'NON_STOP') then
+      Cmd := '\nonstopmode'#10
+    else if SameText(FConfig.GetString('LATEX_BATCHMODE'), 'SCROLL') then
+      Cmd := '\scrollmode'#10
+    else if SameText(FConfig.GetString('LATEX_BATCHMODE'), 'ERROR_STOP') then
+      Cmd := '\errorstopmode'#10;
+    if Compact then
+      Main := '\documentclass[' + Name + ',11pt]{article}'#10
+    else
+      Main := '\documentclass[' + Name + ',11pt]{report}'#10;
+    Main := Cmd + Main;
+    Main := Template('LATEX_HEADER', Main + Packages + '\begin{document}'#10 + '$titlepage',
+      ['projectname', LatexEscape(FConfig.GetString('PROJECT_NAME')), 'projectnumber',
+       LatexEscape(FConfig.GetString('PROJECT_NUMBER')), 'projectbrief', LatexEscape(Brief),
+       'doxypasversion', LatexEscape(DoxyPasVersion), 'documentclass', Main.Trim, 'packages', Packages,
+       'titlepage', TitlePage]);
+    if not Main.Contains('\begin{document}') then
+      Main := Main + '\begin{document}'#10 + TitlePage;
+    Main := Main + #10;
+
+    Part(Tr('Introduction'), Pages);
+    Part(Tr('Topic Documentation'), Topics);
+    Part(Tr('Unit Documentation'), Units);
+    Part(Tr('Class Documentation'), Classes);
+
+    // the index and the end; LATEX_FOOTER replaces them ($printindex stands for the index)
+    if HideIndex then
+      Idx := ''
+    else
+    begin
+      if Compact then Name := 'section' else Name := 'chapter';
+      Idx := '\cleardoublepage'#10'\phantomsection'#10'\addcontentsline{toc}{' + Name + '}{' + LatexEscape(Tr('Index')) +
+        '}'#10'\printindex'#10;
+    end;
+    Footer := Template('LATEX_FOOTER', '$printindex' + '\end{document}'#10, ['printindex', Idx]);
+    Main := Main + Footer;
     Save('refman.tex', Main);
     Save('doxypas.sty', StyleText);
-    TFile.WriteAllText(TPath.Combine(FDir, 'make.bat'), MakeBat, TEncoding.ASCII);
-    TFile.WriteAllText(TPath.Combine(FDir, 'Makefile'), MakeFile, TEncoding.ASCII);
+    Extra := CopyList('LATEX_EXTRA_FILES');
+    Cmd := FConfig.GetString('LATEX_CMD_NAME');
+    if Cmd = '' then
+      Cmd := 'pdflatex';
+    Idx := FConfig.GetString('LATEX_MAKEINDEX_CMD');
+    if (Idx = '') or SameText(Idx, 'makeindex') then
+      Idx := FConfig.GetString('MAKEINDEX_CMD_NAME');
+    if Idx = '' then
+      Idx := 'makeindex';
+    TFile.WriteAllText(TPath.Combine(FDir, 'make.bat'), '@echo off'#13#10 + Cmd + ' refman'#13#10 +
+      IfThen(HideIndex, '', Idx + ' refman.idx'#13#10) + Cmd + ' refman'#13#10 + Cmd + ' refman'#13#10, TEncoding.ASCII);
+    TFile.WriteAllText(TPath.Combine(FDir, 'Makefile'), 'all: refman.pdf'#10#10'refman.pdf: refman.tex'#10#9 + Cmd +
+      ' refman'#10 + IfThen(HideIndex, '', #9 + Idx + ' refman.idx'#10) + #9 + Cmd + ' refman'#10#9 + Cmd + ' refman'#10#10 +
+      'clean:'#10#9'rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out refman.pdf'#10, TEncoding.ASCII);
     Inc(FFiles, 2);
   finally
     Classes.Free;

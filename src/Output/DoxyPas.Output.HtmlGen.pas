@@ -81,6 +81,8 @@ type
     FLayout: TLayout;         // LAYOUT_FILE
     FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
     FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
+    FBriefMemberDesc, FRepeatBrief, FInlineInfo, FShowEnumValues: Boolean;
+    FMaxInitLines, FEnumPerLine: Integer;
     FPageLayout: string;      // the layout page the member tables follow when it is not the one of the kind of definition ('group')
     FTabs: TDictionary<string, TLayoutEntry>;   // type of tab -> its <tab> element
     FMenu: TNavNode;          // the tabs, for HTML_DYNAMIC_MENUS = NO
@@ -196,6 +198,7 @@ type
     procedure WriteAnnotated;
     procedure WriteClassIndex;
     function IndexName(const AName: string): string;
+    function ShowInitializer(E: TEntry): Boolean;
     procedure WriteHierarchy;
     procedure WriteUnitList;
     procedure WriteTopics;
@@ -310,6 +313,12 @@ begin
   FLayout := TLayout.Create(AConfig);
   FAlphabeticalIndex := AConfig.GetBool('ALPHABETICAL_INDEX');
   FIgnorePrefix := AConfig.GetList('IGNORE_PREFIX');
+  FBriefMemberDesc := AConfig.GetBool('BRIEF_MEMBER_DESC');
+  FRepeatBrief := AConfig.GetBool('REPEAT_BRIEF');
+  FInlineInfo := AConfig.GetBool('INLINE_INFO');
+  FShowEnumValues := AConfig.GetBool('SHOW_ENUM_VALUES');
+  FMaxInitLines := AConfig.GetInt('MAX_INITIALIZER_LINES');
+  FEnumPerLine := AConfig.GetInt('ENUM_VALUES_PER_LINE');
   FTabs := TDictionary<string, TLayoutEntry>.Create;
   if FLayout.NavIndex <> nil then
     CollectTabs(FLayout.NavIndex);
@@ -1123,7 +1132,7 @@ begin
     if efOverload in E.Flags then L.Add('overload');
     if efReintroduce in E.Flags then L.Add('reintroduce');
     if efFinal in E.Flags then L.Add('final');
-    if efInline in E.Flags then L.Add('inline');
+    if (efInline in E.Flags) and FInlineInfo then L.Add('inline');
     if efStatic in E.Flags then L.Add('static');
     if E.CallConv <> '' then L.Add(E.CallConv);
     for S in E.Directives do
@@ -1148,6 +1157,23 @@ begin
   end;
   if efClassMember in M.Entry.Flags then
     Result := 'class ' + Result;
+end;
+
+// The initial value of a variable or constant is shown unless \hideinitializer, or when it has more lines than
+// MAX_INITIALIZER_LINES (0: never) and there is no \showinitializer.
+function THtmlGenerator.ShowInitializer(E: TEntry): Boolean;
+var
+  Lines, I: Integer;
+begin
+  if (E.InitText = '') or (efHideInitializer in E.Flags) then
+    Exit(False);
+  if efShowInitializer in E.Flags then
+    Exit(True);
+  Lines := 1;
+  for I := 1 to Length(E.InitText) do
+    if E.InitText[I] = #10 then
+      Inc(Lines);
+  Result := (FMaxInitLines > 0) and (Lines <= FMaxInitLines);
 end;
 
 function THtmlGenerator.LeftHtml(M: TMemberDef): string;
@@ -1196,32 +1222,36 @@ begin
       begin
         if E.TypeText <> '' then
           Result := Result + ': ' + FDoc.LinkedText(E.TypeText, M);
-        if E.InitText <> '' then
+        if ShowInitializer(E) then
           Result := Result + ' = ' + FDoc.LinkedText(E.InitText, M);
       end;
     memTypedef:
       if E.TypeText <> '' then
         Result := Result + ' = ' + FDoc.LinkedText(E.TypeText, M);
     memEnumeration:
+      // the values, ENUM_VALUES_PER_LINE on each line (0: not in the table); SHOW_ENUM_VALUES adds "= value"
+      if FEnumPerLine > 0 then
       begin
         Vals := '';
         N := 0;
         for V in M.EnumValues do
         begin
-          if N >= 6 then
+          if N > 0 then
           begin
-            Vals := Vals + ', ...';
-            Break;
+            Vals := Vals + ',';
+            if N mod FEnumPerLine = 0 then
+              Vals := Vals + '<br />&#160;&#160;&#160;&#160;'
+            else
+              Vals := Vals + ' ';
           end;
-          if Vals <> '' then
-            Vals := Vals + ', ';
           Vals := Vals + FDoc.Link(V, V.Name);
+          if FShowEnumValues and (V.Entry <> nil) and (V.Entry.InitText <> '') then
+            Vals := Vals + ' = ' + FDoc.LinkedText(V.Entry.InitText, M);
           Inc(N);
         end;
         if Vals <> '' then
           Result := Result + ' { ' + Vals + ' }';
-      end;
-  end;
+      end;  end;
 end;
 
 function THtmlGenerator.ProtoHtml(M: TMemberDef): string;
@@ -1259,7 +1289,7 @@ begin
         Result := KeywordSpan('const') + ' ' + Name;
         if E.TypeText <> '' then
           Result := Result + ': ' + FDoc.LinkedText(E.TypeText, M);
-        if E.InitText <> '' then
+        if ShowInitializer(E) then
           Result := Result + ' = ' + FDoc.LinkedText(E.InitText, M);
       end;
     memTypedef:
@@ -1274,7 +1304,7 @@ begin
       Result := Name;
       if E.TypeText <> '' then
         Result := Result + ': ' + FDoc.LinkedText(E.TypeText, M);
-      if E.InitText <> '' then
+      if ShowInitializer(E) then
         Result := Result + ' = ' + FDoc.LinkedText(E.InitText, M);
     end;
   end;
@@ -1297,7 +1327,7 @@ begin
   T1 := Tick;
   Brief := BriefOf(M);
   Add('rows: BriefOf', T1);
-  if Brief <> '' then
+  if (Brief <> '') and FBriefMemberDesc then
   begin
     More := '';
     if IsDocPage(M) and (Trim(M.Detailed) <> '') and (AInheritClass = '') then
@@ -1461,7 +1491,10 @@ begin
   Title := HtmlEscape(M.Name);
   if M.Kind = memFunction then
     Title := Title + '()';
-  Body := FDoc.Render(M.Brief + #10#10 + M.Detailed, M);
+  if FRepeatBrief or (Trim(M.Detailed) = '') then
+    Body := FDoc.Render(M.Brief + #10#10 + M.Detailed, M)       // REPEAT_BRIEF: the brief before the detailed text
+  else
+    Body := FDoc.Render(M.Detailed, M);
   Tail := '';
   if M.Reimplements <> nil then
     Tail := Tail + '<p>' + Tr('Reimplemented from') + ' ' + FDoc.Link(M.Reimplements.Scope, M.Reimplements.Scope.Name) + '.</p>'#10;

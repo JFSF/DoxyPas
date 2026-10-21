@@ -25,6 +25,7 @@ type
     [Test] procedure SubstitutesLongestKeyword;
     [Test] procedure ReplacesColorMarkers;
     [Test] procedure HighlightsPascalKeywords;
+    [Test] procedure NumbersAndLinksSourceLines;
     [Test] procedure EscapesLatex;
     [Test] procedure QuotesSql;
     [Test] procedure TranslatesTexts;
@@ -367,6 +368,23 @@ begin
   Assert.AreEqual('<div class="line"><span class="keywordflow">if</span> X <span class="keywordflow">then</span> ' +
     '<span class="stringliteral">''a''</span> <span class="comment">// c</span></div>',
     HighlightPascal('if X then ''a'' // c'));
+end;
+
+procedure THtmlTemplateTests.NumbersAndLinksSourceLines;
+var
+  Html: string;
+begin
+  Html := HighlightSource('A'#10'if B', True,
+    function(const AWord: string): string
+    begin
+      if AWord = 'B' then
+        Result := 'b.html'
+      else
+        Result := '';
+    end);
+  Assert.Contains(Html, '<a id="l00002" name="l00002"></a><span class="lineno">&#160;&#160;&#160;&#160;2</span>');
+  Assert.Contains(Html, '<a class="code" href="b.html">B</a>');
+  Assert.IsFalse(Html.Contains('href="b.html">A<'));
 end;
 
 procedure THtmlTemplateTests.EscapesLatex;

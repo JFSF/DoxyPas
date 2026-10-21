@@ -8,6 +8,13 @@ interface
 /// <summary>One &lt;div class="line"&gt; per line of ACode, coloured.</summary>
 function HighlightPascal(const ACode: string): string;
 
+type
+  /// <summary>The URL an identifier links to, or '' for no link.</summary>
+  TWordLinker = reference to function(const AWord: string): string;
+
+/// <summary>Like HighlightPascal, with Doxygen's line numbers and anchors (l00001) and links on identifiers.</summary>
+function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker): string;
+
 /// <summary>&lt;span class="keyword"&gt;AWord&lt;/span&gt;</summary>
 function KeywordSpan(const AWord: string): string;
 
@@ -160,28 +167,50 @@ begin
   end;
 end;
 
-function HighlightPascal(const ACode: string): string;
+function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker): string;
 var
   SB: TStringBuilder;
   T: TTok;
   Parts: TArray<string>;
-  K: Integer;
+  K, Line: Integer;
   Open: Boolean;
+  Href: string;
+
+  procedure StartLine;
+  begin
+    SB.Append('<div class="line">');
+    if ALineNumbers then
+      SB.Append('<a id="l').Append(Format('%.5d', [Line])).Append('" name="l').Append(Format('%.5d', [Line])).
+        Append('"></a><span class="lineno">').Append(Format('%5d', [Line]).Replace(' ', '&#160;')).
+        Append('</span>&#160;');
+  end;
+
 begin
+  Line := 1;
   SB := TStringBuilder.Create;
   try
-    SB.Append('<div class="line">');
+    StartLine;
     for T in Tokenize(ACode.Replace(#13#10, #10)) do
     begin
       Parts := T.Text.Split([#10]);
       for K := 0 to High(Parts) do
       begin
         if K > 0 then
-          SB.Append('</div><div class="line">');
+        begin
+          SB.Append('</div>');
+          Inc(Line);
+          StartLine;
+        end;
         Open := (T.Cls <> '') and (Parts[K] <> '');
         if Open then
           SB.Append('<span class="' + T.Cls + '">');
-        SB.Append(HtmlEscape(Parts[K]).Replace('  ', '&#160; '));
+        Href := '';
+        if Assigned(ALink) and (T.Cls = '') and (Parts[K] <> '') and CharInSet(Parts[K][1], ['A'..'Z', 'a'..'z', '_']) then
+          Href := ALink(Parts[K]);
+        if Href <> '' then
+          SB.Append('<a class="code" href="' + HtmlEscape(Href) + '">' + HtmlEscape(Parts[K]) + '</a>')
+        else
+          SB.Append(HtmlEscape(Parts[K]).Replace('  ', '&#160; '));
         if Open then
           SB.Append('</span>');
       end;
@@ -191,6 +220,11 @@ begin
   finally
     SB.Free;
   end;
+end;
+
+function HighlightPascal(const ACode: string): string;
+begin
+  Result := HighlightSource(ACode, False, nil);
 end;
 
 initialization

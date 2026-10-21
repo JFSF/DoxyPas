@@ -77,6 +77,8 @@ begin
   Add('Inherits', 'Herda de', '', 'Hereda de', 'Hérite de', 'Erbt von');
   Add('Inheritance diagram for %s:', 'Diagrama de heranças para %s:', '', 'Diagrama de herencia para %s:',
     'Graphe d''héritage de %s :', 'Klassendiagramm für %s:');
+  Add('Go to the source code of this file.', 'Ir para o código-fonte deste ficheiro.', 'Ir para o código-fonte deste arquivo.',
+    'Ir al código fuente de este archivo.', 'Aller au code source de ce fichier.', 'Gehe zum Quellcode dieser Datei.');
   Add('Collaboration diagram for %s:', 'Diagrama de colaboração para %s:', '', 'Diagrama de colaboración para %s:',
     'Graphe de collaboration de %s :', 'Zusammenarbeitsdiagramm für %s:');
   Add('Dependency graph for %s:', 'Grafo de dependências para %s:', '', 'Gráfico de dependencias para %s:',

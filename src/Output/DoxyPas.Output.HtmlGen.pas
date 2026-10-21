@@ -2,7 +2,7 @@
 
 { HTML output (Doxygen's htmlgen + index + ftvhelp + searchindex_js): one page per class, unit, group and page, the
   index pages, the menu / navigation tree / search data and the style sheets and scripts of Doxygen's own templates.
-  Units are the "namespaces" of the output. Not (yet) supported: graphs, source browser, LaTeX formulas, server
+  Units are the "namespaces" of the output. Not (yet) supported: call graphs, LaTeX formulas, server
   based search, static tabs (HTML_DYNAMIC_MENUS = NO), LAYOUT_FILE. }
 
 interface
@@ -92,6 +92,7 @@ type
     FHasPages, FHasGroups, FHasClasses, FHasUnits: Boolean;
     FDotGraphs: Boolean;      // HAVE_DOT and CLASS_GRAPH: draw the inheritance diagrams (Windows only for now)
     FDotPath: string;
+    FSource: Boolean;         // SOURCE_BROWSER: a highlighted page with line numbers for every unit
     FNav: TObjectList<TNavNode>;
     FNavIndex: TList<TPair<string, string>>;
     FSearchTerms: array of TList<TSearchTerm>;
@@ -142,6 +143,9 @@ type
     procedure WriteClass(C: TClassDef);
     procedure WriteMembersPage(C: TClassDef);
     procedure WriteUnit(U: TUnitDef);
+    function HasSource(U: TUnitDef): Boolean;
+    function SourceUrl(U: TUnitDef): string;
+    procedure WriteSource(U: TUnitDef);
     procedure WriteGroup(G: TGroupDef);
     procedure WritePage(P: TPageDef);
     // index pages
@@ -315,6 +319,7 @@ begin
   if FExt[1] <> '.' then
     FExt := '.' + FExt;
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
+  FSource := AConfig.GetBool('SOURCE_BROWSER');
 {$IFDEF MSWINDOWS}
   FDotGraphs := AConfig.GetBool('HAVE_DOT') and SameText(AConfig.GetString('CLASS_GRAPH'), 'YES');
   FDotPath := AConfig.GetString('DOT_PATH');
@@ -651,12 +656,22 @@ end;
 function THtmlGenerator.DefinedAt(ADef: TDefinition): string;
 var
   E: TEntry;
+  U: TUnitDef;
+  Line, Name: string;
 begin
   E := ADef.Entry;
   if (E = nil) or (E.FileName = '') then
     Exit('');
-  Result := '<p class="definition">' + HtmlEscape(Format(Tr('Definition at line %d of file %s.'),
-    [E.Line, ExtractFileName(FProject.OutputPath(E.FileName))])) + '</p>'#10;
+  Line := IntToStr(E.Line);
+  Name := HtmlEscape(ExtractFileName(FProject.OutputPath(E.FileName)));
+  U := ADef.OwnerUnit;
+  if (U <> nil) and HasSource(U) and SameText(E.FileName, U.FileName) then
+  begin
+    Line := '<a href="' + SourceUrl(U) + '#l' + Format('%.5d', [E.Line]) + '">' + Line + '</a>';
+    Name := '<a href="' + SourceUrl(U) + '">' + Name + '</a>';
+  end;
+  Result := '<p class="definition">' + Format(Tr('Definition at line %d of file %s.').Replace('%d', '%s'),
+    [Line, Name]) + '</p>'#10;
 end;
 
 function THtmlGenerator.VisibleMembers(AList: TList<TMemberDef>): TList<TMemberDef>;
@@ -1685,6 +1700,8 @@ begin
       end;
     if Uses_ <> '' then
       W('<p>' + Tr('Used by') + ': ' + Uses_ + '</p>'#10);
+    if HasSource(U) then
+      W('<p><a href="' + SourceUrl(U) + '">' + Tr('Go to the source code of this file.') + '</a></p>'#10);
     W(UnitGraph(U));
     if Rows.Length > 0 then
       W('<table class="memberdecls">'#10 + Rows.ToString + '</table>'#10);
@@ -1695,6 +1712,62 @@ begin
     Summary.Free;
     Rows.Free;
     Vis.Free;
+  end;
+end;
+
+function THtmlGenerator.HasSource(U: TUnitDef): Boolean;
+begin
+  Result := FSource and FLinks.IsLinkable(U) and (U.FileName <> '') and TFile.Exists(U.FileName);
+end;
+
+function THtmlGenerator.SourceUrl(U: TUnitDef): string;
+begin
+  Result := U.DiskName + '_source' + FExt;
+end;
+
+// The text of a source file: UTF-8 (BOM or not), else the ANSI code page.
+function ReadSourceText(const AFile: string): string;
+var
+  Bytes: TBytes;
+  Enc: TEncoding;
+  Skip: Integer;
+begin
+  Bytes := TFile.ReadAllBytes(AFile);
+  Enc := nil;
+  Skip := TEncoding.GetBufferEncoding(Bytes, Enc, TEncoding.UTF8);
+  Result := Enc.GetString(Bytes, Skip, Length(Bytes) - Skip);
+  if Result.Contains(#$FFFD) then
+    Result := TEncoding.ANSI.GetString(Bytes, Skip, Length(Bytes) - Skip);
+end;
+
+// Doxygen's "source file" page: the unit's text with line numbers and links from identifiers to their pages.
+procedure THtmlGenerator.WriteSource(U: TUnitDef);
+var
+  Cache: TDictionary<string, string>;
+  Name: string;
+begin
+  Cache := TDictionary<string, string>.Create;
+  try
+    Name := ExtractFileName(FProject.OutputPath(U.FileName));
+    BeginPage(U.DiskName + '_source', Name);
+    PageHeader(Name);
+    W('<div class="fragment">' + HighlightSource(ReadSourceText(U.FileName), True,
+      function(const AWord: string): string
+      var
+        T: TLinkTarget;
+      begin
+        if not Cache.TryGetValue(AWord, Result) then
+        begin
+          Result := '';
+          T := FLinks.Resolve(AWord, U);
+          if (T.Def <> nil) and (T.Def <> U) and FLinks.IsLinkable(T.Def) then
+            Result := FDoc.DefUrl(T.Def);
+          Cache.Add(AWord, Result);
+        end;
+      end) + '</div>'#10);
+    EndPage(NavPathOf(U));
+  finally
+    Cache.Free;
   end;
 end;
 
@@ -2806,7 +2879,11 @@ begin
     end;
   for U in FProject.Units do
     if FLinks.IsLinkable(U) then
+    begin
       WriteUnit(U);
+      if HasSource(U) then
+        WriteSource(U);
+    end;
   for G in FProject.Groups do
     WriteGroup(G);
   for P in FProject.Pages do

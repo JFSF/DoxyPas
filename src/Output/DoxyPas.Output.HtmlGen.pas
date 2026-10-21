@@ -166,6 +166,7 @@ type
     procedure WriteSource(U: TUnitDef);
     function WordLinker(AScope: TDefinition): TWordLinker;
     function InlineSource(M: TMemberDef): string;
+    function RelationLink(X: TMemberDef; const AText: string): string;
     function Relations(M: TMemberDef): string;
     procedure WriteGroup(G: TGroupDef);
     procedure WritePage(P: TPageDef);
@@ -1900,6 +1901,24 @@ begin
   end;
 end;
 
+// A member in a References / Referenced by list: with REFERENCES_LINK_SOURCE (and SOURCE_BROWSER) the link goes to its
+// line in the source page, otherwise to its documentation.
+function THtmlGenerator.RelationLink(X: TMemberDef; const AText: string): string;
+var
+  U: TUnitDef;
+  B: TEntry;
+begin
+  U := X.OwnerUnit;
+  B := X.Impl;
+  if B = nil then
+    B := X.Entry;
+  if FConfig.GetBool('REFERENCES_LINK_SOURCE') and (U <> nil) and HasSource(U) and (B <> nil) and
+    SameText(B.FileName, U.FileName) then
+    Result := '<a class="el" href="' + SourceUrl(U) + '#l' + Format('%.5d', [B.Line]) + '">' + HtmlEscape(AText) + '</a>'
+  else
+    Result := FDoc.Link(X, AText);
+end;
+
 // REFERENCES_RELATION / REFERENCED_BY_RELATION: "References a, b." and "Referenced by x, y." below a member.
 function THtmlGenerator.Relations(M: TMemberDef): string;
 
@@ -1924,7 +1943,7 @@ function THtmlGenerator.Relations(M: TMemberDef): string;
           Text := X.Scope.Name + '.' + Text;
         if Result <> '' then
           Result := Result + ', ';
-        Result := Result + FDoc.Link(X, Text);
+        Result := Result + RelationLink(X, Text);
       end;
     finally
       Sorted.Free;

@@ -189,6 +189,7 @@ begin
         okList:
           begin
             Ctl := TMemo.Create(Row);
+            Ctl.Parent := Row;                 // before the text and the scroll bars: they need a window
             TMemo(Ctl).Lines.Text := string.Join(#13#10, Opt.List.ToArray);
             TMemo(Ctl).ScrollBars := ssVertical;
             TMemo(Ctl).OnChange := EditorChange;

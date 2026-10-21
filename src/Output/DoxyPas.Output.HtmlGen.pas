@@ -78,6 +78,7 @@ type
     FLight, FDark: string;
     FTree, FSearch, FNoIndex, FDynMenus, FSidebar, FFold, FDynSec, FClip: Boolean;
     FLayout: TLayout;         // LAYOUT_FILE
+    FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
     FPageLayout: string;      // the layout page the member tables follow when it is not the one of the kind of definition ('group')
     FTabs: TDictionary<string, TLayoutEntry>;   // type of tab -> its <tab> element
     FMenu: TNavNode;          // the tabs, for HTML_DYNAMIC_MENUS = NO
@@ -301,6 +302,7 @@ begin
   FDynMenus := AConfig.GetBool('HTML_DYNAMIC_MENUS');
   FPageMenu := TDictionary<string, TPair<string, string>>.Create;
   FLayout := TLayout.Create(AConfig);
+  FAlphabeticalIndex := AConfig.GetBool('ALPHABETICAL_INDEX');
   FTabs := TDictionary<string, TLayoutEntry>.Create;
   if FLayout.NavIndex <> nil then
     CollectTabs(FLayout.NavIndex);
@@ -560,7 +562,7 @@ begin
   else if AType = 'topics' then begin Result := 'topics'; AAvailable := FHasGroups; end
   else if (AType = 'namespaces') or (AType = 'namespacelist') then begin Result := 'namespaces'; AAvailable := FHasUnits; end
   else if (AType = 'classes') or (AType = 'classlist') then begin Result := 'annotated'; AAvailable := FHasClasses; end
-  else if AType = 'classindex' then begin Result := 'classes'; AAvailable := FHasClasses; end
+  else if AType = 'classindex' then begin Result := 'classes'; AAvailable := FHasClasses and FAlphabeticalIndex; end
   else if AType = 'hierarchy' then begin Result := 'hierarchy'; AAvailable := FHasClasses; end
   else if AType = 'classmembers' then begin Result := 'functions'; AAvailable := FHasClasses; end
   else if (AType = 'files') or (AType = 'filelist') then begin Result := 'dirs'; AAvailable := FDirs <> nil; end
@@ -665,7 +667,8 @@ begin
   begin
     N := FMenu.Add(NavTitle('classes'), 'annotated');
     N.Add(NavTitle('classlist'), 'annotated');
-    N.Add(NavTitle('classindex'), 'classes');
+    if FAlphabeticalIndex then
+      N.Add(NavTitle('classindex'), 'classes');
     N.Add(NavTitle('hierarchy'), 'hierarchy');
     N.Add(NavTitle('classmembers'), 'functions');
   end;
@@ -2155,7 +2158,8 @@ begin
         W(' <a href="#details">More...</a>');
       W('</p>'#10);
     end;
-    ShowIncludes := LayoutShows('file', 'includes');   // the uses clauses are the includes of a unit
+    // the uses clauses are the includes of a unit: SHOW_INCLUDE_FILES when there is no layout of files
+    ShowIncludes := LayoutShows('file', 'includes') and ((FLayout.Page('file') <> nil) or FConfig.GetBool('SHOW_INCLUDE_FILES'));
     Uses_ := '';
     for S in U.UsesInterfaceNames do
     begin
@@ -3140,7 +3144,8 @@ begin
             AddClass(Node, C);
           end;
       end;
-    Classes.Add(NavTitle('classindex'), Url('classes'));
+    if FAlphabeticalIndex then
+      Classes.Add(NavTitle('classindex'), Url('classes'));
     Classes.Add(NavTitle('hierarchy'), Url('hierarchy'));
     Classes.Add(NavTitle('classmembers'), Url('functions'));
   end;

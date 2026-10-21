@@ -9,6 +9,7 @@ interface
 
 uses
   System.Classes,
+  System.Generics.Collections,
   System.Types,
   System.UITypes,
   Vcl.Forms,
@@ -30,6 +31,7 @@ type
     FModified: Boolean;
     FBuilding: Boolean;
     FGroups: TListBox;
+    FGroupIds: TList<Integer>;     // the group of each item of FGroups (the ones that have options)
     FTitle, FSubtitle: TLabel;
     FScroll: TScrollBox;
     FSearch: TSearchBox;
@@ -104,6 +106,7 @@ uses
   Vcl.Styles,
   DoxyPas.Core.Version,
   DoxyPas.Config.Options,
+  DoxyPas.Config.Implemented,
   DoxyPas.Config.Reader,
   DoxyPas.Config.Writer;
 
@@ -130,7 +133,7 @@ type
   strict private
     FSplit: Integer;
   public
-    NameLabel, DescLabel: TLabel;
+    NameLabel, DescLabel, Badge: TLabel;
     Editor: TWinControl;
     Browse: TButton;
     Line: TPanel;
@@ -150,6 +153,11 @@ begin
   FSplit := Max(MulDiv(Width, 42, 100), 220 * S);
   NameLabel.SetBounds(16 * S, 9 * S, FSplit - 28 * S, NameLabel.Height);
   DescLabel.SetBounds(16 * S, NameLabel.Top + NameLabel.Height + 2 * S, FSplit - 28 * S, DescLabel.Height);
+  if Badge <> nil then                       // at the right end of the column of the names
+  begin
+    Badge.Left := FSplit - 12 * S - Badge.Width;
+    Badge.Top := NameLabel.Top + (NameLabel.Height - Badge.Height) div 2;
+  end;
   W := Width - FSplit - 24 * S;
   if Browse <> nil then
   begin
@@ -182,6 +190,7 @@ begin
   OnCloseQuery := FormCloseQuery;
   FConfig := TConfig.Create;
   FConfig.PostProcess;
+  FGroupIds := TList<Integer>.Create;
   // light or dark like the apps of Windows
   Light := True;
   R := TRegistry.Create(KEY_READ);
@@ -202,6 +211,7 @@ end;
 destructor TMainForm.Destroy;
 begin
   FSearchTimer.Free;
+  FGroupIds.Free;
   FConfig.Free;
   inherited;
 end;
@@ -296,7 +306,7 @@ var
   Split: TSplitter;
   Clear: TButton;
   Cap: TLabel;
-  I: Integer;
+  I, J: Integer;
 
   function Btn(const ACaption: string; AImage: Integer; AHandler: TNotifyEvent): TButton;
   begin
@@ -414,8 +424,15 @@ begin
   FGroups.BorderStyle := bsNone;
   FGroups.AlignWithMargins := True;
   FGroups.Margins.SetBounds(8, 0, 0, 0);
+  // the groups of the output formats that DoxyPas does not have (RTF, Man, ...) have only obsolete options: not listed
   for I := 0 to ConfigGroupCount - 1 do
-    FGroups.Items.Add(ConfigGroups[I].Name.Replace('_', ' '));
+    for J := 0 to High(ConfigOptions) do
+      if (ConfigOptions[J].Group = I) and (ConfigOptions[J].Kind <> okObsolete) then
+      begin
+        FGroupIds.Add(I);
+        FGroups.Items.Add(ConfigGroups[I].Name.Replace('_', ' '));
+        Break;
+      end;
   FGroups.OnClick := GroupClick;
   FGroups.OnDrawItem := GroupDraw;
 
@@ -492,7 +509,7 @@ begin
   Dec(R.Right, Sc(26));
   DrawText(C.Handle, PChar(FGroups.Items[Index]), -1, R, DT_SINGLELINE or DT_VCENTER or DT_END_ELLIPSIS or DT_NOPREFIX);
   // a dot marks the groups with options that are not the default
-  if GroupHasChanges(Index) then
+  if GroupHasChanges(FGroupIds[Index]) then
   begin
     C.Brush.Color := StyleServices.GetSystemColor(clHotLight);
     C.Pen.Color := C.Brush.Color;
@@ -505,7 +522,7 @@ procedure TMainForm.GroupClick(Sender: TObject);
 begin
   if FGroups.ItemIndex < 0 then
     Exit;
-  FCurrentGroup := FGroups.ItemIndex;
+  FCurrentGroup := FGroupIds[FGroups.ItemIndex];
   FSearch.OnChange := nil;     // the search is cleared without starting another search
   FSearch.Text := '';
   FSearch.OnChange := SearchChange;
@@ -549,7 +566,7 @@ begin
     end
     else
     begin
-      FGroups.ItemIndex := FCurrentGroup;
+      FGroups.ItemIndex := FGroupIds.IndexOf(FCurrentGroup);
       FTitle.Caption := ConfigGroups[FCurrentGroup].Name.Replace('_', ' ');
     end;
     for Opt in FConfig.Options do
@@ -616,6 +633,18 @@ begin
   P := Pos('. ', Brief);
   if P > 0 then
     Brief := Copy(Brief, 1, P);
+  if not IsImplemented(Info.Name) then
+  begin
+    // DoxyPas reads the option (a Doxyfile of Doxygen has it) but does nothing with it
+    Row.Badge := TLabel.Create(Row);
+    Row.Badge.Parent := Row;
+    Row.Badge.AutoSize := True;
+    Row.Badge.Caption := 'not implemented';
+    Row.Badge.Font.Style := [fsItalic];
+    Row.Badge.Font.Color := clGrayText;
+    Row.Badge.ShowHint := True;
+    Row.Badge.Hint := 'DoxyPas does not use this option yet: it is accepted and has no effect.';
+  end;
   Row.DescLabel := TLabel.Create(Row);
   Row.DescLabel.Parent := Row;
   Row.DescLabel.AutoSize := False;

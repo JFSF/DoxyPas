@@ -22,6 +22,7 @@ type
     procedure TearDown;
 
     [Test] procedure DefaultsComeFromConfigXml;
+    [Test] procedure ImplementedOptionsAreOptions;
     [Test] procedure AssignmentsAndComments;
     [Test] procedure QuotedStringsAndEscapes;
     [Test] procedure ListAssignAndAppend;
@@ -45,6 +46,7 @@ uses
   System.IOUtils,
   DoxyPas.Core.Log,
   DoxyPas.Config.Options,
+  DoxyPas.Config.Implemented,
   DoxyPas.Config.Reader,
   DoxyPas.Config.Writer;
 
@@ -77,10 +79,30 @@ begin
   Assert.AreEqual('My Project', FConfig.GetString('PROJECT_NAME'));
   Assert.IsTrue(FConfig.GetBool('GENERATE_HTML'));
   Assert.IsTrue(FConfig.GetBool('GENERATE_LATEX'));
-  Assert.IsFalse(FConfig.GetBool('GENERATE_RTF'));
+  Assert.IsFalse(FConfig.GetBool('GENERATE_XML'));
   Assert.AreEqual('English', FConfig.GetString('OUTPUT_LANGUAGE'));
   Assert.AreEqual('Delphi', FConfig.GetString('PASCAL_DIALECT'));
   Assert.AreEqual<Integer>(11, Integer(Length(FConfig.GetList('ABBREVIATE_BRIEF'))));
+end;
+
+procedure TConfigTests.ImplementedOptionsAreOptions;
+var
+  Names: TArray<string>;
+  I: Integer;
+  Opt: TConfigOption;
+begin
+  Names := ImplementedOptions;
+  for I := 0 to High(Names) do
+  begin
+    Opt := FConfig.Find(Names[I]);
+    Assert.IsNotNull(Opt, Names[I] + ' is not an option');
+    Assert.IsTrue(Opt.Info.Kind <> okObsolete, Names[I] + ' is obsolete');
+    if I > 0 then
+      Assert.IsTrue(CompareStr(Names[I - 1], Names[I]) < 0, Names[I] + ' is not in order');
+  end;
+  Assert.IsTrue(IsImplemented('PROJECT_NAME'));
+  Assert.IsFalse(IsImplemented('UML_LOOK'));
+  Assert.IsFalse(IsImplemented('NO_SUCH_OPTION'));
 end;
 
 procedure TConfigTests.AssignmentsAndComments;

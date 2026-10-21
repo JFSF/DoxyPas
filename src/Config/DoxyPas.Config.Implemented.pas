@@ -1,0 +1,75 @@
+﻿unit DoxyPas.Config.Implemented;
+
+{ Which options DoxyPas does something with. The others are accepted (a Doxyfile of Doxygen has them) and ignored: the GUI
+  shows them as not implemented and the Doxyfile that is generated says so in the comment of the option. Keep the list in
+  alphabetical order; a test checks that every name is an option and that the list is sorted. }
+
+interface
+
+/// <summary>Does DoxyPas do something with the option?</summary>
+function IsImplemented(const AName: string): Boolean;
+
+/// <summary>The names of the implemented options, in alphabetical order.</summary>
+function ImplementedOptions: TArray<string>;
+
+implementation
+
+uses
+  System.SysUtils;
+
+const
+  Names: array[0..121] of string = (
+    'ALIASES', 'ALPHABETICAL_INDEX', 'AUTOLINK_SUPPORT', 'CALLER_GRAPH', 'CALL_GRAPH', 'CASE_SENSE_NAMES',
+    'CHM_FILE', 'CITE_BIB_FILES', 'CLASS_GRAPH', 'COLLABORATION_GRAPH', 'COMPACT_LATEX', 'DELPHI_PROJECT',
+    'DIRECTORY_GRAPH', 'DISABLE_INDEX', 'DOT_CLEANUP', 'DOT_GRAPH_MAX_NODES', 'DOT_PATH', 'DOXYFILE_ENCODING',
+    'ENABLED_SECTIONS', 'EXCLUDE', 'EXCLUDE_PATTERNS', 'EXTRACT_ALL', 'EXTRACT_LOCAL_CLASSES', 'EXTRACT_PRIVATE',
+    'EXTRACT_STATIC', 'EXTRA_PACKAGES', 'FILE_PATTERNS', 'FORMULA_FONTSIZE', 'FORMULA_MACROFILE', 'FULL_SIDEBAR',
+    'GENERATE_HTML', 'GENERATE_HTMLHELP', 'GENERATE_LATEX', 'GENERATE_SQLITE3', 'GENERATE_TAGFILE',
+    'GENERATE_TREEVIEW', 'GENERATE_XML', 'HAVE_DOT', 'HHC_LOCATION', 'HIDE_UNDOC_CLASSES', 'HIDE_UNDOC_MEMBERS',
+    'HTML_CODE_FOLDING', 'HTML_COLORSTYLE', 'HTML_COLORSTYLE_GAMMA', 'HTML_COLORSTYLE_HUE', 'HTML_COLORSTYLE_SAT',
+    'HTML_COPY_CLIPBOARD', 'HTML_DYNAMIC_MENUS', 'HTML_DYNAMIC_SECTIONS', 'HTML_EXTRA_STYLESHEET',
+    'HTML_FILE_EXTENSION', 'HTML_FOOTER', 'HTML_HEADER', 'HTML_OUTPUT', 'HTML_STYLESHEET', 'INCLUDED_BY_GRAPH',
+    'INCLUDE_GRAPH', 'INCLUDE_PATH', 'INHERIT_DOCS', 'INLINE_SOURCES', 'INPUT', 'INTERNAL_DOCS', 'JAVADOC_AUTOBRIEF',
+    'LATEX_BATCHMODE', 'LATEX_BIB_STYLE', 'LATEX_CMD_NAME', 'LATEX_EXTRA_FILES', 'LATEX_EXTRA_STYLESHEET',
+    'LATEX_FOOTER', 'LATEX_HEADER', 'LATEX_HIDE_INDICES', 'LATEX_MAKEINDEX_CMD', 'LATEX_OUTPUT', 'LAYOUT_FILE',
+    'MAKEINDEX_CMD_NAME', 'MARKDOWN_SUPPORT', 'MATHJAX_CODEFILE', 'MATHJAX_EXTENSIONS', 'MATHJAX_FORMAT',
+    'MATHJAX_RELPATH', 'MATHJAX_VERSION', 'OUTPUT_DIRECTORY', 'OUTPUT_LANGUAGE', 'PAPER_TYPE',
+    'PASCAL_DFM_PROPERTIES', 'PASCAL_DIALECT', 'PASCAL_PARSE_DFM', 'PASCAL_PLATFORM', 'PASCAL_UNIT_SCOPES',
+    'PASCAL_XMLDOC', 'PDF_HYPERLINKS', 'PREDEFINED', 'PROJECT_BRIEF', 'PROJECT_ICON', 'PROJECT_LOGO', 'PROJECT_NAME',
+    'PROJECT_NUMBER', 'QT_AUTOBRIEF', 'QUIET', 'RECURSIVE', 'REFERENCED_BY_RELATION', 'REFERENCES_LINK_SOURCE',
+    'REFERENCES_RELATION', 'SEARCHENGINE', 'SHOW_FILES', 'SHOW_INCLUDE_FILES', 'SORT_BRIEF_DOCS', 'SORT_MEMBER_DOCS',
+    'SOURCE_BROWSER', 'SQLITE3_OUTPUT', 'STRIP_CODE_COMMENTS', 'STRIP_FROM_PATH', 'TAB_SIZE', 'TAGFILES',
+    'TREEVIEW_WIDTH', 'USE_MATHJAX', 'USE_PDFLATEX', 'WARNINGS', 'WARN_IF_DOC_ERROR', 'WARN_IF_UNDOCUMENTED',
+    'WARN_NO_PARAMDOC', 'XML_OUTPUT'
+  );
+
+function IsImplemented(const AName: string): Boolean;
+var
+  Lo, Hi, Mid, Cmp: Integer;
+begin
+  Lo := 0;
+  Hi := High(Names);
+  while Lo <= Hi do
+  begin
+    Mid := (Lo + Hi) div 2;
+    Cmp := CompareStr(AName, Names[Mid]);
+    if Cmp = 0 then
+      Exit(True);
+    if Cmp < 0 then
+      Hi := Mid - 1
+    else
+      Lo := Mid + 1;
+  end;
+  Result := False;
+end;
+
+function ImplementedOptions: TArray<string>;
+var
+  I: Integer;
+begin
+  SetLength(Result, Length(Names));
+  for I := 0 to High(Names) do
+    Result[I] := Names[I];
+end;
+
+end.

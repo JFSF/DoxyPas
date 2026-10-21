@@ -19,6 +19,7 @@ implementation
 uses
   System.Classes,
   DoxyPas.Config.Options,
+  DoxyPas.Config.Implemented,
   DoxyPas.Core.Version;
 
 const
@@ -127,11 +128,14 @@ end;
 
 procedure WriteOption(ATarget: TStringBuilder; AOption: TConfigOption; AShort, AUpdate: Boolean);
 var
-  Name: string;
+  Name, Doc: string;
 begin
   Name := AOption.Info.Name;
+  Doc := AOption.Info.Doc;
+  if not IsImplemented(Name) then
+    Doc := Doc + #10#10'Not implemented in DoxyPas: the option is accepted and has no effect.';
   if not AShort then
-    ATarget.Append(#10).Append(ConvertToComment(AOption.Info.Doc, AOption.UserComment)).Append(#10)
+    ATarget.Append(#10).Append(ConvertToComment(Doc, AOption.UserComment)).Append(#10)
   else if AOption.UserComment <> '' then
     ATarget.Append(ConvertToComment('', AOption.UserComment));
   ATarget.Append(Name).Append(StringOfChar(' ', MaxOptionLength - Length(Name))).Append('=')

@@ -2023,70 +2023,6 @@ hr.footer {
 ]]>
       </docs>
     </option>
-    <option type='bool' id='GENERATE_DOCSET' defval='0' depends='GENERATE_HTML'>
-      <docs>
-<![CDATA[
- If the \c GENERATE_DOCSET tag is set to \c YES, additional index files
- will be generated that can be used as input for
- <a href="https://developer.apple.com/xcode/">Apple's Xcode 3
- integrated development environment</a>, introduced with OSX 10.5 (Leopard).
- To create a documentation set, Doxygen will generate a Makefile in the
- HTML output directory. Running \c make will produce the docset in that
- directory and running <code>make install</code> will install the docset in
- <code>~/Library/Developer/Shared/Documentation/DocSets</code>
- so that Xcode will find it at startup. See
- https://developer.apple.com/library/archive/featuredarticles/DoxygenXcode/_index.html
- for more information.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='DOCSET_FEEDNAME' format='string' defval='Doxygen generated docs' depends='GENERATE_DOCSET'>
-      <docs>
-<![CDATA[
- This tag determines the name of the docset
- feed. A documentation feed provides an umbrella under which multiple
- documentation sets from a single provider (such as a company or product suite)
- can be grouped.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='DOCSET_FEEDURL' format='string' depends='GENERATE_DOCSET'>
-      <docs>
-<![CDATA[
- This tag determines the URL of the docset
- feed. A documentation feed provides an umbrella under which multiple
- documentation sets from a single provider (such as a company or product suite)
- can be grouped.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='DOCSET_BUNDLE_ID' format='string' defval='org.doxygen.Project' depends='GENERATE_DOCSET'>
-      <docs>
-<![CDATA[
- This tag specifies a string that
- should uniquely identify the documentation set bundle. This should be a
- reverse domain-name style string, e.g. <code>com.mycompany.MyDocSet</code>.
- Doxygen will append <code>.docset</code> to the name.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='DOCSET_PUBLISHER_ID' format='string' defval='org.doxygen.Publisher' depends='GENERATE_DOCSET'>
-      <docs>
-<![CDATA[
-The \c DOCSET_PUBLISHER_ID
-tag specifies a string that should uniquely identify
-the documentation publisher. This should be a reverse domain-name style
-string, e.g. <code>com.mycompany.MyDocSet.documentation</code>.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='DOCSET_PUBLISHER_NAME' format='string' defval='Publisher' depends='GENERATE_DOCSET'>
-      <docs>
-<![CDATA[
-The \c DOCSET_PUBLISHER_NAME tag identifies the documentation publisher.
-]]>
-      </docs>
-    </option>
     <option type='bool' id='GENERATE_HTMLHELP' defval='0' depends='GENERATE_HTML'>
       <docs>
 <![CDATA[
@@ -2177,105 +2113,6 @@ The \c DOCSET_PUBLISHER_NAME tag identifies the documentation publisher.
  \ref cfg_html_output "HTML_OUTPUT". In case no \c SITEMAP_URL is specified no
  sitemap is generated.
  For information about the sitemap protocol see https://www.sitemaps.org
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='GENERATE_QHP' defval='0' depends='GENERATE_HTML'>
-      <docs>
-<![CDATA[
- If the \c GENERATE_QHP tag is set to \c YES and both \ref cfg_qhp_namespace "QHP_NAMESPACE"
- and \ref cfg_qhp_virtual_folder "QHP_VIRTUAL_FOLDER" are set, an additional index file will
- be generated that can be used as input for Qt's qhelpgenerator
- to generate a Qt Compressed Help (`.qch`) of the generated HTML
- documentation.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='QCH_FILE' format='file' defval='' depends='GENERATE_QHP'>
-      <docs>
-<![CDATA[
- If the \ref cfg_qhg_location "QHG_LOCATION" tag is specified, the \c QCH_FILE tag can
- be used to specify the file name of the resulting `.qch` file.
- The path specified is relative to the HTML output folder.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='QHP_NAMESPACE' format='string' defval='org.doxygen.Project' depends='GENERATE_QHP'>
-      <docs>
-<![CDATA[
- The \c QHP_NAMESPACE tag specifies the namespace to use when generating
- Qt Help Project output. For more information please see
- <a href="https://doc.qt.io/archives/qt-4.8/qthelpproject.html#namespace">Qt Help Project / Namespace</a>.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='QHP_VIRTUAL_FOLDER' format='string' defval='doc' depends='GENERATE_QHP'>
-      <docs>
-<![CDATA[
- The \c QHP_VIRTUAL_FOLDER tag specifies the namespace to use when
- generating Qt Help Project output. For more information please see
- <a href="https://doc.qt.io/archives/qt-4.8/qthelpproject.html#virtual-folders">Qt Help Project / Virtual Folders</a>.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='QHP_CUST_FILTER_NAME' format='string' defval='' depends='GENERATE_QHP'>
-      <docs>
-<![CDATA[
-  If the \c QHP_CUST_FILTER_NAME tag is set, it specifies the name of a custom filter to add. For more information please see
-  <a href="https://doc.qt.io/archives/qt-4.8/qthelpproject.html#custom-filters">Qt Help Project / Custom Filters</a>.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='QHP_CUST_FILTER_ATTRS' format='string' defval='' depends='GENERATE_QHP'>
-      <docs>
-<![CDATA[
-  The \c QHP_CUST_FILTER_ATTRS tag specifies the list of the attributes of the custom filter to add.
-  For more information please see
-  <a href="https://doc.qt.io/archives/qt-4.8/qthelpproject.html#custom-filters">Qt Help Project / Custom Filters</a>.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='QHP_SECT_FILTER_ATTRS' format='string' defval='' depends='GENERATE_QHP'>
-      <docs>
-<![CDATA[
-  The \c QHP_SECT_FILTER_ATTRS tag specifies the list of the attributes this project's filter section matches.
-  <a href="https://doc.qt.io/archives/qt-4.8/qthelpproject.html#filter-attributes">Qt Help Project / Filter Attributes</a>.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='QHG_LOCATION' format='file' defval='' depends='GENERATE_QHP'>
-      <docs>
-<![CDATA[
- The \c QHG_LOCATION tag can
- be used to specify the location (absolute path including file name) of
- Qt's qhelpgenerator.
- If non-empty Doxygen will try to run qhelpgenerator on the generated `.qhp` file.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='GENERATE_ECLIPSEHELP' defval='0' depends='GENERATE_HTML'>
-      <docs>
-<![CDATA[
- If the \c GENERATE_ECLIPSEHELP tag is set to \c YES, additional index files
- will be generated, together with the HTML files, they form an `Eclipse` help
- plugin.
-
- To install this plugin and make it available under the help contents
- menu in `Eclipse`, the contents of the directory containing the HTML and XML
- files needs to be copied into the plugins directory of eclipse. The name of
- the directory within the plugins directory should be the same as
- the \ref cfg_eclipse_doc_id "ECLIPSE_DOC_ID" value.
-
- After copying `Eclipse` needs to be restarted before the help appears.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='ECLIPSE_DOC_ID' format='string' defval='org.doxygen.Project' depends='GENERATE_ECLIPSEHELP'>
-      <docs>
-<![CDATA[
- A unique identifier for the `Eclipse` help plugin. When installing the plugin
- the directory name containing the HTML and XML files should also have
- this name. Each documentation set should have its own identifier.
 ]]>
       </docs>
     </option>
@@ -3008,130 +2845,8 @@ The following block name is set based on whether or not a feature is used in the
     </option>
   </group>
   <group name='RTF' docs='Configuration options related to the RTF output'>
-    <option type='bool' id='GENERATE_RTF' defval='0'>
-      <docs>
-<![CDATA[
- If the \c GENERATE_RTF tag is set to \c YES, Doxygen will generate RTF output.
- The RTF output is optimized for Word 97 and may not look too pretty with
- other RTF readers/editors.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='RTF_OUTPUT' format='dir' defval='rtf' depends='GENERATE_RTF'>
-      <docs>
-<![CDATA[
- The \c RTF_OUTPUT tag is used to specify where the RTF docs will be put.
- If a relative path is entered the value of \ref cfg_output_directory "OUTPUT_DIRECTORY" will be
- put in front of it.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='COMPACT_RTF' defval='0' depends='GENERATE_RTF'>
-      <docs>
-<![CDATA[
- If the \c COMPACT_RTF tag is set to \c YES, Doxygen generates more compact
- RTF documents. This may be useful for small projects and may help to
- save some trees in general.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='RTF_HYPERLINKS' defval='0' depends='GENERATE_RTF'>
-      <docs>
-<![CDATA[
- If the \c RTF_HYPERLINKS tag is set to \c YES, the RTF that is generated
- will contain hyperlink fields. The RTF file will
- contain links (just like the HTML output) instead of page references.
- This makes the output suitable for online browsing using Word or some other
- Word compatible readers that support those fields.
-
- <br>Note: WordPad (write) and others do not support links.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='RTF_STYLESHEET_FILE' format='file' defval='' depends='GENERATE_RTF'>
-      <docs>
-<![CDATA[
- Load stylesheet definitions from file. Syntax is similar to Doxygen's
- configuration file, i.e. a series of assignments. You only have to provide
- replacements, missing definitions are set to their default value.
-<br>
- See also section \ref doxygen_usage for information on how to generate
- the default style sheet that Doxygen normally uses.
-
-]]>
-      </docs>
-    </option>
-    <option type='string' id='RTF_EXTENSIONS_FILE' format='file' defval='' depends='GENERATE_RTF'>
-      <docs>
-<![CDATA[
- Set optional variables used in the generation of an RTF document.
- Syntax is similar to Doxygen's configuration file.
- A template extensions file can be generated using
- <code>doxygen -e rtf extensionFile</code>.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='RTF_EXTRA_FILES' format='file' depends='GENERATE_RTF'>
-      <docs>
-<![CDATA[
- The \c RTF_EXTRA_FILES tag can be used to specify one or more extra images
- or other source files which should be copied to the \ref cfg_rtf_output "RTF_OUTPUT"
- output directory.
- Note that the files will be copied as-is; there are no commands or markers
- available.
-]]>
-      </docs>
-    </option>
   </group>
   <group name='Man' docs='Configuration options related to the man page output'>
-    <option type='bool' id='GENERATE_MAN' defval='0'>
-      <docs>
-<![CDATA[
- If the \c GENERATE_MAN tag is set to \c YES, Doxygen will
- generate man pages for classes and files.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='MAN_OUTPUT' format='dir' defval='man' depends='GENERATE_MAN'>
-      <docs>
-<![CDATA[
- The \c MAN_OUTPUT tag is used to specify where the man pages will be put.
- If a relative path is entered the value of \ref cfg_output_directory "OUTPUT_DIRECTORY" will be
- put in front of it.
- A directory \c man3 will be created inside the directory specified by
- \c MAN_OUTPUT.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='MAN_EXTENSION' format='string' defval='.3' depends='GENERATE_MAN'>
-      <docs>
-<![CDATA[
- The \c MAN_EXTENSION tag determines the extension that is added to
- the generated man pages. In case
- the manual section does not start with a number, the number 3 is prepended.
- The dot (.) at the beginning of the \c MAN_EXTENSION tag is optional.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='MAN_SUBDIR' format='string' defval='' depends='GENERATE_MAN'>
-      <docs>
-<![CDATA[
- The \c MAN_SUBDIR tag determines the name of the directory created within \c MAN_OUTPUT
- in which the man pages are placed. If defaults to man followed by \c MAN_EXTENSION
- with the initial `.` removed.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='MAN_LINKS' defval='0' depends='GENERATE_MAN'>
-      <docs>
-<![CDATA[
- If the \c MAN_LINKS tag is set to \c YES and Doxygen generates man output,
- then it will generate one additional man file for each entity documented in
- the real man page(s). These additional files only source the real man page,
- but without them the \c man command would be unable to find the correct page.
-]]>
-      </docs>
-    </option>
   </group>
   <group name='XML' docs='Configuration options related to the XML output'>
     <option type='bool' id='GENERATE_XML' defval='0'>
@@ -3173,36 +2888,8 @@ The following block name is set based on whether or not a feature is used in the
     </option>
   </group>
   <group name='Docbook' docs='Configuration options related to the DOCBOOK output'>
-    <option type='bool' id='GENERATE_DOCBOOK' defval='0'>
-      <docs>
-<![CDATA[
-If the \c GENERATE_DOCBOOK tag is set to \c YES, Doxygen will generate Docbook files
-that can be used to generate PDF.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='DOCBOOK_OUTPUT' format='dir' defval='docbook' depends='GENERATE_DOCBOOK'>
-      <docs>
-<![CDATA[
-The \c DOCBOOK_OUTPUT tag is used to specify where the Docbook pages will be put.
-If a relative path is entered the value of \ref cfg_output_directory "OUTPUT_DIRECTORY" will be put in
-front of it.
-]]>
-      </docs>
-    </option>
   </group>
   <group name='AutoGen' docs='Configuration options for the AutoGen Definitions output'>
-    <option type='bool' id='GENERATE_AUTOGEN_DEF' defval='0'>
-      <docs>
-<![CDATA[
- If the \c GENERATE_AUTOGEN_DEF tag is set to \c YES, Doxygen will
- generate an AutoGen Definitions (see https://autogen.sourceforge.net/) file
- that captures the structure of the code including all
- documentation. Note that this feature is still experimental
- and incomplete at the moment.
-]]>
-      </docs>
-    </option>
   </group>
   <group name='Sqlite3' docs='Configuration options related to Sqlite3 output'>
     <option type='bool' id='GENERATE_SQLITE3' defval='0'>
@@ -3234,48 +2921,6 @@ If set to \c NO, Doxygen will warn if a database file is already found and not m
 
   </group>
   <group name='PerlMod' docs='Configuration options related to the Perl module output'>
-    <option type='bool' id='GENERATE_PERLMOD' defval='0'>
-      <docs>
-<![CDATA[
- If the \c GENERATE_PERLMOD tag is set to \c YES, Doxygen will
- generate a Perl module file that captures the structure of
- the code including all documentation.
- <br>Note that this
- feature is still experimental and incomplete at the
- moment.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='PERLMOD_LATEX' defval='0' depends='GENERATE_PERLMOD'>
-      <docs>
-<![CDATA[
- If the \c PERLMOD_LATEX tag is set to \c YES, Doxygen will generate
- the necessary \c Makefile rules, \c Perl scripts and \f$\mbox{\LaTeX}\f$ code to be able
- to generate PDF and DVI output from the Perl module output.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='PERLMOD_PRETTY' defval='1' depends='GENERATE_PERLMOD'>
-      <docs>
-<![CDATA[
- If the \c PERLMOD_PRETTY tag is set to \c YES, the Perl module output will be
- nicely formatted so it can be parsed by a human reader.  This is useful
- if you want to understand what is going on. On the other hand, if this
- tag is set to \c NO, the size of the Perl module output will be much smaller
- and Perl will parse it just the same.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='PERLMOD_MAKEVAR_PREFIX' format='string' defval='' depends='GENERATE_PERLMOD'>
-      <docs>
-<![CDATA[
- The names of the make variables in the generated `doxyrules.make` file
- are prefixed with the string contained in \c PERLMOD_MAKEVAR_PREFIX.
- This is useful so different `doxyrules.make` files included by the same
- `Makefile` don't overwrite each other's variables.
-]]>
-      </docs>
-    </option>
   </group>
   <group name='Preprocessor' docs='Configuration options related to the preprocessor'>
     <option type='list' id='INCLUDE_PATH' format='dir'>
@@ -3990,6 +3635,41 @@ This setting is not only used for dot files but also for msc temporary files.
     <option type='obsolete' orgtype='list' id='INCLUDE_FILE_PATTERNS'/>
     <option type='obsolete' orgtype='list' id='EXPAND_AS_DEFINED'/>
     <option type='obsolete' orgtype='bool' id='SKIP_FUNCTION_MACROS'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_RTF'/>
+    <option type='obsolete' orgtype='string' id='RTF_OUTPUT'/>
+    <option type='obsolete' orgtype='bool' id='COMPACT_RTF'/>
+    <option type='obsolete' orgtype='bool' id='RTF_HYPERLINKS'/>
+    <option type='obsolete' orgtype='string' id='RTF_STYLESHEET_FILE'/>
+    <option type='obsolete' orgtype='string' id='RTF_EXTENSIONS_FILE'/>
+    <option type='obsolete' orgtype='list' id='RTF_EXTRA_FILES'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_MAN'/>
+    <option type='obsolete' orgtype='string' id='MAN_OUTPUT'/>
+    <option type='obsolete' orgtype='string' id='MAN_EXTENSION'/>
+    <option type='obsolete' orgtype='string' id='MAN_SUBDIR'/>
+    <option type='obsolete' orgtype='bool' id='MAN_LINKS'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_DOCBOOK'/>
+    <option type='obsolete' orgtype='string' id='DOCBOOK_OUTPUT'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_AUTOGEN_DEF'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_PERLMOD'/>
+    <option type='obsolete' orgtype='bool' id='PERLMOD_LATEX'/>
+    <option type='obsolete' orgtype='bool' id='PERLMOD_PRETTY'/>
+    <option type='obsolete' orgtype='string' id='PERLMOD_MAKEVAR_PREFIX'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_DOCSET'/>
+    <option type='obsolete' orgtype='string' id='DOCSET_FEEDNAME'/>
+    <option type='obsolete' orgtype='string' id='DOCSET_FEEDURL'/>
+    <option type='obsolete' orgtype='string' id='DOCSET_BUNDLE_ID'/>
+    <option type='obsolete' orgtype='string' id='DOCSET_PUBLISHER_ID'/>
+    <option type='obsolete' orgtype='string' id='DOCSET_PUBLISHER_NAME'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_QHP'/>
+    <option type='obsolete' orgtype='string' id='QCH_FILE'/>
+    <option type='obsolete' orgtype='string' id='QHP_NAMESPACE'/>
+    <option type='obsolete' orgtype='string' id='QHP_VIRTUAL_FOLDER'/>
+    <option type='obsolete' orgtype='string' id='QHP_CUST_FILTER_NAME'/>
+    <option type='obsolete' orgtype='string' id='QHP_CUST_FILTER_ATTRS'/>
+    <option type='obsolete' orgtype='string' id='QHP_SECT_FILTER_ATTRS'/>
+    <option type='obsolete' orgtype='string' id='QHG_LOCATION'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_ECLIPSEHELP'/>
+    <option type='obsolete' orgtype='string' id='ECLIPSE_DOC_ID'/>
     <option type='obsolete' orgtype='bool' id='USE_WINDOWS_ENCODING'/>
     <option type='obsolete' orgtype='bool' id='DETAILS_AT_TOP'/>
     <option type='obsolete' orgtype='string' id='QTHELP_FILE'/>

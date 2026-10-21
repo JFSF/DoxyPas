@@ -1552,71 +1552,6 @@ const
       'tree by default.' + #10 +
       'Minimum value: 0, maximum value: 9999, default value: 100.' + #10 +
       'This tag requires that the tag GENERATE_HTML is set to YES.'),
-    (Name: 'GENERATE_DOCSET';
-     Kind: okBool; OrgKind: okBool; Group: 6;
-     Format: ''; Depends: 'GENERATE_HTML';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the GENERATE_DOCSET tag is set to YES, additional index files will be' + #10 +
-      'generated that can be used as input for Apple''s Xcode 3 integrated development' + #10 +
-      'environment (see:' + #10 +
-      'https://developer.apple.com/xcode/), introduced with OSX 10.5 (Leopard). To' + #10 +
-      'create a documentation set, Doxygen will generate a Makefile in the HTML' + #10 +
-      'output directory. Running make will produce the docset in that directory and' + #10 +
-      'running make install will install the docset in' + #10 +
-      '~/Library/Developer/Shared/Documentation/DocSets so that Xcode will find it at' + #10 +
-      'startup. See' + #10 +
-      'https://developer.apple.com/library/archive/featuredarticles/DoxygenXcode/_index.html' + #10 +
-      'for more information.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag GENERATE_HTML is set to YES.'),
-    (Name: 'DOCSET_FEEDNAME';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_DOCSET';
-     Default: 'Doxygen generated docs'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'This tag determines the name of the docset feed. A documentation feed provides' + #10 +
-      'an umbrella under which multiple documentation sets from a single provider' + #10 +
-      '(such as a company or product suite) can be grouped.' + #10 +
-      'The default value is: Doxygen generated docs.' + #10 +
-      'This tag requires that the tag GENERATE_DOCSET is set to YES.'),
-    (Name: 'DOCSET_FEEDURL';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_DOCSET';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'This tag determines the URL of the docset feed. A documentation feed provides' + #10 +
-      'an umbrella under which multiple documentation sets from a single provider' + #10 +
-      '(such as a company or product suite) can be grouped.' + #10 +
-      'This tag requires that the tag GENERATE_DOCSET is set to YES.'),
-    (Name: 'DOCSET_BUNDLE_ID';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_DOCSET';
-     Default: 'org.doxygen.Project'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'This tag specifies a string that should uniquely identify the documentation' + #10 +
-      'set bundle. This should be a reverse domain-name style string, e.g.' + #10 +
-      'com.mycompany.MyDocSet. Doxygen will append .docset to the name.' + #10 +
-      'The default value is: org.doxygen.Project.' + #10 +
-      'This tag requires that the tag GENERATE_DOCSET is set to YES.'),
-    (Name: 'DOCSET_PUBLISHER_ID';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_DOCSET';
-     Default: 'org.doxygen.Publisher'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The DOCSET_PUBLISHER_ID tag specifies a string that should uniquely identify' + #10 +
-      'the documentation publisher. This should be a reverse domain-name style' + #10 +
-      'string, e.g. com.mycompany.MyDocSet.documentation.' + #10 +
-      'The default value is: org.doxygen.Publisher.' + #10 +
-      'This tag requires that the tag GENERATE_DOCSET is set to YES.'),
-    (Name: 'DOCSET_PUBLISHER_NAME';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_DOCSET';
-     Default: 'Publisher'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The DOCSET_PUBLISHER_NAME tag identifies the documentation publisher.' + #10 +
-      'The default value is: Publisher.' + #10 +
-      'This tag requires that the tag GENERATE_DOCSET is set to YES.'),
     (Name: 'GENERATE_HTMLHELP';
      Kind: okBool; OrgKind: okBool; Group: 6;
      Format: ''; Depends: 'GENERATE_HTML';
@@ -1707,110 +1642,6 @@ const
       'is specified no sitemap is generated. For information about the sitemap' + #10 +
       'protocol see https://www.sitemaps.org' + #10 +
       'This tag requires that the tag GENERATE_HTML is set to YES.'),
-    (Name: 'GENERATE_QHP';
-     Kind: okBool; OrgKind: okBool; Group: 6;
-     Format: ''; Depends: 'GENERATE_HTML';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the GENERATE_QHP tag is set to YES and both QHP_NAMESPACE and' + #10 +
-      'QHP_VIRTUAL_FOLDER are set, an additional index file will be generated that' + #10 +
-      'can be used as input for Qt''s qhelpgenerator to generate a Qt Compressed Help' + #10 +
-      '(.qch) of the generated HTML documentation.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag GENERATE_HTML is set to YES.'),
-    (Name: 'QCH_FILE';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'file'; Depends: 'GENERATE_QHP';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the QHG_LOCATION tag is specified, the QCH_FILE tag can be used to specify' + #10 +
-      'the file name of the resulting .qch file. The path specified is relative to' + #10 +
-      'the HTML output folder.' + #10 +
-      'This tag requires that the tag GENERATE_QHP is set to YES.'),
-    (Name: 'QHP_NAMESPACE';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_QHP';
-     Default: 'org.doxygen.Project'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The QHP_NAMESPACE tag specifies the namespace to use when generating Qt Help' + #10 +
-      'Project output. For more information please see Qt Help Project / Namespace' + #10 +
-      '(see:' + #10 +
-      'https://doc.qt.io/archives/qt-4.8/qthelpproject.html#namespace).' + #10 +
-      'The default value is: org.doxygen.Project.' + #10 +
-      'This tag requires that the tag GENERATE_QHP is set to YES.'),
-    (Name: 'QHP_VIRTUAL_FOLDER';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_QHP';
-     Default: 'doc'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The QHP_VIRTUAL_FOLDER tag specifies the namespace to use when generating Qt' + #10 +
-      'Help Project output. For more information please see Qt Help Project / Virtual' + #10 +
-      'Folders (see:' + #10 +
-      'https://doc.qt.io/archives/qt-4.8/qthelpproject.html#virtual-folders).' + #10 +
-      'The default value is: doc.' + #10 +
-      'This tag requires that the tag GENERATE_QHP is set to YES.'),
-    (Name: 'QHP_CUST_FILTER_NAME';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_QHP';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the QHP_CUST_FILTER_NAME tag is set, it specifies the name of a custom' + #10 +
-      'filter to add. For more information please see Qt Help Project / Custom' + #10 +
-      'Filters (see:' + #10 +
-      'https://doc.qt.io/archives/qt-4.8/qthelpproject.html#custom-filters).' + #10 +
-      'This tag requires that the tag GENERATE_QHP is set to YES.'),
-    (Name: 'QHP_CUST_FILTER_ATTRS';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_QHP';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The QHP_CUST_FILTER_ATTRS tag specifies the list of the attributes of the' + #10 +
-      'custom filter to add. For more information please see Qt Help Project / Custom' + #10 +
-      'Filters (see:' + #10 +
-      'https://doc.qt.io/archives/qt-4.8/qthelpproject.html#custom-filters).' + #10 +
-      'This tag requires that the tag GENERATE_QHP is set to YES.'),
-    (Name: 'QHP_SECT_FILTER_ATTRS';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_QHP';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The QHP_SECT_FILTER_ATTRS tag specifies the list of the attributes this' + #10 +
-      'project''s filter section matches. Qt Help Project / Filter Attributes (see:' + #10 +
-      'https://doc.qt.io/archives/qt-4.8/qthelpproject.html#filter-attributes).' + #10 +
-      'This tag requires that the tag GENERATE_QHP is set to YES.'),
-    (Name: 'QHG_LOCATION';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'file'; Depends: 'GENERATE_QHP';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The QHG_LOCATION tag can be used to specify the location (absolute path' + #10 +
-      'including file name) of Qt''s qhelpgenerator. If non-empty Doxygen will try to' + #10 +
-      'run qhelpgenerator on the generated .qhp file.' + #10 +
-      'This tag requires that the tag GENERATE_QHP is set to YES.'),
-    (Name: 'GENERATE_ECLIPSEHELP';
-     Kind: okBool; OrgKind: okBool; Group: 6;
-     Format: ''; Depends: 'GENERATE_HTML';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the GENERATE_ECLIPSEHELP tag is set to YES, additional index files will be' + #10 +
-      'generated, together with the HTML files, they form an Eclipse help plugin. To' + #10 +
-      'install this plugin and make it available under the help contents menu in' + #10 +
-      'Eclipse, the contents of the directory containing the HTML and XML files needs' + #10 +
-      'to be copied into the plugins directory of eclipse. The name of the directory' + #10 +
-      'within the plugins directory should be the same as the ECLIPSE_DOC_ID value.' + #10 +
-      'After copying Eclipse needs to be restarted before the help appears.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag GENERATE_HTML is set to YES.'),
-    (Name: 'ECLIPSE_DOC_ID';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'GENERATE_ECLIPSEHELP';
-     Default: 'org.doxygen.Project'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'A unique identifier for the Eclipse help plugin. When installing the plugin' + #10 +
-      'the directory name containing the HTML and XML files should also have this' + #10 +
-      'name. Each documentation set should have its own identifier.' + #10 +
-      'The default value is: org.doxygen.Project.' + #10 +
-      'This tag requires that the tag GENERATE_ECLIPSEHELP is set to YES.'),
     (Name: 'DISABLE_INDEX';
      Kind: okBool; OrgKind: okBool; Group: 6;
      Format: ''; Depends: 'GENERATE_HTML';
@@ -2364,130 +2195,6 @@ const
       'it will be relative to the LATEX_OUTPUT directory. If left blank the' + #10 +
       'LATEX_OUTPUT directory will be used.' + #10 +
       'This tag requires that the tag GENERATE_LATEX is set to YES.'),
-    (Name: 'GENERATE_RTF';
-     Kind: okBool; OrgKind: okBool; Group: 8;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the GENERATE_RTF tag is set to YES, Doxygen will generate RTF output. The' + #10 +
-      'RTF output is optimized for Word 97 and may not look too pretty with other RTF' + #10 +
-      'readers/editors.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'RTF_OUTPUT';
-     Kind: okString; OrgKind: okBool; Group: 8;
-     Format: 'dir'; Depends: 'GENERATE_RTF';
-     Default: 'rtf'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The RTF_OUTPUT tag is used to specify where the RTF docs will be put. If a' + #10 +
-      'relative path is entered the value of OUTPUT_DIRECTORY will be put in front of' + #10 +
-      'it.' + #10 +
-      'The default directory is: rtf.' + #10 +
-      'This tag requires that the tag GENERATE_RTF is set to YES.'),
-    (Name: 'COMPACT_RTF';
-     Kind: okBool; OrgKind: okBool; Group: 8;
-     Format: ''; Depends: 'GENERATE_RTF';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the COMPACT_RTF tag is set to YES, Doxygen generates more compact RTF' + #10 +
-      'documents. This may be useful for small projects and may help to save some' + #10 +
-      'trees in general.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag GENERATE_RTF is set to YES.'),
-    (Name: 'RTF_HYPERLINKS';
-     Kind: okBool; OrgKind: okBool; Group: 8;
-     Format: ''; Depends: 'GENERATE_RTF';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the RTF_HYPERLINKS tag is set to YES, the RTF that is generated will' + #10 +
-      'contain hyperlink fields. The RTF file will contain links (just like the HTML' + #10 +
-      'output) instead of page references. This makes the output suitable for online' + #10 +
-      'browsing using Word or some other Word compatible readers that support those' + #10 +
-      'fields.' + #10 +
-      '' + #10 +
-      'Note: WordPad (write) and others do not support links.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag GENERATE_RTF is set to YES.'),
-    (Name: 'RTF_STYLESHEET_FILE';
-     Kind: okString; OrgKind: okBool; Group: 8;
-     Format: 'file'; Depends: 'GENERATE_RTF';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Load stylesheet definitions from file. Syntax is similar to Doxygen''s' + #10 +
-      'configuration file, i.e. a series of assignments. You only have to provide' + #10 +
-      'replacements, missing definitions are set to their default value.' + #10 +
-      '' + #10 +
-      'See also section "Doxygen usage" for information on how to generate the' + #10 +
-      'default style sheet that Doxygen normally uses.' + #10 +
-      'This tag requires that the tag GENERATE_RTF is set to YES.'),
-    (Name: 'RTF_EXTENSIONS_FILE';
-     Kind: okString; OrgKind: okBool; Group: 8;
-     Format: 'file'; Depends: 'GENERATE_RTF';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Set optional variables used in the generation of an RTF document. Syntax is' + #10 +
-      'similar to Doxygen''s configuration file. A template extensions file can be' + #10 +
-      'generated using doxygen -e rtf extensionFile.' + #10 +
-      'This tag requires that the tag GENERATE_RTF is set to YES.'),
-    (Name: 'RTF_EXTRA_FILES';
-     Kind: okList; OrgKind: okBool; Group: 8;
-     Format: 'file'; Depends: 'GENERATE_RTF';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The RTF_EXTRA_FILES tag can be used to specify one or more extra images or' + #10 +
-      'other source files which should be copied to the RTF_OUTPUT output directory.' + #10 +
-      'Note that the files will be copied as-is; there are no commands or markers' + #10 +
-      'available.' + #10 +
-      'This tag requires that the tag GENERATE_RTF is set to YES.'),
-    (Name: 'GENERATE_MAN';
-     Kind: okBool; OrgKind: okBool; Group: 9;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the GENERATE_MAN tag is set to YES, Doxygen will generate man pages for' + #10 +
-      'classes and files.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'MAN_OUTPUT';
-     Kind: okString; OrgKind: okBool; Group: 9;
-     Format: 'dir'; Depends: 'GENERATE_MAN';
-     Default: 'man'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The MAN_OUTPUT tag is used to specify where the man pages will be put. If a' + #10 +
-      'relative path is entered the value of OUTPUT_DIRECTORY will be put in front of' + #10 +
-      'it. A directory man3 will be created inside the directory specified by' + #10 +
-      'MAN_OUTPUT.' + #10 +
-      'The default directory is: man.' + #10 +
-      'This tag requires that the tag GENERATE_MAN is set to YES.'),
-    (Name: 'MAN_EXTENSION';
-     Kind: okString; OrgKind: okBool; Group: 9;
-     Format: 'string'; Depends: 'GENERATE_MAN';
-     Default: '.3'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The MAN_EXTENSION tag determines the extension that is added to the generated' + #10 +
-      'man pages. In case the manual section does not start with a number, the number' + #10 +
-      '3 is prepended. The dot (.) at the beginning of the MAN_EXTENSION tag is' + #10 +
-      'optional.' + #10 +
-      'The default value is: .3.' + #10 +
-      'This tag requires that the tag GENERATE_MAN is set to YES.'),
-    (Name: 'MAN_SUBDIR';
-     Kind: okString; OrgKind: okBool; Group: 9;
-     Format: 'string'; Depends: 'GENERATE_MAN';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The MAN_SUBDIR tag determines the name of the directory created within' + #10 +
-      'MAN_OUTPUT in which the man pages are placed. If defaults to man followed by' + #10 +
-      'MAN_EXTENSION with the initial . removed.' + #10 +
-      'This tag requires that the tag GENERATE_MAN is set to YES.'),
-    (Name: 'MAN_LINKS';
-     Kind: okBool; OrgKind: okBool; Group: 9;
-     Format: ''; Depends: 'GENERATE_MAN';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the MAN_LINKS tag is set to YES and Doxygen generates man output, then it' + #10 +
-      'will generate one additional man file for each entity documented in the real' + #10 +
-      'man page(s). These additional files only source the real man page, but without' + #10 +
-      'them the man command would be unable to find the correct page.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag GENERATE_MAN is set to YES.'),
     (Name: 'GENERATE_XML';
      Kind: okBool; OrgKind: okBool; Group: 10;
      Format: ''; Depends: '';
@@ -2526,34 +2233,6 @@ const
       'namespace members in file scope as well, matching the HTML output.' + #10 +
       'The default value is: NO.' + #10 +
       'This tag requires that the tag GENERATE_XML is set to YES.'),
-    (Name: 'GENERATE_DOCBOOK';
-     Kind: okBool; OrgKind: okBool; Group: 11;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the GENERATE_DOCBOOK tag is set to YES, Doxygen will generate Docbook files' + #10 +
-      'that can be used to generate PDF.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'DOCBOOK_OUTPUT';
-     Kind: okString; OrgKind: okBool; Group: 11;
-     Format: 'dir'; Depends: 'GENERATE_DOCBOOK';
-     Default: 'docbook'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The DOCBOOK_OUTPUT tag is used to specify where the Docbook pages will be put.' + #10 +
-      'If a relative path is entered the value of OUTPUT_DIRECTORY will be put in' + #10 +
-      'front of it.' + #10 +
-      'The default directory is: docbook.' + #10 +
-      'This tag requires that the tag GENERATE_DOCBOOK is set to YES.'),
-    (Name: 'GENERATE_AUTOGEN_DEF';
-     Kind: okBool; OrgKind: okBool; Group: 12;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the GENERATE_AUTOGEN_DEF tag is set to YES, Doxygen will generate an' + #10 +
-      'AutoGen Definitions (see https://autogen.sourceforge.net/) file that captures' + #10 +
-      'the structure of the code including all documentation. Note that this feature' + #10 +
-      'is still experimental and incomplete at the moment.' + #10 +
-      'The default value is: NO.'),
     (Name: 'GENERATE_SQLITE3';
      Kind: okBool; OrgKind: okBool; Group: 13;
      Format: ''; Depends: '';
@@ -2582,48 +2261,6 @@ const
       'will warn if a database file is already found and not modify it.' + #10 +
       'The default value is: YES.' + #10 +
       'This tag requires that the tag GENERATE_SQLITE3 is set to YES.'),
-    (Name: 'GENERATE_PERLMOD';
-     Kind: okBool; OrgKind: okBool; Group: 14;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the GENERATE_PERLMOD tag is set to YES, Doxygen will generate a Perl module' + #10 +
-      'file that captures the structure of the code including all documentation.' + #10 +
-      '' + #10 +
-      'Note that this feature is still experimental and incomplete at the moment.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'PERLMOD_LATEX';
-     Kind: okBool; OrgKind: okBool; Group: 14;
-     Format: ''; Depends: 'GENERATE_PERLMOD';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the PERLMOD_LATEX tag is set to YES, Doxygen will generate the necessary' + #10 +
-      'Makefile rules, Perl scripts and LaTeX code to be able to generate PDF and DVI' + #10 +
-      'output from the Perl module output.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag GENERATE_PERLMOD is set to YES.'),
-    (Name: 'PERLMOD_PRETTY';
-     Kind: okBool; OrgKind: okBool; Group: 14;
-     Format: ''; Depends: 'GENERATE_PERLMOD';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the PERLMOD_PRETTY tag is set to YES, the Perl module output will be nicely' + #10 +
-      'formatted so it can be parsed by a human reader. This is useful if you want to' + #10 +
-      'understand what is going on. On the other hand, if this tag is set to NO, the' + #10 +
-      'size of the Perl module output will be much smaller and Perl will parse it' + #10 +
-      'just the same.' + #10 +
-      'The default value is: YES.' + #10 +
-      'This tag requires that the tag GENERATE_PERLMOD is set to YES.'),
-    (Name: 'PERLMOD_MAKEVAR_PREFIX';
-     Kind: okString; OrgKind: okBool; Group: 14;
-     Format: 'string'; Depends: 'GENERATE_PERLMOD';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The names of the make variables in the generated doxyrules.make file are' + #10 +
-      'prefixed with the string contained in PERLMOD_MAKEVAR_PREFIX. This is useful' + #10 +
-      'so different doxyrules.make files included by the same Makefile don''t' + #10 +
-      'overwrite each other''s variables.' + #10 +
-      'This tag requires that the tag GENERATE_PERLMOD is set to YES.'),
     (Name: 'INCLUDE_PATH';
      Kind: okList; OrgKind: okBool; Group: 15;
      Format: 'dir'; Depends: '';
@@ -3473,6 +3110,216 @@ const
      Doc: ''),
     (Name: 'SKIP_FUNCTION_MACROS';
      Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_RTF';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'RTF_OUTPUT';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'COMPACT_RTF';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'RTF_HYPERLINKS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'RTF_STYLESHEET_FILE';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'RTF_EXTENSIONS_FILE';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'RTF_EXTRA_FILES';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_MAN';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MAN_OUTPUT';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MAN_EXTENSION';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MAN_SUBDIR';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MAN_LINKS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_DOCBOOK';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'DOCBOOK_OUTPUT';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_AUTOGEN_DEF';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_PERLMOD';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PERLMOD_LATEX';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PERLMOD_PRETTY';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PERLMOD_MAKEVAR_PREFIX';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_DOCSET';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'DOCSET_FEEDNAME';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'DOCSET_FEEDURL';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'DOCSET_BUNDLE_ID';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'DOCSET_PUBLISHER_ID';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'DOCSET_PUBLISHER_NAME';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_QHP';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'QCH_FILE';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'QHP_NAMESPACE';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'QHP_VIRTUAL_FOLDER';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'QHP_CUST_FILTER_NAME';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'QHP_CUST_FILTER_ATTRS';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'QHP_SECT_FILTER_ATTRS';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'QHG_LOCATION';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_ECLIPSEHELP';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'ECLIPSE_DOC_ID';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
      Format: ''; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;
      Values: '';

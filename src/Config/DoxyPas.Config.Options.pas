@@ -3932,8 +3932,9 @@ const
      Format: 'file'; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;
      Values: '';
-     Doc: 'The DELPHI_PROJECT tag can be used to specify .dpr, .dpk or .dproj files from' + #10 +
-      'which the source files, search paths and conditional defines are taken.')
+     Doc: 'The DELPHI_PROJECT tag can be used to specify .dpr, .dpk, .dproj, .groupproj' + #10 +
+      '(the union of the projects it lists) or Lazarus .lpi and .lpk files from which' + #10 +
+      'the source files, search paths and conditional defines are taken.')
   );
 
 implementation

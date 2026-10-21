@@ -40,6 +40,8 @@ type
     [Test] procedure FormBecomesComponentTreePage;
     [Test] procedure BinaryFormIsRejected;
     [Test] procedure DprojGivesSourcesAndDefines;
+    [Test] procedure GroupProjIsTheUnionOfItsProjects;
+    [Test] procedure LazarusProjectGivesSourcesDefinesAndPaths;
   end;
 
   [TestFixture]
@@ -526,6 +528,48 @@ begin
   end;
 end;
 
+procedure TDelphiExtrasTests.GroupProjIsTheUnionOfItsProjects;
+var
+  D: string;
+  P: TDelphiProject;
+begin
+  D := TPath.Combine(TPath.GetTempPath, 'dp_group');
+  TDirectory.CreateDirectory(D);
+  TFile.WriteAllText(TPath.Combine(D, 'a.dproj'), '<Project><PropertyGroup><DCC_Define>AAA</DCC_Define></PropertyGroup>' +
+    '<ItemGroup><DCCReference Include="a.pas"/></ItemGroup></Project>');
+  TFile.WriteAllText(TPath.Combine(D, 'b.dproj'), '<Project><PropertyGroup><DCC_Define>BBB;AAA</DCC_Define></PropertyGroup>' +
+    '<ItemGroup><DCCReference Include="a.pas"/><DCCReference Include="b.pas"/></ItemGroup></Project>');
+  TFile.WriteAllText(TPath.Combine(D, 'g.groupproj'), '<Project><ItemGroup><Projects Include="a.dproj"><Dependencies/></Projects>' +
+    '<Projects Include="b.dproj"/></ItemGroup></Project>');
+  try
+    P := ReadDelphiProject(TPath.Combine(D, 'g.groupproj'));
+    Assert.AreEqual(2, Integer(Length(P.Sources)), 'a.pas is listed once');
+    Assert.AreEqual(2, Integer(Length(P.Defines)), 'AAA is listed once');
+  finally
+    TDirectory.Delete(D, True);
+  end;
+end;
+
+procedure TDelphiExtrasTests.LazarusProjectGivesSourcesDefinesAndPaths;
+var
+  F: string;
+  P: TDelphiProject;
+begin
+  F := TPath.Combine(TPath.GetTempPath, 'dp_t4.lpi');
+  TFile.WriteAllText(F, '<CONFIG><ProjectOptions><Units Count="3"><Unit0><Filename Value="p.lpr"/><IsPartOfProject Value="True"/></Unit0>' +
+    '<Unit1><Filename Value="u1.pas"/><IsPartOfProject Value="True"/></Unit1><Unit2><Filename Value="u2.pas"/></Unit2></Units>' +
+    '</ProjectOptions><CompilerOptions><SearchPaths><OtherUnitFiles Value="lib;$(LazarusDir)/x"/></SearchPaths>' +
+    '<Other><CustomOptions Value="-dFOO -O2 -dBAR"/></Other></CompilerOptions></CONFIG>');
+  try
+    P := ReadDelphiProject(F);
+    Assert.AreEqual(3, Integer(Length(P.Sources)));
+    Assert.AreEqual(2, Integer(Length(P.Defines)));
+    Assert.AreEqual('FOO', P.Defines[0]);
+    Assert.AreEqual(1, Integer(Length(P.SearchPaths)), 'macros are skipped');
+  finally
+    TFile.Delete(F);
+  end;
+end;
 initialization
   TDUnitX.RegisterTestFixture(TXmlOutputTests);
   TDUnitX.RegisterTestFixture(TTagFileTests);

@@ -67,7 +67,8 @@
       <docs>
 <![CDATA[
  The \c DELPHI_PROJECT tag can be used to specify <code>.dpr</code>,
- <code>.dpk</code> or <code>.dproj</code> files from which the source files,
+ <code>.dpk</code>, <code>.dproj</code>, <code>.groupproj</code> (the union of the projects it
+ lists) or Lazarus <code>.lpi</code> and <code>.lpk</code> files from which the source files,
  search paths and conditional defines are taken.
 ]]>
       </docs>

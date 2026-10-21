@@ -1,8 +1,9 @@
 ﻿unit DoxyPas.Lang.Project;
 
-{ Delphi project files (.dproj, .dpr, .dpk): the source files they list, the conditional defines and the unit search
-  paths. The .dproj is read with regular expressions (no XML parser: it also has to work on Linux); only the settings
-  that apply to every configuration (the "Base" property groups) are used. }
+{ Delphi and Lazarus project files (.dproj, .groupproj, .dpr, .dpk, .lpi, .lpk): the source files they list, the conditional
+  defines and the unit search paths. The XML files are read with regular expressions (no XML parser: it also has to
+  work on Linux); of a .dproj only the settings that apply to every configuration (the "Base" property groups) are
+  used. A .groupproj is the union of the projects it lists. }
 
 interface
 
@@ -13,7 +14,7 @@ type
     SearchPaths: TArray<string>;  // full paths
   end;
 
-/// <summary>Reads a .dproj, .dpr or .dpk. Raises an exception if the file cannot be read.</summary>
+/// <summary>Reads a .dproj, .groupproj, .dpr, .dpk, .lpi or .lpk. Raises an exception if the file cannot be read.</summary>
 function ReadDelphiProject(const AFileName: string): TDelphiProject;
 
 implementation
@@ -87,6 +88,31 @@ begin
   end;
 end;
 
+// Lazarus .lpi / .lpk: <Filename Value="unit1.pas"/> of the units (of a project only the ones that are part of it),
+// -dNAME in the custom options and the unit and include paths of the compiler options.
+procedure ReadLazarus(const AText, ADir: string; ASources, ADefines, APaths: TList<string>);
+var
+  M: TMatch;
+  S, Item, Ext: string;
+begin
+  for M in TRegEx.Matches(AText, '<Filename\s+Value="([^"]+)"[^>]*/>(?:\s*<IsPartOfProject\s+Value="(\w+)")?') do
+  begin
+    S := M.Groups[1].Value;
+    Ext := LowerCase(ExtractFileExt(S));
+    if (Ext = '.pas') or (Ext = '.pp') or (Ext = '.lpr') or (Ext = '.p') then
+      if not ((M.Groups.Count > 2) and SameText(M.Groups[2].Value, 'False')) then
+        AddUnique(ASources, FullPath(ADir, S));
+  end;
+  for M in TRegEx.Matches(AText, '<CustomOptions\s+Value="([^"]*)"') do
+    for Item in M.Groups[1].Value.Split([' ']) do
+      if Item.StartsWith('-d', True) and (Length(Item) > 2) then
+        AddUnique(ADefines, Copy(Item, 3, MaxInt));
+  for M in TRegEx.Matches(AText, '<(?:OtherUnitFiles|IncludeFiles)\s+Value="([^"]*)"') do
+    for Item in M.Groups[1].Value.Split([';']) do
+      if (Trim(Item) <> '') and not Item.Contains('$(') then
+        AddUnique(APaths, FullPath(ADir, Trim(Item)));
+end;
+
 procedure ReadSourceList(const AText, ADir: string; ASources: TList<string>);
 var
   M: TMatch;
@@ -98,8 +124,11 @@ end;
 
 function ReadDelphiProject(const AFileName: string): TDelphiProject;
 var
-  Text, Dir: string;
+  Text, Dir, Ext, Name: string;
   Sources, Defines, Paths: TList<string>;
+  M: TMatch;
+  Sub: TDelphiProject;
+  S: string;
 begin
   Text := TFile.ReadAllText(AFileName);
   Dir := ExtractFilePath(TPath.GetFullPath(AFileName));
@@ -107,8 +136,29 @@ begin
   Defines := TList<string>.Create;
   Paths := TList<string>.Create;
   try
-    if SameText(ExtractFileExt(AFileName), '.dproj') then
+    Ext := LowerCase(ExtractFileExt(AFileName));
+    if Ext = '.dproj' then
       ReadDproj(Text, Dir, Sources, Defines, Paths)
+    else if (Ext = '.lpi') or (Ext = '.lpk') then
+      ReadLazarus(Text, Dir, Sources, Defines, Paths)
+    else if Ext = '.groupproj' then
+    begin
+      // <Projects Include="a.dproj">: every project of the group
+      for M in TRegEx.Matches(Text, '<Projects\s+Include="([^"]+)"') do
+      begin
+        Name := FullPath(Dir, M.Groups[1].Value);
+        if TFile.Exists(Name) then
+        begin
+          Sub := ReadDelphiProject(Name);
+          for S in Sub.Sources do
+            AddUnique(Sources, S);
+          for S in Sub.Defines do
+            AddUnique(Defines, S);
+          for S in Sub.SearchPaths do
+            AddUnique(Paths, S);
+        end;
+      end;
+    end
     else
     begin
       AddUnique(Sources, TPath.GetFullPath(AFileName));

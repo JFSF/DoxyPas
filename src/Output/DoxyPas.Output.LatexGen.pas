@@ -71,6 +71,7 @@ type
     FLinks: TLinkResolver;
     FDir: string;
     FFiles: Integer;
+    FPdf: Boolean;            // USE_PDFLATEX: PDF graphs and pdflatex; otherwise EPS graphs and latex + dvips + ps2pdf
     FCite: Boolean;           // CITE_BIB_FILES: \cite and a bibliography
     FDotOn: Boolean;          // HAVE_DOT and dot runs: the graphs are PDF files included with \includegraphics
     FDot: TDotGraphs;
@@ -98,6 +99,7 @@ type
     function UnitChapter(U: TUnitDef): string;
     function Template(const AOption, ADefault: string; const AVars: array of string): string;
     function CopyList(const AOption: string): TArray<string>;
+    function LogoUsable(const AFile: string): Boolean;
     procedure Save(const AName, AText: string);
   public
     constructor Create(AProject: TProject; AConfig: TConfig; const ADir: string);
@@ -119,6 +121,7 @@ begin
     SetOutputLanguage('English');
     Warn('', 0, 'OUTPUT_LANGUAGE: the LaTeX output is in English for this language');
   end;
+  FPdf := AConfig.GetBool('USE_PDFLATEX');
   FCite := Length(AConfig.GetList('CITE_BIB_FILES')) > 0;
   FDotOn := AConfig.GetBool('HAVE_DOT');
   if FDotOn then
@@ -129,7 +132,8 @@ begin
       FCalls := TCallIndex.Create(FBodies, FLinks);
     end;
     FDot := TDotGraphs.Create(AProject, FLinks, AConfig, FCalls, nil);
-    FRunner := TDotRunner.Create(ADir, AConfig.GetString('DOT_PATH'), 'pdf', AConfig.GetBool('DOT_CLEANUP'));
+    FRunner := TDotRunner.Create(ADir, AConfig.GetString('DOT_PATH'), IfThen(FPdf, 'pdf', 'eps'),
+      AConfig.GetBool('DOT_CLEANUP'));
   end;
 end;
 
@@ -417,7 +421,7 @@ function TLatexGenerator.GraphBlock(const ABase, ATitle, ADot: string): string;
 begin
   FRunner.Queue(ABase, ADot);
   Result := '\par\noindent\textit{' + LatexEscape(ATitle) + '}\par'#10'\begin{center}'#10 +
-    '\includegraphics[max width=\linewidth,max height=0.55\textheight]{' + ABase + '.pdf}'#10'\end{center}'#10;
+    '\includegraphics[max width=\linewidth,max height=0.55\textheight]{' + ABase + IfThen(FPdf, '.pdf', '.eps') + '}'#10'\end{center}'#10;
 end;
 
 function TLatexGenerator.ClassGraphs(C: TClassDef): string;
@@ -733,6 +737,14 @@ begin
   end;
 end;
 
+function TLatexGenerator.LogoUsable(const AFile: string): Boolean;
+begin
+  if FPdf then
+    Result := MatchText(ExtractFileExt(AFile), ['.png', '.jpg', '.jpeg', '.pdf'])
+  else
+    Result := SameText(ExtractFileExt(AFile), '.eps');
+end;
+
 // Copies the files of a list option (LATEX_EXTRA_STYLESHEET, LATEX_EXTRA_FILES) into the output; returns their names.
 function TLatexGenerator.CopyList(const AOption: string): TArray<string>;
 var
@@ -762,7 +774,7 @@ var
   C: TClassDef;
   G: TGroupDef;
   P: TPageDef;
-  Main, Name, Title, Brief, Packages, TitlePage, Opts, Logo, Pkg, Cmd, Idx, Footer, Bib, BibStyle: string;
+  Main, Name, Title, Brief, Packages, TitlePage, Opts, Logo, Pkg, Cmd, Idx, Footer, Bib, BibStyle, Dvi: string;
   Pages, Topics, Units, Classes: TStringList;
   Compact, Hyper, HideIndex: Boolean;
   Extra: TArray<string>;
@@ -844,14 +856,14 @@ begin
     Brief := FConfig.GetString('PROJECT_BRIEF');
     Logo := FConfig.GetString('PROJECT_LOGO');
     TitlePage := '\begin{titlepage}'#10'\vspace*{3cm}'#10'\begin{center}'#10;
-    if (Logo <> '') and TFile.Exists(Logo) and MatchText(ExtractFileExt(Logo), ['.png', '.jpg', '.jpeg', '.pdf']) then
+    if (Logo <> '') and TFile.Exists(Logo) and LogoUsable(Logo) then
     begin
       TFile.WriteAllBytes(TPath.Combine(FDir, 'logo' + ExtractFileExt(Logo)), TFile.ReadAllBytes(Logo));
       Inc(FFiles);
       TitlePage := TitlePage + '\includegraphics[height=3cm]{logo' + ExtractFileExt(Logo) + '}\par\vspace{3ex}'#10;
     end
     else if Logo <> '' then
-      Warn('', 0, 'PROJECT_LOGO: only png, jpg and pdf files can be used in the LaTeX output: ' + Logo);
+      Warn('', 0, 'PROJECT_LOGO: the LaTeX output can use ' + IfThen(FPdf, 'png, jpg and pdf', 'eps') + ' files only: ' + Logo);
     TitlePage := TitlePage + '{\Huge\bfseries\color{doxyblue} ' + LatexEscape(FConfig.GetString('PROJECT_NAME')) +
       '}\par\vspace{1ex}'#10;
     if FConfig.GetString('PROJECT_NUMBER') <> '' then
@@ -929,7 +941,11 @@ begin
     Extra := CopyList('LATEX_EXTRA_FILES');
     Cmd := FConfig.GetString('LATEX_CMD_NAME');
     if Cmd = '' then
-      Cmd := 'pdflatex';
+      Cmd := IfThen(FPdf, 'pdflatex', 'latex');
+    // without pdflatex: dvi -> ps -> pdf
+    Dvi := '';
+    if not FPdf then
+      Dvi := 'dvips -o refman.ps refman.dvi'#13#10'ps2pdf refman.ps refman.pdf'#13#10;
     Idx := FConfig.GetString('LATEX_MAKEINDEX_CMD');
     if (Idx = '') or SameText(Idx, 'makeindex') then
       Idx := FConfig.GetString('MAKEINDEX_CMD_NAME');
@@ -937,10 +953,11 @@ begin
       Idx := 'makeindex';
     TFile.WriteAllText(TPath.Combine(FDir, 'make.bat'), '@echo off'#13#10 + Cmd + ' refman'#13#10 +
       IfThen(FCite, 'bibtex refman'#13#10, '') + IfThen(HideIndex, '', Idx + ' refman.idx'#13#10) + Cmd + ' refman'#13#10 + Cmd +
-      ' refman'#13#10, TEncoding.ASCII);
+      ' refman'#13#10 + Dvi, TEncoding.ASCII);
     TFile.WriteAllText(TPath.Combine(FDir, 'Makefile'), 'all: refman.pdf'#10#10'refman.pdf: refman.tex'#10#9 + Cmd +
       ' refman'#10 + IfThen(FCite, #9'bibtex refman'#10, '') + IfThen(HideIndex, '', #9 + Idx + ' refman.idx'#10) + #9 + Cmd + ' refman'#10#9 + Cmd + ' refman'#10#10 +
-      'clean:'#10#9'rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out refman.pdf'#10, TEncoding.ASCII);
+      IfThen(FPdf, '', #9'dvips -o refman.ps refman.dvi'#10#9'ps2pdf refman.ps refman.pdf'#10) +
+      #10'clean:'#10#9'rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out *.dvi *.ps refman.pdf'#10, TEncoding.ASCII);
     Inc(FFiles, 2);
   finally
     Classes.Free;

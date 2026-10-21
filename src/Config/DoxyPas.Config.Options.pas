@@ -1239,10 +1239,12 @@ const
      Default: ''; MinVal: 0; MaxVal: 0;
      Values: '';
      Doc: 'The IGNORE_PREFIX tag can be used to specify a prefix (or a list of prefixes)' + #10 +
-      'that should be ignored while generating the index headers. The IGNORE_PREFIX' + #10 +
-      'tag works for classes, function and member names. The entity will be placed in' + #10 +
-      'the alphabetical list under the first letter of the entity name that remains' + #10 +
-      'after removing the prefix.' + #10 +
+      'that should be ignored while generating the index headers of the class index' + #10 +
+      '(ALPHABETICAL_INDEX): the class is placed in the alphabetical list under the' + #10 +
+      'first letter of its name that remains after removing the prefix, and is sorted' + #10 +
+      'by it. A prefix of one letter is removed only before an upper case letter:' + #10 +
+      'with IGNORE_PREFIX = T I E the class TButton is listed under B, but Table' + #10 +
+      'stays under T. Typical values for Delphi and Lazarus are T, I and E.' + #10 +
       'This tag requires that the tag ALPHABETICAL_INDEX is set to YES.'),
     (Name: 'GENERATE_HTML';
      Kind: okBool; OrgKind: okBool; Group: 6;

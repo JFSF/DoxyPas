@@ -1550,11 +1550,11 @@ to disable this feature.
     <option type='list' id='IGNORE_PREFIX' format='string' depends='ALPHABETICAL_INDEX'>
       <docs>
 <![CDATA[
- The \c IGNORE_PREFIX tag can be used to specify a prefix
- (or a list of prefixes) that should be ignored while generating the index headers.
- The \c IGNORE_PREFIX tag works for classes, function and member names.
- The entity will be placed in the alphabetical list under the first letter of the entity name that remains
- after removing the prefix.
+ The \c IGNORE_PREFIX tag can be used to specify a prefix (or a list of prefixes) that should be ignored while
+ generating the index headers of the class index (\ref cfg_alphabetical_index "ALPHABETICAL_INDEX"): the class is placed in the
+ alphabetical list under the first letter of its name that remains after removing the prefix, and is sorted by it.
+ A prefix of one letter is removed only before an upper case letter: with `IGNORE_PREFIX = T I E` the class `TButton`
+ is listed under B, but `Table` stays under T. Typical values for Delphi and Lazarus are `T`, `I` and `E`.
 ]]>
       </docs>
     </option>

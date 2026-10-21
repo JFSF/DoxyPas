@@ -17,6 +17,7 @@ function GenerateHtml(AProject: TProject; AConfig: TConfig; const AOutDir: strin
 implementation
 
 uses
+  System.Character,
 {$IFDEF MSWINDOWS}
   Winapi.Windows,
 {$ENDIF}
@@ -79,6 +80,7 @@ type
     FTree, FSearch, FNoIndex, FDynMenus, FSidebar, FFold, FDynSec, FClip: Boolean;
     FLayout: TLayout;         // LAYOUT_FILE
     FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
+    FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
     FPageLayout: string;      // the layout page the member tables follow when it is not the one of the kind of definition ('group')
     FTabs: TDictionary<string, TLayoutEntry>;   // type of tab -> its <tab> element
     FMenu: TNavNode;          // the tabs, for HTML_DYNAMIC_MENUS = NO
@@ -193,6 +195,7 @@ type
     procedure GroupRows(G: TGroupDef; ALevel: Integer; var ARow: Integer; ASB: TStringBuilder);
     procedure WriteAnnotated;
     procedure WriteClassIndex;
+    function IndexName(const AName: string): string;
     procedure WriteHierarchy;
     procedure WriteUnitList;
     procedure WriteTopics;
@@ -303,6 +306,7 @@ begin
   FPageMenu := TDictionary<string, TPair<string, string>>.Create;
   FLayout := TLayout.Create(AConfig);
   FAlphabeticalIndex := AConfig.GetBool('ALPHABETICAL_INDEX');
+  FIgnorePrefix := AConfig.GetList('IGNORE_PREFIX');
   FTabs := TDictionary<string, TLayoutEntry>.Create;
   if FLayout.NavIndex <> nil then
     CollectTabs(FLayout.NavIndex);
@@ -2665,6 +2669,20 @@ begin
   end;
 end;
 
+// The name as the index sorts it and puts it under a letter: without the first of the prefixes of IGNORE_PREFIX that it has.
+// A prefix of one letter (T, I, E: the ones of the types of Pascal) is taken out only before an upper case letter, so that
+// TButton is under B but Table stays under T.
+function THtmlGenerator.IndexName(const AName: string): string;
+var
+  P: string;
+begin
+  for P in FIgnorePrefix do
+    if (P <> '') and (Length(AName) > Length(P)) and AName.StartsWith(P) then
+      if (Length(P) > 1) or TCharacter.IsUpper(AName[Length(P) + 1]) then
+        Exit(Copy(AName, Length(P) + 1, MaxInt));
+  Result := AName;
+end;
+
 procedure THtmlGenerator.WriteClassIndex;
 var
   Sorted: TList<TClassDef>;
@@ -2680,7 +2698,9 @@ begin
     Sorted.Sort(TComparer<TClassDef>.Construct(
       function(const A, B: TClassDef): Integer
       begin
-        Result := CompareText(A.Name, B.Name);
+        Result := CompareText(IndexName(A.Name), IndexName(B.Name));
+        if Result = 0 then
+          Result := CompareText(A.Name, B.Name);
         if Result = 0 then
           Result := CompareText(A.QualifiedName, B.QualifiedName);
       end));
@@ -2691,7 +2711,7 @@ begin
     Row := 0;
     for C in Sorted do
     begin
-      Letter := UpperCase(Copy(C.Name, 1, 1));
+      Letter := UpperCase(Copy(IndexName(C.Name), 1, 1));
       if Letter <> Cur then
       begin
         if Cur <> '' then

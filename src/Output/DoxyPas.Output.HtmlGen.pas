@@ -20,6 +20,9 @@ uses
 {$IFDEF MSWINDOWS}
   Winapi.Windows,
 {$ENDIF}
+{$IFDEF POSIX}
+  Posix.Stdlib,
+{$ENDIF}
   System.SysUtils,
   System.Classes,
   System.IOUtils,
@@ -29,6 +32,7 @@ uses
   System.Generics.Collections,
   System.Generics.Defaults,
   DoxyPas.Core.Version,
+  DoxyPas.Core.Log,
   DoxyPas.Model.Entry,
   DoxyPas.Model.Defs,
   DoxyPas.Model.Links,
@@ -244,6 +248,16 @@ begin
 end;
 {$ENDIF}
 
+{$IFDEF POSIX}
+// Same for Linux: through the shell (system), in ADir, without output.
+function RunTool(const ACmd, ADir: string): Boolean;
+var
+  M: TMarshaller;
+begin
+  Result := _system(M.AsAnsi('cd ''' + ADir.Replace('''', '''\''''') + ''' && ' + ACmd + ' >/dev/null 2>&1').ToPointer) = 0;
+end;
+{$ENDIF}
+
 function DotQuote(const S: string): string;
 begin
   Result := '"' + S.Replace('\', '\\').Replace('"', '\"') + '"';
@@ -343,7 +357,6 @@ begin
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
   FSource := AConfig.GetBool('SOURCE_BROWSER');
   FWordCache := TDictionary<string, string>.Create;
-{$IFDEF MSWINDOWS}
   FPendingGraphs := TList<string>.Create;
   FDotGraphs := AConfig.GetBool('HAVE_DOT');
   FInline := AConfig.GetBool('INLINE_SOURCES');
@@ -355,7 +368,6 @@ begin
   FDotPath := AConfig.GetString('DOT_PATH');
   if FDotPath <> '' then
     FDotPath := IncludeTrailingPathDelimiter(FDotPath);
-{$ENDIF}
   FColors := THtmlColors.Parse(AConfig.GetString('HTML_COLORSTYLE'), AConfig.GetInt('HTML_COLORSTYLE_HUE'),
     AConfig.GetInt('HTML_COLORSTYLE_SAT'), AConfig.GetInt('HTML_COLORSTYLE_GAMMA'));
   FLight := HtmlResourceText('lightmode_settings.css');
@@ -1442,7 +1454,6 @@ end;
 
 // Runs dot on ADot and returns the HTML block that shows the resulting SVG, or '' when dot fails.
 function THtmlGenerator.RunGraph(const ABase, ATitle, ADot: string): string;
-{$IFDEF MSWINDOWS}
 begin
   // dot runs later, over many files at once (FlushGraphs): starting it once per graph takes minutes on a big project
   TFile.WriteAllText(TPath.Combine(FDir, ABase + '.dot'), ADot, TUTF8Encoding.Create(False)); // dot 2.x rejects a BOM
@@ -1451,15 +1462,9 @@ begin
     '<div class="center"><object type="image/svg+xml" data="' + ABase + '.svg" class="inherit_graph">' +
     ATitle + '</object></div>'#10'</div>'#10;
 end;
-{$ELSE}
-begin
-  Result := '';
-end;
-{$ENDIF}
 
 // Turns the pending .dot files into .svg: dot -Tsvg -O writes <name>.dot.svg for every file it is given.
 procedure THtmlGenerator.FlushGraphs;
-{$IFDEF MSWINDOWS}
 const
   Chunk = 25;
 var
@@ -1491,10 +1496,6 @@ begin
   end;
   FPendingGraphs.Clear;
 end;
-{$ELSE}
-begin
-end;
-{$ENDIF}
 // The graphs of a class: inheritance (CLASS_GRAPH) and collaboration (COLLABORATION_GRAPH).
 function THtmlGenerator.ClassGraph(C: TClassDef): string;
 var
@@ -3201,6 +3202,11 @@ var
   D: TDirDef;
 begin
   TDirectory.CreateDirectory(FDir);
+  if FDotGraphs and not RunTool('"' + FDotPath + 'dot" -V', FDir) then
+  begin
+    FDotGraphs := False;
+    Warn('', 0, 'HAVE_DOT = YES, but dot could not be run (set DOT_PATH or put Graphviz on the PATH): no graphs');
+  end;
   for C in FProject.Classes do
     if FLinks.IsLinkable(C) then
       FHasClasses := True;

@@ -18,6 +18,8 @@ for %%P in (32 64) do (
 )
 rem GUI (VCL, Windows only), next to DoxyPas.exe
 pushd "%ROOT%src\Gui"
+rem the VCL styles of the GUI (Styles.rc -> Styles.RES)
+"%BDS%\bin\brcc32.exe" Styles.rc >nul || exit /b 1
 for %%P in (32 64) do (
   if not exist "%ROOT%build\Win%%P\dcu_gui" mkdir "%ROOT%build\Win%%P\dcu_gui"
   "%BDS%\bin\dcc%%P.exe" -Q -B -W+ -NSSystem;System.Win;Winapi;Vcl;Vcl.Imaging -E"%ROOT%build\Win%%P" -N0"%ROOT%build\Win%%P\dcu_gui" DoxyPasGui.dpr || exit /b 1

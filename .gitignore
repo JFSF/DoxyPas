@@ -87,3 +87,6 @@ modules/
 /latex/
 /xml/
 *.local
+
+# built by build.bat from Styles.rc
+/src/Gui/Styles.RES

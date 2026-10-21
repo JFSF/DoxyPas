@@ -1,0 +1,3 @@
+1 24 "DoxyPasGui.manifest"
+WINDOWSMODERN VCLSTYLE "../../resources/gui/WindowsModern.vsf"
+WINDOWSMODERNDARK VCLSTYLE "../../resources/gui/WindowsModernDark.vsf"

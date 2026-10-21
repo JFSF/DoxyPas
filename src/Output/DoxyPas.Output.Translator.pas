@@ -148,18 +148,15 @@ begin
   Add('Classes and Units', 'Classes e Units', '', 'Clases y unidades', 'Classes et unités', 'Klassen und Units');
   // member sections
   Add('Types', 'Tipos', '', 'Tipos', 'Types', 'Typen');
-  Add('Member Functions', 'Funções Membro', '', 'Funciones miembro', 'Fonctions membres', 'Memberfunktionen');
-  Add('Static Member Functions', 'Funções Membro Estáticas', '', 'Funciones miembro estáticas',
-    'Fonctions membres statiques', 'Statische Memberfunktionen');
-  Add('Attributes', 'Atributos', '', 'Atributos', 'Attributs', 'Attribute');
-  Add('Static Attributes', 'Atributos Estáticos', '', 'Atributos estáticos', 'Attributs statiques',
-    'Statische Attribute');
+  Add('Methods', 'Métodos', '', 'Métodos', 'Méthodes', 'Methoden');
+  Add('Class Methods', 'Métodos de Classe', '', 'Métodos de clase', 'Méthodes de classe', 'Klassenmethoden');
+  Add('Fields', 'Campos', '', 'Campos', 'Champs', 'Felder');
+  Add('Class Fields', 'Campos de Classe', '', 'Campos de clase', 'Champs de classe', 'Klassenfelder');
   Add('Public', 'visibilidade pública', '', 'visibilidad pública', 'visibilité publique', 'öffentlich');
   Add('Protected', 'visibilidade protegida', '', 'visibilidad protegida', 'visibilité protégée', 'geschützt');
   Add('Private', 'visibilidade privada', '', 'visibilidad privada', 'visibilité privée', 'privat');
-  Add('Typedefs', 'Tipos Definidos', '', 'Definiciones de tipo', 'Définitions de type', 'Typdefinitionen');
   Add('Enumerations', 'Enumerações', '', 'Enumeraciones', 'Énumérations', 'Aufzählungen');
-  Add('Functions', 'Funções', '', 'Funciones', 'Fonctions', 'Funktionen');
+  Add('Routines', 'Rotinas', '', 'Rutinas', 'Routines', 'Routinen');
   Add('Variables', 'Variáveis', '', 'Variables', 'Variables', 'Variablen');
   Add('Properties', 'Propriedades', '', 'Propiedades', 'Propriétés', 'Eigenschaften');
   Add('Enumerator', 'Enumerador', '', 'Enumerador', 'Énumérateur', 'Aufzählungswert');
@@ -169,22 +166,22 @@ begin
   Add('Constructor & Destructor Documentation', 'Documentação dos Construtores e Destrutores', '',
     'Documentación de constructores y destructores', 'Documentation des constructeurs et destructeurs',
     'Konstruktoren und Destruktoren');
-  Add('Member Typedef Documentation', 'Documentação dos Tipos Definidos', '', 'Documentación de definiciones de tipo',
-    'Documentation des définitions de type', 'Dokumentation der Typdefinitionen');
   Add('Member Enumeration Documentation', 'Documentação das Enumerações', '', 'Documentación de enumeraciones',
     'Documentation des énumérations', 'Dokumentation der Aufzählungen');
-  Add('Member Function Documentation', 'Documentação das Funções Membro', '', 'Documentación de funciones miembro',
-    'Documentation des fonctions membres', 'Dokumentation der Memberfunktionen');
-  Add('Member Data Documentation', 'Documentação dos Dados Membro', '', 'Documentación de datos miembro',
-    'Documentation des données membres', 'Dokumentation der Datenelemente');
+  Add('Method Documentation', 'Documentação dos Métodos', '', 'Documentación de métodos',
+    'Documentation des méthodes', 'Dokumentation der Methoden');
+  Add('Field Documentation', 'Documentação dos Campos', '', 'Documentación de campos',
+    'Documentation des champs', 'Dokumentation der Felder');
+  Add('Constant Documentation', 'Documentação das Constantes', '', 'Documentación de constantes',
+    'Documentation des constantes', 'Dokumentation der Konstanten');
   Add('Property Documentation', 'Documentação das Propriedades', '', 'Documentación de propiedades',
     'Documentation des propriétés', 'Dokumentation der Eigenschaften');
-  Add('Typedef Documentation', 'Documentação dos Tipos Definidos', '', 'Documentación de definiciones de tipo',
-    'Documentation des définitions de type', 'Dokumentation der Typdefinitionen');
+  Add('Type Documentation', 'Documentação dos Tipos', '', 'Documentación de tipos',
+    'Documentation des types', 'Dokumentation der Typen');
   Add('Enumeration Type Documentation', 'Documentação das Enumerações', '', 'Documentación de enumeraciones',
     'Documentation des énumérations', 'Dokumentation der Aufzählungstypen');
-  Add('Function Documentation', 'Documentação das Funções', '', 'Documentación de funciones',
-    'Documentation des fonctions', 'Dokumentation der Funktionen');
+  Add('Routine Documentation', 'Documentação das Rotinas', '', 'Documentación de rutinas',
+    'Documentation des routines', 'Dokumentation der Routinen');
   Add('Variable Documentation', 'Documentação das Variáveis', '', 'Documentación de variables',
     'Documentation des variables', 'Dokumentation der Variablen');
   Add('Reimplemented from', 'Reimplementado de', '', 'Reimplementado de', 'Réimplémentée à partir de',
@@ -314,10 +311,7 @@ function TrSection(const AProtection, AKind: string): string;
 begin
   if Lang = lgEnglish then
   begin
-    if AKind.StartsWith('Static ') then
-      Result := 'Static ' + AProtection + ' ' + Copy(AKind, 8, MaxInt)
-    else
-      Result := AProtection + ' ' + AKind;
+    Result := AProtection + ' ' + AKind;
   end
   else
     Result := Tr(AKind) + ' (' + Tr(AProtection) + ')';

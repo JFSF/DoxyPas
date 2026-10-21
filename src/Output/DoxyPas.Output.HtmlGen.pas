@@ -137,6 +137,7 @@ type
     // members
     function SectionKey(M: TMemberDef; AInUnit: Boolean): string;
     function SectionTitle(const AKey: string): string;
+    function LayoutListsDecl(AInUnit: Boolean; const AStart, AEnd: string): Boolean;
     function IsConstructor(M: TMemberDef): Boolean;
     function ArgsHtml(M: TMemberDef; ADefaults: Boolean): string;
     function DirectivesText(M: TMemberDef): string;
@@ -222,7 +223,7 @@ const
 
   SearchNames: array[0..10] of string = ('all', 'classes', 'namespaces', 'functions', 'variables', 'typedefs',
     'enums', 'enumvalues', 'properties', 'groups', 'pages');
-  SearchLabels: array[0..10] of string = ('All', 'Classes', 'Units', 'Functions', 'Variables', 'Typedefs',
+  SearchLabels: array[0..10] of string = ('All', 'Classes', 'Units', 'Routines', 'Variables', 'Types',
     'Enumerations', 'Enumerator', 'Properties', 'Topics', 'Pages');
   CAll = 0; CClasses = 1; CUnits = 2; CFunctions = 3; CVariables = 4; CTypedefs = 5; CEnums = 6; CEnumValues = 7;
   CProperties = 8; CGroups = 9; CPages = 10;
@@ -945,12 +946,14 @@ end;
 { ------------------------------------------------------------------ members }
 
 // The section of the declaration tables a <memberdecl> element stands for ('' for the ones DoxyPas does not have).
+// The names are the ones of Doxygen (publicmethods, ...) plus the ones of Pascal: published, strictprotected,
+// strictprivate and the constants.
 function DeclKeyOf(const AName: string; AInUnit: Boolean): string;
 const
-  Prot: array[0..2] of string = ('public', 'protected', 'private');
-  Short: array[0..2] of string = ('pub', 'pro', 'pri');
-  Kinds: array[0..4] of string = ('types', 'methods', 'staticmethods', 'attributes', 'staticattributes');
-  Keys: array[0..4] of string = ('types', 'methods', 'static-methods', 'attribs', 'static-attribs');
+  Prot: array[0..5] of string = ('public', 'published', 'protected', 'strictprotected', 'private', 'strictprivate');
+  Short: array[0..5] of string = ('pub', 'pbl', 'pro', 'spr', 'pri', 'spv');
+  Kinds: array[0..5] of string = ('types', 'constants', 'methods', 'staticmethods', 'attributes', 'staticattributes');
+  Keys: array[0..5] of string = ('types', 'consts', 'methods', 'static-methods', 'attribs', 'static-attribs');
 var
   I, K: Integer;
 begin
@@ -959,14 +962,15 @@ begin
   begin
     if AName = 'typedefs' then Result := 'typedef-members'
     else if AName = 'enums' then Result := 'enum-members'
+    else if AName = 'constants' then Result := 'const-members'
     else if AName = 'functions' then Result := 'func-members'
     else if AName = 'variables' then Result := 'var-members';
     Exit;
   end;
   if AName = 'properties' then
     Exit('properties');
-  for I := 0 to 2 do
-    for K := 0 to 4 do
+  for I := 0 to 5 do
+    for K := 0 to 5 do
       if AName = Prot[I] + Kinds[K] then
         Exit(Short[I] + '-' + Keys[K]);
 end;
@@ -980,20 +984,38 @@ begin
   else if AName = 'enums' then Result := 2
   else if AName = 'functions' then Result := 3
   else if AName = 'variables' then Result := 4
-  else if (AName = 'properties') and not AInUnit then Result := 5;
+  else if (AName = 'properties') and not AInUnit then Result := 5
+  else if AName = 'constants' then Result := 6;
 end;
 function THtmlGenerator.IsConstructor(M: TMemberDef): Boolean;
 begin
   Result := (M.Kind = memFunction) and (M.Entry <> nil) and (M.Entry.MethodKind in [rkConstructor, rkDestructor]);
 end;
 
+// Does the <memberdecl> of the layout have an element that starts with / ends with the text? (A layout that does not
+// have the elements of Pascal, one from Doxygen for instance, shows the members of those sections with the others.)
+function THtmlGenerator.LayoutListsDecl(AInUnit: Boolean; const AStart, AEnd: string): Boolean;
+var
+  MD, E: TLayoutEntry;
+begin
+  MD := LayoutMembers(AInUnit, 'memberdecl');
+  if MD = nil then
+    Exit(True);
+  for E in MD.Children do
+    if (AStart <> '') and E.Name.StartsWith(AStart) or (AEnd <> '') and E.Name.EndsWith(AEnd) then
+      Exit(True);
+  Result := False;
+end;
+
 function THtmlGenerator.SectionKey(M: TMemberDef; AInUnit: Boolean): string;
 var
   P, What: string;
-  Static: Boolean;
+  Static, Consts: Boolean;
 begin
   if M.Kind = memProperty then
     Exit('properties');
+  // the constants have a section of their own when the layout has one
+  Consts := (M.Kind = memConstant) and LayoutListsDecl(AInUnit, '', 'constants');
   if AInUnit then
   begin
     case M.Kind of
@@ -1001,13 +1023,16 @@ begin
       memEnumeration: Result := 'enum-members';
       memFunction: Result := 'func-members';
     else
-      Result := 'var-members';
+      if Consts then Result := 'const-members' else Result := 'var-members';
     end;
     Exit;
   end;
   case M.Protection of
-    prProtected, prStrictProtected: P := 'pro';
-    prPrivate, prStrictPrivate: P := 'pri';
+    prPublished: if LayoutListsDecl(False, 'published', '') then P := 'pbl' else P := 'pub';
+    prProtected: P := 'pro';
+    prStrictProtected: if LayoutListsDecl(False, 'strictprotected', '') then P := 'spr' else P := 'pro';
+    prPrivate: P := 'pri';
+    prStrictPrivate: if LayoutListsDecl(False, 'strictprivate', '') then P := 'spv' else P := 'pri';
   else
     P := 'pub';
   end;
@@ -1016,31 +1041,36 @@ begin
     memTypedef, memEnumeration: What := 'types';
     memFunction: if Static then What := 'static-methods' else What := 'methods';
   else
-    if Static then What := 'static-attribs' else What := 'attribs';
+    if Consts then What := 'consts'
+    else if Static then What := 'static-attribs'
+    else What := 'attribs';
   end;
   Result := P + '-' + What;
 end;
-
 function THtmlGenerator.SectionTitle(const AKey: string): string;
 var
   P, What: string;
 begin
   if AKey = 'properties' then Exit(Tr('Properties'));
-  if AKey = 'typedef-members' then Exit(Tr('Typedefs'));
+  if AKey = 'typedef-members' then Exit(Tr('Types'));
   if AKey = 'enum-members' then Exit(Tr('Enumerations'));
-  if AKey = 'func-members' then Exit(Tr('Functions'));
+  if AKey = 'const-members' then Exit(Tr('Constants'));
+  if AKey = 'func-members' then Exit(Tr('Routines'));
   if AKey = 'var-members' then Exit(Tr('Variables'));
   if AKey.StartsWith('pub-') then P := 'Public'
+  else if AKey.StartsWith('pbl-') then P := 'Published'
   else if AKey.StartsWith('pro-') then P := 'Protected'
+  else if AKey.StartsWith('spr-') then P := 'Strict Protected'
+  else if AKey.StartsWith('spv-') then P := 'Strict Private'
   else P := 'Private';
   What := Copy(AKey, 5, MaxInt);
   if What = 'types' then Result := TrSection(P, 'Types')
-  else if What = 'methods' then Result := TrSection(P, 'Member Functions')
-  else if What = 'static-methods' then Result := TrSection(P, 'Static Member Functions')
-  else if What = 'attribs' then Result := TrSection(P, 'Attributes')
-  else Result := TrSection(P, 'Static Attributes');
+  else if What = 'consts' then Result := TrSection(P, 'Constants')
+  else if What = 'methods' then Result := TrSection(P, 'Methods')
+  else if What = 'static-methods' then Result := TrSection(P, 'Class Methods')
+  else if What = 'attribs' then Result := TrSection(P, 'Fields')
+  else Result := TrSection(P, 'Class Fields');
 end;
-
 function THtmlGenerator.ArgsHtml(M: TMemberDef; ADefaults: Boolean): string;
 var
   A: TArgument;
@@ -1270,9 +1300,9 @@ end;
 
 procedure THtmlGenerator.DeclSections(AMembers: TList<TMemberDef>; AInUnit: Boolean; ARows, ASummary: TStringBuilder);
 const
-  UnitOrder: array[0..3] of string = ('typedef-members', 'enum-members', 'func-members', 'var-members');
-  Prots: array[0..2] of string = ('pub', 'pro', 'pri');
-  Kinds: array[0..4] of string = ('types', 'methods', 'static-methods', 'attribs', 'static-attribs');
+  UnitOrder: array[0..4] of string = ('typedef-members', 'enum-members', 'const-members', 'func-members', 'var-members');
+  Prots: array[0..5] of string = ('pub', 'pbl', 'pro', 'spr', 'pri', 'spv');
+  Kinds: array[0..5] of string = ('types', 'consts', 'methods', 'static-methods', 'attribs', 'static-attribs');
 var
   Order: TList<string>;
   Key, P, K: string;
@@ -1286,7 +1316,7 @@ begin
     begin
       for K in Kinds do
         Order.Add('pub-' + K);
-      Order.Add('properties');
+      Order.Add('properties');                // after the public ones, then the other visibilities
       for P in Prots do
         if P <> 'pub' then
           for K in Kinds do
@@ -1347,14 +1377,15 @@ end;
 
 procedure THtmlGenerator.InheritedSections(C: TClassDef; ARows: TStringBuilder);
 const
-  Keys: array[0..5] of string = ('pub-types', 'pub-methods', 'pub-static-methods', 'pub-attribs',
-    'pub-static-attribs', 'properties');
+  Prots: array[0..3] of string = ('pub', 'pbl', 'pro', 'spr');
+  Kinds: array[0..5] of string = ('types', 'consts', 'methods', 'static-methods', 'attribs', 'static-attribs');
 var
   Froms: TList<TClassDef>;
   IM: TInheritedMember;
   F: TClassDef;
-  Key, Cls: string;
+  Key, Cls, Prot, Kind: string;
   Any: Boolean;
+  Keys: TList<string>;
 
   function Wanted(const AIM: TInheritedMember): Boolean;
   begin
@@ -1365,7 +1396,12 @@ var
 
 begin
   Froms := TList<TClassDef>.Create;
+  Keys := TList<string>.Create;
   try
+    for Prot in Prots do
+      for Kind in Kinds do
+        Keys.Add(Prot + '-' + Kind);
+    Keys.Add('properties');
     for IM in C.AllMembers do
       if Wanted(IM) and (Froms.IndexOf(IM.From) < 0) then
         Froms.Add(IM.From);
@@ -1398,6 +1434,7 @@ begin
       end;
     end;
   finally
+    Keys.Free;
     Froms.Free;
   end;
 end;
@@ -1474,11 +1511,22 @@ end;
 
 function THtmlGenerator.DocSections(AMembers: TList<TMemberDef>; AInUnit: Boolean): string;
 const
-  ClassGroups: array[0..5] of string = ('Constructor & Destructor Documentation', 'Member Typedef Documentation',
-    'Member Enumeration Documentation', 'Member Function Documentation', 'Member Data Documentation',
-    'Property Documentation');
-  UnitGroups: array[0..5] of string = ('', 'Typedef Documentation', 'Enumeration Type Documentation',
-    'Function Documentation', 'Variable Documentation', '');
+  ClassGroups: array[0..6] of string = ('Constructor & Destructor Documentation', 'Type Documentation',
+    'Member Enumeration Documentation', 'Method Documentation', 'Field Documentation',
+    'Property Documentation', 'Constant Documentation');
+  UnitGroups: array[0..6] of string = ('', 'Type Documentation', 'Enumeration Type Documentation',
+    'Routine Documentation', 'Variable Documentation', '', 'Constant Documentation');
+  // the order of the groups when there is no layout: the constants after the types and the enumerations
+  GroupOrder: array[0..6] of Integer = (0, 1, 2, 6, 3, 4, 5);
+
+  // does the <memberdef> of the layout have the element? (a layout of Doxygen does not have the constants)
+  function LayoutListsDef(AUnit: Boolean; const AName: string): Boolean;
+  var
+    MD: TLayoutEntry;
+  begin
+    MD := LayoutMembers(AUnit, 'memberdef');
+    Result := (MD = nil) or (MD.Child(AName) <> nil);
+  end;
 
   function GroupOf(M: TMemberDef): Integer;
   begin
@@ -1488,6 +1536,7 @@ const
       memEnumeration: Result := 2;
       memFunction: Result := 3;
       memProperty: Result := 5;
+      memConstant: if LayoutListsDef(AInUnit, 'constants') then Result := 6 else Result := 4;
     else
       Result := 4;
     end;
@@ -1500,13 +1549,13 @@ var
   Title: string;
   MD, E: TLayoutEntry;
   Groups: TList<Integer>;
-  Titles: array[0..5] of string;
+  Titles: array[0..6] of string;
 begin
   Result := '';
   Docs := TList<TMemberDef>.Create;
   Groups := TList<Integer>.Create;
   try
-    for G := 0 to 5 do
+    for G in GroupOrder do
     begin
       Groups.Add(G);
       Titles[G] := '';
@@ -1541,7 +1590,7 @@ begin
           end));
       if AInUnit then Title := Tr(UnitGroups[G]) else Title := Tr(ClassGroups[G]);
       if (Title = '') and AInUnit then
-        Title := Tr(UnitGroups[3]);
+        Title := Tr(UnitGroups[3]);          // (the constructors of a unit: none)
       if Titles[G] <> '' then
         Title := Titles[G];
       Result := Result + '<h2 class="groupheader">' + HtmlEscape(Title) + '</h2>'#10;

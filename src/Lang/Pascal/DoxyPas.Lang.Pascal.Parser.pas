@@ -642,13 +642,22 @@ end;
 procedure TEntryBuilder.DoMembers(AParent: TEntry; ANode: TSyntaxNode; AProt: TProtection);
 var
   M: TSyntaxNode;
+  I, First: Integer;
 begin
   for M in ANode.ChildNodes do
     case M.Typ of
       ntField: DoVarLike(AParent, M, ekField, AProt, [], False);
       ntMethod: DoMethod(AParent, M, AProt, False);
       ntProperty: DoProperty(AParent, M, AProt);
-      ntTypeSection: DoTypeSection(AParent, M, False);
+      ntTypeSection:
+        begin
+          // the types declared in a class have the visibility of the section they are in
+          First := AParent.Children.Count;
+          DoTypeSection(AParent, M, False);
+          for I := First to AParent.Children.Count - 1 do
+            AParent.Children[I].Protection := AProt;
+        end;
+      ntConstant: DoVarLike(AParent, M, ekConstant, AProt, [], False);       // const inside a class
       ntConstants: DoConstants(AParent, M, AProt, False);
       ntVariables: DoVariables(AParent, M, AProt, False);
       ntAttributes: FPendingAttrs.Add(ReadAttributes(M));
@@ -688,6 +697,7 @@ begin
       ntMethod: DoMethod(AEntry, N, prPublic, False);
       ntProperty: DoProperty(AEntry, N, prPublic);
       ntTypeSection: DoTypeSection(AEntry, N, False);
+      ntConstant: DoVarLike(AEntry, N, ekConstant, prPublic, [], False);
       ntConstants: DoConstants(AEntry, N, prPublic, False);
       ntVariables: DoVariables(AEntry, N, prPublic, False);
       ntAttributes: FPendingAttrs.Add(ReadAttributes(N));

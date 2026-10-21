@@ -408,8 +408,8 @@ end;
 function GroupTitle(AOrder: Integer; AInClass: Boolean): string;
 const
   Prot: array[0..5] of string = ('Published', 'Public', 'Protected', 'Strict Protected', 'Private', 'Strict Private');
-  KindsClass: array[0..4] of string = ('Types', 'Constants', 'Member Functions', 'Attributes', 'Properties');
-  KindsUnit: array[0..4] of string = ('Types', 'Constants', 'Functions', 'Variables', 'Properties');
+  KindsClass: array[0..4] of string = ('Types', 'Constants', 'Methods', 'Fields', 'Properties');
+  KindsUnit: array[0..4] of string = ('Types', 'Constants', 'Routines', 'Variables', 'Properties');
 begin
   if AInClass then
     Result := TrSection(Prot[AOrder div 10], KindsClass[AOrder mod 10])

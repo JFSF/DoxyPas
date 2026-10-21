@@ -469,18 +469,6 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='list' id='STRIP_FROM_INC_PATH' format='dir'>
-      <docs>
-<![CDATA[
- The \c STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of
- the path mentioned in the documentation of a class, which tells
- the reader which header file to include in order to use a class.
- If left blank only the name of the header file containing the class
- definition is used. Otherwise one should specify the list of include paths that
- are normally passed to the compiler using the `-I` flag.
-]]>
-      </docs>
-    </option>
     <option type='bool' id='SHORT_NAMES' defval='0'>
       <docs>
 <![CDATA[
@@ -520,29 +508,6 @@ Go to the <a href="commands.html">next</a> section or return to the
   comment as the brief description. If set to \c NO, the
   Qt-style will behave just like regular Qt-style comments (thus
   requiring an explicit \ref cmdbrief "\\brief" command for a brief description.)
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='MULTILINE_CPP_IS_BRIEF' defval='0'>
-      <docs>
-<![CDATA[
-  The \c MULTILINE_CPP_IS_BRIEF tag can be set to \c YES to make Doxygen
-  treat a multi-line C++ special comment block (i.e. a block of \c //! or \c ///
-  comments) as a brief description. This used to be the default behavior.
-  The new default is to treat a multi-line C++ comment block as a detailed
-  description. Set this tag to \c YES if you prefer the old behavior instead.
-  <br>Note that setting this tag to \c YES also means that rational rose comments
-  are not recognized any more.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='PYTHON_DOCSTRING' defval='1'>
-      <docs>
-<![CDATA[
-  By default Python docstrings are displayed as preformatted text
-  and Doxygen's special commands cannot be used. By setting \c PYTHON_DOCSTRING to
-  \c NO the Doxygen's special commands can be used and the contents of the docstring
-  documentation blocks is shown as Doxygen documentation.
 ]]>
       </docs>
     </option>
@@ -599,41 +564,6 @@ Go to the <a href="commands.html">next</a> section or return to the
  escape them by means of a backslash (\c \\), this can lead to conflicts with the
  commands \c \\{ and \c \\} for these it is advised to use the version \c @@{ and \c @@} or
  use a double escape (\c \\\\{ and \c \\\\})
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='OPTIMIZE_OUTPUT_SLICE' defval='0'>
-      <docs>
-<![CDATA[
- Set the \c OPTIMIZE_OUTPUT_SLICE tag to \c YES if your project consists of Slice
- sources only. Doxygen will then generate output that is more tailored
- for that language. For instance, namespaces will be presented as modules,
- types will be separated into more groups, etc.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='EXTENSION_MAPPING' format='string'>
-      <docs>
-<![CDATA[
- Doxygen selects the parser to use depending on the extension of the files it parses.
- With this tag you can assign which parser to use for a given extension.
- Doxygen has a built-in mapping, but you can override or extend it using this tag.
- The format is `ext=language`, where `ext` is a file extension, and `language` is one of
- the parsers supported by Doxygen: IDL, Java, JavaScript, Csharp (C#), C, C++, Lex, D, PHP,
- md (Markdown), Objective-C, Python, Slice, VHDL, Fortran (fixed format Fortran: FortranFixed,
- free formatted Fortran: FortranFree, unknown formatted Fortran: Fortran. In
- the later case the parser tries to guess whether the code is fixed or free
- formatted code, this is the default for Fortran type files).
-
- For instance to make Doxygen treat
- <code>.inc</code> files as Fortran files (default is PHP), and <code>.f</code> files as C (default is Fortran),
- use: `inc=Fortran f=C`.
-
- <br>Note: For files without extension you can use `no_extension` as a placeholder.
- <br>Note that for custom extensions you also need to set \ref cfg_file_patterns "FILE_PATTERNS" otherwise the
- files are not read by Doxygen. When specifying `no_extension` you should add `*`
- to the \ref cfg_file_patterns "FILE_PATTERNS".
- <br>Note see also the list of \ref default_file_extension_mapping "default file extension mappings".
 ]]>
       </docs>
     </option>
@@ -703,18 +633,6 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='IDL_PROPERTY_SUPPORT' defval='1'>
-      <docs>
-<![CDATA[
- For Microsoft's IDL there are \c propget and \c propput attributes to indicate getter
- and setter methods for a property. Setting this option to \c YES
- will make Doxygen to replace the get and set methods by a property in the
- documentation. This will only work if the methods are indeed getting or
- setting a simple type. If this is not the case, or you want to show the
- methods anyway, you should set this option to \c NO.
-]]>
-      </docs>
-    </option>
     <option type='bool' id='DISTRIBUTE_GROUP_DOC' defval='0'>
       <docs>
 <![CDATA[
@@ -766,19 +684,6 @@ Go to the <a href="commands.html">next</a> section or return to the
  namespace, or group documentation), provided this scope is documented. If set
  to \c NO, structs, classes, and unions are shown on a separate
  page (for HTML and Man pages) or section (for \f$\mbox{\LaTeX}\f$ and RTF).
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='TYPEDEF_HIDES_STRUCT' defval='0'>
-      <docs>
-<![CDATA[
- When \c TYPEDEF_HIDES_STRUCT tag is enabled, a typedef of a struct, union, or enum
- is documented as struct, union, or enum with the name of the typedef. So
- <code>typedef struct TypeS {} TypeT</code>, will appear in the documentation as a struct
- with name \c TypeT. When disabled the typedef will appear as a member of a file,
- namespace, or class. And the struct will be named \c TypeS. This can typically
- be useful for C code in case the coding convention dictates that all compound
- types are typedef'ed and only the typedef is referenced, never the tag name.
 ]]>
       </docs>
     </option>
@@ -848,8 +753,8 @@ Go to the <a href="commands.html">next</a> section or return to the
     <option type='bool' id='EXTRACT_PRIVATE' defval='0'>
       <docs>
 <![CDATA[
- If the \c EXTRACT_PRIVATE tag is set to \c YES, all private members of a
- class will be included in the documentation.
+ If the \c EXTRACT_PRIVATE tag is set to \c YES, all <code>private</code> and <code>strict private</code>
+ members of a class will be included in the documentation.
 ]]>
       </docs>
     </option>
@@ -861,58 +766,21 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='EXTRACT_PACKAGE' defval='0'>
-      <docs>
-<![CDATA[
- If the \c EXTRACT_PACKAGE tag is set to \c YES, all members with package
- or internal scope will be included in the documentation.
-]]>
-      </docs>
-    </option>
     <option type='bool' id='EXTRACT_STATIC' defval='0'>
       <docs>
 <![CDATA[
- If the \c EXTRACT_STATIC tag is set to \c YES, all static members of a file
- will be included in the documentation.
+ If the \c EXTRACT_STATIC tag is set to \c YES, the routines, variables, constants and types that
+ are declared only in the \c implementation section of a unit (that is, that are private to the unit)
+ are included in the documentation.
 ]]>
       </docs>
     </option>
     <option type='bool' id='EXTRACT_LOCAL_CLASSES' defval='1'>
       <docs>
 <![CDATA[
- If the \c EXTRACT_LOCAL_CLASSES tag is set to \c YES, classes (and structs)
- defined locally in source files will be included in the documentation.
- If set to \c NO, only classes defined in header files are included. Does not
- have any effect for Java sources.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='EXTRACT_LOCAL_METHODS' defval='0'>
-      <docs>
-<![CDATA[
- This flag is only useful for Objective-C code. If set to \c YES, local
- methods, which are defined in the implementation section but not in
- the interface are included in the documentation.
- If set to \c NO, only methods in the interface are included.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='EXTRACT_ANON_NSPACES' defval='0'>
-      <docs>
-<![CDATA[
- If this flag is set to \c YES, the members of anonymous namespaces will be extracted
- and appear in the documentation as a namespace called 'anonymous_namespace{file}',
- where file will be replaced with the base name of the file that contains the anonymous
- namespace. By default anonymous namespace are hidden.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='RESOLVE_UNNAMED_PARAMS' defval='1'>
-      <docs>
-<![CDATA[
- If this flag is set to \c YES, the name of an unnamed parameter in a declaration will be
- determined by the corresponding definition. By default unnamed parameters remain unnamed
- in the output.
+ If the \c EXTRACT_LOCAL_CLASSES tag is set to \c YES, the classes, records and interfaces
+ declared in the \c implementation section of a unit are included in the documentation.
+ If set to \c NO, only the ones of the \c interface section are included.
 ]]>
       </docs>
     </option>
@@ -950,16 +818,6 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='HIDE_FRIEND_COMPOUNDS' defval='0'>
-      <docs>
-<![CDATA[
- If the \c HIDE_FRIEND_COMPOUNDS tag is set to \c YES, Doxygen will hide all
- friend declarations.
- If set to \c NO, these declarations will be included in the
- documentation.
-]]>
-      </docs>
-    </option>
     <option type='bool' id='HIDE_IN_BODY_DOCS' defval='0'>
       <docs>
 <![CDATA[
@@ -980,23 +838,15 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='enum' id='CASE_SENSE_NAMES' defval='SYSTEM'>
+    <option type='enum' id='CASE_SENSE_NAMES' defval='NO'>
       <docs>
 <![CDATA[
- With the correct setting of option \c CASE_SENSE_NAMES Doxygen will better be able to match the
- capabilities of the underlying filesystem.
+ Pascal identifiers are not case sensitive, so the default is \c NO: the names of the output
+ files and the links do not depend on the casing (nor on the file system).
 
- In case the filesystem is case sensitive (i.e. it supports files in the same directory
- whose names only differ in casing), the option must be set to \c YES to properly deal with such files
- in case they appear in the input.
-
- For filesystems that are not case sensitive the option should be set to \c NO to properly
- deal with output files written for symbols that only differ in casing, such as for two classes,
- one named \c CLASS and the other named \c Class, and to also support references to files without
- having to specify the exact matching casing.
-
- On Windows (including Cygwin) and macOS, users should typically set this option to \c NO,
- whereas on Linux or other Unix flavors it should typically be set to \c YES.
+ Set \c YES only if the input has files that differ in casing only (on a case sensitive file system)
+ and they must be kept apart. Use \c SYSTEM to follow the file system (\c NO on Windows and macOS,
+ \c YES on Linux).
 ]]>
       </docs>
       <value name="SYSTEM" />
@@ -1021,38 +871,11 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='SHOW_HEADERFILE' defval='1'>
-      <docs>
-<![CDATA[
- If the \c SHOW_HEADERFILE tag is set to \c YES then the documentation
- for a class will show which file needs to be included to use the class.
-]]>
-      </docs>
-    </option>
     <option type='bool' id='SHOW_INCLUDE_FILES' defval='1'>
       <docs>
 <![CDATA[
- If the \c SHOW_INCLUDE_FILES tag is set to \c YES then Doxygen
- will put a list of the files that are included by a file in the documentation
- of that file.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='SHOW_GROUPED_MEMB_INC' defval='0'>
-      <docs>
-<![CDATA[
- If the \c SHOW_GROUPED_MEMB_INC tag is set to \c YES then Doxygen
- will add for each grouped member an include statement to the documentation,
- telling the reader which file to include in order to use the member.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='FORCE_LOCAL_INCLUDES' defval='0'>
-      <docs>
-<![CDATA[
- If the \c FORCE_LOCAL_INCLUDES tag is set to \c YES then Doxygen
- will list include files with double quotes in the documentation
- rather than with sharp brackets.
+ If the \c SHOW_INCLUDE_FILES tag is set to \c YES then the documentation of a unit
+ has the units of its \c uses clause (and the ones that use it).
 ]]>
       </docs>
     </option>
@@ -1119,18 +942,6 @@ Go to the <a href="commands.html">next</a> section or return to the
  \note This option is not very useful if \ref cfg_hide_scope_names "HIDE_SCOPE_NAMES" is set to \c YES.
  \note This option applies only to the class list, not to the
        alphabetical list.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='STRICT_PROTO_MATCHING' defval='0'>
-      <docs>
-<![CDATA[
- If the \c STRICT_PROTO_MATCHING option is enabled and Doxygen fails to
- do proper type resolution of all parameters of a function it will reject a
- match between the prototype and the implementation of a member function even
- if there is only one candidate or it is obvious which candidate to choose
- by doing a simple string match. By disabling \c STRICT_PROTO_MATCHING Doxygen
- will still accept a match between prototype and implementation in such cases.
 ]]>
       </docs>
     </option>
@@ -1600,8 +1411,13 @@ PATH=/Library/TeX/texbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
  <br>Note that the wildcards are matched
  against the file with absolute path, so to exclude all test directories
  for example use the pattern `*``/test/``*`
+ <br>The default list has the folders where Delphi (`__history`, `__recovery`) and Lazarus (`backup`)
+ keep the previous versions of the files.
 ]]>
       </docs>
+      <value name='*/__history/*'/>
+      <value name='*/__recovery/*'/>
+      <value name='*/backup/*'/>
     </option>
     <option type='list' id='EXCLUDE_SYMBOLS' format='string'>
       <docs>
@@ -1738,17 +1554,6 @@ PATH=/Library/TeX/texbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 ]]>
       </docs>
     </option>
-    <option type='int' id='FORTRAN_COMMENT_AFTER' defval='72' minval='7' maxval='10000'>
-      <docs>
-<![CDATA[
- The Fortran standard specifies that for fixed formatted Fortran code all characters
- from position 72 are to be considered as comment. A common extension is to allow
- longer lines before the automatic comment starts.
- The setting \c FORTRAN_COMMENT_AFTER will also make it possible that longer lines can be
- processed before the automatic comment starts.
-]]>
-      </docs>
-    </option>
   </group>
   <group name='Source_Browser' docs='Configuration options related to source browsing'>
     <option type='bool' id='SOURCE_BROWSER' defval='0'>
@@ -1819,89 +1624,7 @@ to disable this feature.
 ]]>
       </docs>
     </option>
-    <option type='bool' id='USE_HTAGS' defval='0' depends='SOURCE_BROWSER'>
-      <docs>
-<![CDATA[
- If the \c USE_HTAGS tag is set to \c YES then the references to source code
- will point to the HTML generated by the \c htags(1) tool instead of Doxygen
- built-in source browser. The \c htags tool is part of GNU's global source
- tagging system (see https://www.gnu.org/software/global/global.html). You
- will need version 4.8.6 or higher.
-<br>
- To use it do the following:
- -# Install the latest version of \c global
- -# Enable \ref cfg_source_browser "SOURCE_BROWSER" and \c USE_HTAGS in the configuration file
- -# Make sure the \ref cfg_input "INPUT" points to the root of the source tree
- -# Run \c doxygen as normal
-<br>
- Doxygen will invoke \c htags (and that will in turn invoke \c gtags), so these tools
- must be available from the command line (i.e. in the search path).
-<br>
- The result: instead of the source browser generated by Doxygen, the links to
- source code will now point to the output of \c htags.
-]]>
-      </docs>
-    </option>
 
-    <option type='bool' id='VERBATIM_HEADERS' defval='1'>
-      <docs>
-<![CDATA[
-  If the \c VERBATIM_HEADERS tag is set the \c YES then Doxygen
-  will generate a verbatim copy of the header file for each class for
-  which an include is specified. Set to \c NO to disable this.
-  \sa Section \ref cmdclass "\\class".
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='CLANG_ASSISTED_PARSING' setting='USE_LIBCLANG' defval='0'>
-      <docs>
-<![CDATA[
-  If the \c CLANG_ASSISTED_PARSING tag is set to \c YES then Doxygen will use the
-  <a href="http://clang.llvm.org/">clang parser</a> for more accurate parsing
-  at the cost of reduced performance. This can be particularly helpful with
-  template rich C++ code for which Doxygen's built-in parser lacks the
-  necessary type information.
-
-  @note The availability of this option depends on whether or not Doxygen
-  was generated with the `-Duse_libclang=ON` option for CMake.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='CLANG_ADD_INC_PATHS' setting='USE_LIBCLANG' depends='CLANG_ASSISTED_PARSING' defval='1'>
-      <docs>
-<![CDATA[
-  If the \c CLANG_ASSISTED_PARSING tag is set to \c YES and the \c CLANG_ADD_INC_PATHS
-  tag is set to \c YES then Doxygen will add the directory of each input to the
-  include path.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='CLANG_OPTIONS' format='string' setting='USE_LIBCLANG' depends='CLANG_ASSISTED_PARSING'>
-      <docs>
-<![CDATA[
- If clang assisted parsing is enabled you can provide the compiler with command
- line options that you would normally use when invoking the compiler. Note that
- the include paths will already be set by Doxygen for the files and directories
- specified with \ref cfg_input "INPUT" and \ref cfg_include_path "INCLUDE_PATH".
-]]>
-      </docs>
-    </option>
-    <option type='string' id='CLANG_DATABASE_PATH' setting='USE_LIBCLANG' defval=''>
-      <docs>
-<![CDATA[
- If clang assisted parsing is enabled you can provide the clang parser with the
- path to the directory containing a file called `compile_commands.json`.
- This file is the <a href="http://clang.llvm.org/docs/HowToSetupToolingForLLVM.html">
- compilation database</a> containing the options used when the source files were built.
- This is equivalent to specifying the `-p` option to a clang tool, such as `clang-check`.
- These options will then be passed to the parser. Any options specified with
- \ref cfg_clang_options "CLANG_OPTIONS" will be added as well.
-
- @note The availability of this option depends on whether or not Doxygen
- was generated with the `-Duse_libclang=ON` option for CMake.
- ]]>
-        </docs>
-    </option>
   </group>
   <group name='Index' docs='Configuration options related to the alphabetical class index'>
     <option type='bool' id='ALPHABETICAL_INDEX' defval='1'>
@@ -3555,97 +3278,31 @@ If set to \c NO, Doxygen will warn if a database file is already found and not m
     </option>
   </group>
   <group name='Preprocessor' docs='Configuration options related to the preprocessor'>
-    <option type='bool' id='ENABLE_PREPROCESSING' defval='1'>
-      <docs>
-<![CDATA[
- If the \c ENABLE_PREPROCESSING tag is set to \c YES, Doxygen will
- evaluate all C-preprocessor directives found in the sources and include
- files.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='MACRO_EXPANSION' defval='0' depends='ENABLE_PREPROCESSING'>
-      <docs>
-<![CDATA[
- If the \c MACRO_EXPANSION tag is set to \c YES, Doxygen will expand all macro
- names in the source code. If set to \c NO, only conditional
- compilation will be performed. Macro expansion can be done in a controlled
- way by setting \ref cfg_expand_only_predef "EXPAND_ONLY_PREDEF" to \c YES.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='EXPAND_ONLY_PREDEF' defval='0' depends='ENABLE_PREPROCESSING'>
-      <docs>
-<![CDATA[
- If the \c EXPAND_ONLY_PREDEF and \ref cfg_macro_expansion "MACRO_EXPANSION" tags are both set to \c YES
- then the macro expansion is limited to the macros specified with the
- \ref cfg_predefined "PREDEFINED" and \ref cfg_expand_as_defined "EXPAND_AS_DEFINED" tags.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='SEARCH_INCLUDES' defval='1' depends='ENABLE_PREPROCESSING'>
-      <docs>
-<![CDATA[
- If the \c SEARCH_INCLUDES tag is set to \c YES, the include files
- in the \ref cfg_include_path "INCLUDE_PATH" will be searched if a \c \#include is found.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='INCLUDE_PATH' format='dir' depends='SEARCH_INCLUDES'>
+    <option type='list' id='INCLUDE_PATH' format='dir'>
       <docs>
 <![CDATA[
  The \c INCLUDE_PATH tag can be used to specify one or more directories that
- contain include files that are not input files but should be processed by
- the preprocessor.
+ are searched for the files included with <code>{$I file}</code> and
+ <code>{$INCLUDE file}</code>, after the directory of the source file that includes them
+ (like the include path of Delphi or the <code>-Fi</code> option of Free Pascal).
+ The directories of a Delphi or Lazarus project given in
+ \ref cfg_delphi_project "DELPHI_PROJECT" are added to these.
 
  Note that the \c INCLUDE_PATH is not recursive, so the setting of \ref cfg_recursive "RECURSIVE"
  has no effect here.
 ]]>
       </docs>
     </option>
-    <option type='list' id='INCLUDE_FILE_PATTERNS' format='string' depends='ENABLE_PREPROCESSING'>
+    <option type='list' id='PREDEFINED' format='string'>
       <docs>
 <![CDATA[
- You can use the \c INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
- patterns (like `*.h` and `*.hpp`) to filter out the header-files in the
- directories. If left blank, the patterns specified with \ref cfg_file_patterns "FILE_PATTERNS" will
- be used.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='PREDEFINED' format='string' depends='ENABLE_PREPROCESSING'>
-      <docs>
-<![CDATA[
- The \c PREDEFINED tag can be used to specify one or more macro names that
- are defined before the preprocessor is started (similar to the `-D` option of
- e.g. \c gcc). The argument of the tag is a list of macros of the form:
- <code>name</code> or <code>name=definition</code> (no spaces).
- If the definition and the \c "=" are omitted,  \c "=1" is assumed. To prevent
- a macro definition from being undefined via \c \#undef or recursively expanded
- use the <code>:=</code> operator instead of the \c = operator.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='EXPAND_AS_DEFINED' format='string' depends='ENABLE_PREPROCESSING'>
-      <docs>
-<![CDATA[
- If the \ref cfg_macro_expansion "MACRO_EXPANSION" and
- \ref cfg_expand_only_predef "EXPAND_ONLY_PREDEF" tags are set to \c YES then
- this tag can be used to specify a list of macro names that should be expanded.
- The macro definition that is found in the sources will be used.
- Use the \ref cfg_predefined "PREDEFINED" tag if you want to use a different macro definition that
- overrules the definition found in the source code.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='SKIP_FUNCTION_MACROS' defval='1' depends='ENABLE_PREPROCESSING'>
-      <docs>
-<![CDATA[
- If the \c SKIP_FUNCTION_MACROS tag is set to \c YES then
- Doxygen's preprocessor will remove all references to function-like macros that are alone
- on a line, have an all uppercase name, and do not end with a semicolon.
- Such function macros are typically
- used for boiler-plate code, and will confuse the parser if not removed.
+ The \c PREDEFINED tag can be used to specify one or more conditional symbols that
+ are defined before a source file is read (like the conditional defines of Delphi or the
+ <code>-d</code> option of Free Pascal), so that the code between
+ <code>{$IFDEF name}</code> and <code>{$ENDIF}</code> is the one the compiler would see.
+ The argument of the tag is a list of the form <code>name</code> or <code>name=value</code>
+ (no spaces); the value is not used. The symbols of
+ \ref cfg_pascal_dialect "PASCAL_DIALECT" and \ref cfg_pascal_platform "PASCAL_PLATFORM" are defined already.
 ]]>
       </docs>
     </option>
@@ -4303,6 +3960,36 @@ This setting is not only used for dot files but also for msc temporary files.
     <option type='obsolete' orgtype='bool' id='BUILTIN_STL_SUPPORT'/>
     <option type='obsolete' orgtype='bool' id='CPP_CLI_SUPPORT'/>
     <option type='obsolete' orgtype='bool' id='SIP_SUPPORT'/>
+    <option type='obsolete' orgtype='bool' id='MULTILINE_CPP_IS_BRIEF'/>
+    <option type='obsolete' orgtype='bool' id='PYTHON_DOCSTRING'/>
+    <option type='obsolete' orgtype='bool' id='OPTIMIZE_OUTPUT_SLICE'/>
+    <option type='obsolete' orgtype='list' id='EXTENSION_MAPPING'/>
+    <option type='obsolete' orgtype='bool' id='IDL_PROPERTY_SUPPORT'/>
+    <option type='obsolete' orgtype='bool' id='TYPEDEF_HIDES_STRUCT'/>
+    <option type='obsolete' orgtype='list' id='STRIP_FROM_INC_PATH'/>
+    <option type='obsolete' orgtype='bool' id='EXTRACT_PACKAGE'/>
+    <option type='obsolete' orgtype='bool' id='EXTRACT_ANON_NSPACES'/>
+    <option type='obsolete' orgtype='bool' id='RESOLVE_UNNAMED_PARAMS'/>
+    <option type='obsolete' orgtype='bool' id='EXTRACT_LOCAL_METHODS'/>
+    <option type='obsolete' orgtype='bool' id='HIDE_FRIEND_COMPOUNDS'/>
+    <option type='obsolete' orgtype='bool' id='SHOW_HEADERFILE'/>
+    <option type='obsolete' orgtype='bool' id='SHOW_GROUPED_MEMB_INC'/>
+    <option type='obsolete' orgtype='bool' id='FORCE_LOCAL_INCLUDES'/>
+    <option type='obsolete' orgtype='bool' id='STRICT_PROTO_MATCHING'/>
+    <option type='obsolete' orgtype='int' id='FORTRAN_COMMENT_AFTER'/>
+    <option type='obsolete' orgtype='bool' id='USE_HTAGS'/>
+    <option type='obsolete' orgtype='bool' id='VERBATIM_HEADERS'/>
+    <option type='obsolete' orgtype='bool' id='CLANG_ASSISTED_PARSING'/>
+    <option type='obsolete' orgtype='bool' id='CLANG_ADD_INC_PATHS'/>
+    <option type='obsolete' orgtype='list' id='CLANG_OPTIONS'/>
+    <option type='obsolete' orgtype='string' id='CLANG_DATABASE_PATH'/>
+    <option type='obsolete' orgtype='bool' id='ENABLE_PREPROCESSING'/>
+    <option type='obsolete' orgtype='bool' id='MACRO_EXPANSION'/>
+    <option type='obsolete' orgtype='bool' id='EXPAND_ONLY_PREDEF'/>
+    <option type='obsolete' orgtype='bool' id='SEARCH_INCLUDES'/>
+    <option type='obsolete' orgtype='list' id='INCLUDE_FILE_PATTERNS'/>
+    <option type='obsolete' orgtype='list' id='EXPAND_AS_DEFINED'/>
+    <option type='obsolete' orgtype='bool' id='SKIP_FUNCTION_MACROS'/>
     <option type='obsolete' orgtype='bool' id='USE_WINDOWS_ENCODING'/>
     <option type='obsolete' orgtype='bool' id='DETAILS_AT_TOP'/>
     <option type='obsolete' orgtype='string' id='QTHELP_FILE'/>

@@ -267,17 +267,6 @@ const
       'Note that you can specify absolute paths here, but also relative paths, which' + #10 +
       'will be relative from the directory where Doxygen is started.' + #10 +
       'This tag requires that the tag FULL_PATH_NAMES is set to YES.'),
-    (Name: 'STRIP_FROM_INC_PATH';
-     Kind: okList; OrgKind: okBool; Group: 0;
-     Format: 'dir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of the' + #10 +
-      'path mentioned in the documentation of a class, which tells the reader which' + #10 +
-      'header file to include in order to use a class. If left blank only the name of' + #10 +
-      'the header file containing the class definition is used. Otherwise one should' + #10 +
-      'specify the list of include paths that are normally passed to the compiler' + #10 +
-      'using the -I flag.'),
     (Name: 'SHORT_NAMES';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
@@ -321,30 +310,6 @@ const
       'like regular Qt-style comments (thus requiring an explicit \brief command for' + #10 +
       'a brief description.)' + #10 +
       'The default value is: NO.'),
-    (Name: 'MULTILINE_CPP_IS_BRIEF';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The MULTILINE_CPP_IS_BRIEF tag can be set to YES to make Doxygen treat a' + #10 +
-      'multi-line C++ special comment block (i.e. a block of //! or /// comments) as' + #10 +
-      'a brief description. This used to be the default behavior. The new default is' + #10 +
-      'to treat a multi-line C++ comment block as a detailed description. Set this' + #10 +
-      'tag to YES if you prefer the old behavior instead.' + #10 +
-      '' + #10 +
-      'Note that setting this tag to YES also means that rational rose comments are' + #10 +
-      'not recognized any more.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'PYTHON_DOCSTRING';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'By default Python docstrings are displayed as preformatted text and Doxygen''s' + #10 +
-      'special commands cannot be used. By setting PYTHON_DOCSTRING to NO the' + #10 +
-      'Doxygen''s special commands can be used and the contents of the docstring' + #10 +
-      'documentation blocks is shown as Doxygen documentation.' + #10 +
-      'The default value is: YES.'),
     (Name: 'INHERIT_DOCS';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
@@ -389,41 +354,6 @@ const
       'have to escape them by means of a backslash (\), this can lead to conflicts' + #10 +
       'with the commands \{ and \} for these it is advised to use the version @{ and' + #10 +
       '@} or use a double escape (\\{ and \\})'),
-    (Name: 'OPTIMIZE_OUTPUT_SLICE';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Set the OPTIMIZE_OUTPUT_SLICE tag to YES if your project consists of Slice' + #10 +
-      'sources only. Doxygen will then generate output that is more tailored for that' + #10 +
-      'language. For instance, namespaces will be presented as modules, types will be' + #10 +
-      'separated into more groups, etc.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'EXTENSION_MAPPING';
-     Kind: okList; OrgKind: okBool; Group: 0;
-     Format: 'string'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'Doxygen selects the parser to use depending on the extension of the files it' + #10 +
-      'parses. With this tag you can assign which parser to use for a given' + #10 +
-      'extension. Doxygen has a built-in mapping, but you can override or extend it' + #10 +
-      'using this tag. The format is ext=language, where ext is a file extension, and' + #10 +
-      'language is one of the parsers supported by Doxygen: IDL, Java, JavaScript,' + #10 +
-      'Csharp (C#), C, C++, Lex, D, PHP, md (Markdown), Objective-C, Python, Slice,' + #10 +
-      'VHDL, Fortran (fixed format Fortran: FortranFixed, free formatted Fortran:' + #10 +
-      'FortranFree, unknown formatted Fortran: Fortran. In the later case the parser' + #10 +
-      'tries to guess whether the code is fixed or free formatted code, this is the' + #10 +
-      'default for Fortran type files). For instance to make Doxygen treat .inc files' + #10 +
-      'as Fortran files (default is PHP), and .f files as C (default is Fortran),' + #10 +
-      'use: inc=Fortran f=C.' + #10 +
-      '' + #10 +
-      'Note: For files without extension you can use no_extension as a placeholder.' + #10 +
-      '' + #10 +
-      'Note that for custom extensions you also need to set FILE_PATTERNS otherwise' + #10 +
-      'the files are not read by Doxygen. When specifying no_extension you should add' + #10 +
-      '* to the FILE_PATTERNS.' + #10 +
-      '' + #10 +
-      'Note see also the list of default file extension mappings.'),
     (Name: 'MARKDOWN_SUPPORT';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
@@ -497,18 +427,6 @@ const
       'AUTOLINK_SUPPORT. This list does not affect links explicitly created using #' + #10 +
       'or the \link or \ref commands.' + #10 +
       'This tag requires that the tag AUTOLINK_SUPPORT is set to YES.'),
-    (Name: 'IDL_PROPERTY_SUPPORT';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'For Microsoft''s IDL there are propget and propput attributes to indicate' + #10 +
-      'getter and setter methods for a property. Setting this option to YES will make' + #10 +
-      'Doxygen to replace the get and set methods by a property in the documentation.' + #10 +
-      'This will only work if the methods are indeed getting or setting a simple' + #10 +
-      'type. If this is not the case, or you want to show the methods anyway, you' + #10 +
-      'should set this option to NO.' + #10 +
-      'The default value is: YES.'),
     (Name: 'DISTRIBUTE_GROUP_DOC';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
@@ -563,19 +481,6 @@ const
       'namespace, or group documentation), provided this scope is documented. If set' + #10 +
       'to NO, structs, classes, and unions are shown on a separate page (for HTML and' + #10 +
       'Man pages) or section (for LaTeX and RTF).' + #10 +
-      'The default value is: NO.'),
-    (Name: 'TYPEDEF_HIDES_STRUCT';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When TYPEDEF_HIDES_STRUCT tag is enabled, a typedef of a struct, union, or' + #10 +
-      'enum is documented as struct, union, or enum with the name of the typedef. So' + #10 +
-      'typedef struct TypeS {} TypeT, will appear in the documentation as a struct' + #10 +
-      'with name TypeT. When disabled the typedef will appear as a member of a file,' + #10 +
-      'namespace, or class. And the struct will be named TypeS. This can typically be' + #10 +
-      'useful for C code in case the coding convention dictates that all compound' + #10 +
-      'types are typedef''ed and only the typedef is referenced, never the tag name.' + #10 +
       'The default value is: NO.'),
     (Name: 'LOOKUP_CACHE_SIZE';
      Kind: okInt; OrgKind: okBool; Group: 0;
@@ -634,8 +539,8 @@ const
      Format: ''; Depends: '';
      Default: '0'; MinVal: 0; MaxVal: 0;
      Values: '';
-     Doc: 'If the EXTRACT_PRIVATE tag is set to YES, all private members of a class will' + #10 +
-      'be included in the documentation.' + #10 +
+     Doc: 'If the EXTRACT_PRIVATE tag is set to YES, all private and strict private' + #10 +
+      'members of a class will be included in the documentation.' + #10 +
       'The default value is: NO.'),
     (Name: 'EXTRACT_PRIV_VIRTUAL';
      Kind: okBool; OrgKind: okBool; Group: 1;
@@ -645,61 +550,24 @@ const
      Doc: 'If the EXTRACT_PRIV_VIRTUAL tag is set to YES, documented private virtual' + #10 +
       'methods of a class will be included in the documentation.' + #10 +
       'The default value is: NO.'),
-    (Name: 'EXTRACT_PACKAGE';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the EXTRACT_PACKAGE tag is set to YES, all members with package or internal' + #10 +
-      'scope will be included in the documentation.' + #10 +
-      'The default value is: NO.'),
     (Name: 'EXTRACT_STATIC';
      Kind: okBool; OrgKind: okBool; Group: 1;
      Format: ''; Depends: '';
      Default: '0'; MinVal: 0; MaxVal: 0;
      Values: '';
-     Doc: 'If the EXTRACT_STATIC tag is set to YES, all static members of a file will be' + #10 +
-      'included in the documentation.' + #10 +
+     Doc: 'If the EXTRACT_STATIC tag is set to YES, the routines, variables, constants' + #10 +
+      'and types that are declared only in the implementation section of a unit (that' + #10 +
+      'is, that are private to the unit) are included in the documentation.' + #10 +
       'The default value is: NO.'),
     (Name: 'EXTRACT_LOCAL_CLASSES';
      Kind: okBool; OrgKind: okBool; Group: 1;
      Format: ''; Depends: '';
      Default: '1'; MinVal: 0; MaxVal: 0;
      Values: '';
-     Doc: 'If the EXTRACT_LOCAL_CLASSES tag is set to YES, classes (and structs) defined' + #10 +
-      'locally in source files will be included in the documentation. If set to NO,' + #10 +
-      'only classes defined in header files are included. Does not have any effect' + #10 +
-      'for Java sources.' + #10 +
-      'The default value is: YES.'),
-    (Name: 'EXTRACT_LOCAL_METHODS';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'This flag is only useful for Objective-C code. If set to YES, local methods,' + #10 +
-      'which are defined in the implementation section but not in the interface are' + #10 +
-      'included in the documentation. If set to NO, only methods in the interface are' + #10 +
+     Doc: 'If the EXTRACT_LOCAL_CLASSES tag is set to YES, the classes, records and' + #10 +
+      'interfaces declared in the implementation section of a unit are included in' + #10 +
+      'the documentation. If set to NO, only the ones of the interface section are' + #10 +
       'included.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'EXTRACT_ANON_NSPACES';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If this flag is set to YES, the members of anonymous namespaces will be' + #10 +
-      'extracted and appear in the documentation as a namespace called' + #10 +
-      '''anonymous_namespace{file}'', where file will be replaced with the base name of' + #10 +
-      'the file that contains the anonymous namespace. By default anonymous namespace' + #10 +
-      'are hidden.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'RESOLVE_UNNAMED_PARAMS';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If this flag is set to YES, the name of an unnamed parameter in a declaration' + #10 +
-      'will be determined by the corresponding definition. By default unnamed' + #10 +
-      'parameters remain unnamed in the output.' + #10 +
       'The default value is: YES.'),
     (Name: 'HIDE_UNDOC_MEMBERS';
      Kind: okBool; OrgKind: okBool; Group: 1;
@@ -732,15 +600,6 @@ const
       'If set to NO, these namespaces will be included in the various overviews. This' + #10 +
       'option has no effect if EXTRACT_ALL is enabled.' + #10 +
       'The default value is: YES.'),
-    (Name: 'HIDE_FRIEND_COMPOUNDS';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the HIDE_FRIEND_COMPOUNDS tag is set to YES, Doxygen will hide all friend' + #10 +
-      'declarations. If set to NO, these declarations will be included in the' + #10 +
-      'documentation.' + #10 +
-      'The default value is: NO.'),
     (Name: 'HIDE_IN_BODY_DOCS';
      Kind: okBool; OrgKind: okBool; Group: 1;
      Format: ''; Depends: '';
@@ -762,22 +621,15 @@ const
     (Name: 'CASE_SENSE_NAMES';
      Kind: okEnum; OrgKind: okBool; Group: 1;
      Format: ''; Depends: '';
-     Default: 'SYSTEM'; MinVal: 0; MaxVal: 0;
+     Default: 'NO'; MinVal: 0; MaxVal: 0;
      Values: 'SYSTEM|NO|YES';
-     Doc: 'With the correct setting of option CASE_SENSE_NAMES Doxygen will better be' + #10 +
-      'able to match the capabilities of the underlying filesystem. In case the' + #10 +
-      'filesystem is case sensitive (i.e. it supports files in the same directory' + #10 +
-      'whose names only differ in casing), the option must be set to YES to properly' + #10 +
-      'deal with such files in case they appear in the input. For filesystems that' + #10 +
-      'are not case sensitive the option should be set to NO to properly deal with' + #10 +
-      'output files written for symbols that only differ in casing, such as for two' + #10 +
-      'classes, one named CLASS and the other named Class, and to also support' + #10 +
-      'references to files without having to specify the exact matching casing. On' + #10 +
-      'Windows (including Cygwin) and macOS, users should typically set this option' + #10 +
-      'to NO, whereas on Linux or other Unix flavors it should typically be set to' + #10 +
-      'YES.' + #10 +
+     Doc: 'Pascal identifiers are not case sensitive, so the default is NO: the names of' + #10 +
+      'the output files and the links do not depend on the casing (nor on the file' + #10 +
+      'system). Set YES only if the input has files that differ in casing only (on a' + #10 +
+      'case sensitive file system) and they must be kept apart. Use SYSTEM to follow' + #10 +
+      'the file system (NO on Windows and macOS, YES on Linux).' + #10 +
       'Possible values are: SYSTEM, NO and YES.' + #10 +
-      'The default value is: SYSTEM.'),
+      'The default value is: NO.'),
     (Name: 'HIDE_SCOPE_NAMES';
      Kind: okBool; OrgKind: okBool; Group: 1;
      Format: ''; Depends: '';
@@ -796,39 +648,14 @@ const
       'append additional text to a page''s title, such as Class Reference. If set to' + #10 +
       'YES the compound reference will be hidden.' + #10 +
       'The default value is: NO.'),
-    (Name: 'SHOW_HEADERFILE';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the SHOW_HEADERFILE tag is set to YES then the documentation for a class' + #10 +
-      'will show which file needs to be included to use the class.' + #10 +
-      'The default value is: YES.'),
     (Name: 'SHOW_INCLUDE_FILES';
      Kind: okBool; OrgKind: okBool; Group: 1;
      Format: ''; Depends: '';
      Default: '1'; MinVal: 0; MaxVal: 0;
      Values: '';
-     Doc: 'If the SHOW_INCLUDE_FILES tag is set to YES then Doxygen will put a list of' + #10 +
-      'the files that are included by a file in the documentation of that file.' + #10 +
+     Doc: 'If the SHOW_INCLUDE_FILES tag is set to YES then the documentation of a unit' + #10 +
+      'has the units of its uses clause (and the ones that use it).' + #10 +
       'The default value is: YES.'),
-    (Name: 'SHOW_GROUPED_MEMB_INC';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the SHOW_GROUPED_MEMB_INC tag is set to YES then Doxygen will add for each' + #10 +
-      'grouped member an include statement to the documentation, telling the reader' + #10 +
-      'which file to include in order to use the member.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'FORCE_LOCAL_INCLUDES';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the FORCE_LOCAL_INCLUDES tag is set to YES then Doxygen will list include' + #10 +
-      'files with double quotes in the documentation rather than with sharp brackets.' + #10 +
-      'The default value is: NO.'),
     (Name: 'INLINE_INFO';
      Kind: okBool; OrgKind: okBool; Group: 1;
      Format: ''; Depends: '';
@@ -890,18 +717,6 @@ const
       'Note: This option is not very useful if HIDE_SCOPE_NAMES is set to YES.' + #10 +
       'Note: This option applies only to the class list, not to the alphabetical' + #10 +
       'list.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'STRICT_PROTO_MATCHING';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the STRICT_PROTO_MATCHING option is enabled and Doxygen fails to do proper' + #10 +
-      'type resolution of all parameters of a function it will reject a match between' + #10 +
-      'the prototype and the implementation of a member function even if there is' + #10 +
-      'only one candidate or it is obvious which candidate to choose by doing a' + #10 +
-      'simple string match. By disabling STRICT_PROTO_MATCHING Doxygen will still' + #10 +
-      'accept a match between prototype and implementation in such cases.' + #10 +
       'The default value is: NO.'),
     (Name: 'GENERATE_TODOLIST';
      Kind: okBool; OrgKind: okBool; Group: 1;
@@ -1284,13 +1099,17 @@ const
      Kind: okList; OrgKind: okBool; Group: 3;
      Format: 'string'; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
+     Values: '*/__history/*|*/__recovery/*|*/backup/*';
      Doc: 'If the value of the INPUT tag contains directories, you can use the' + #10 +
       'EXCLUDE_PATTERNS tag to specify one or more wildcard patterns to exclude' + #10 +
       'certain files from those directories.' + #10 +
       '' + #10 +
       'Note that the wildcards are matched against the file with absolute path, so to' + #10 +
-      'exclude all test directories for example use the pattern */test/*'),
+      'exclude all test directories for example use the pattern */test/*' + #10 +
+      '' + #10 +
+      'The default list has the folders where Delphi (__history, __recovery) and' + #10 +
+      'Lazarus (backup) keep the previous versions of the files.*/__history/*,' + #10 +
+      '*/__recovery/* and */backup/*.'),
     (Name: 'EXCLUDE_SYMBOLS';
      Kind: okList; OrgKind: okBool; Group: 3;
      Format: 'string'; Depends: '';
@@ -1419,17 +1238,6 @@ const
       '\mainpage command. If set to NO, the README.md file needs to start with an' + #10 +
       'explicit \dir command in order to be used as directory documentation.' + #10 +
       'The default value is: YES.'),
-    (Name: 'FORTRAN_COMMENT_AFTER';
-     Kind: okInt; OrgKind: okBool; Group: 3;
-     Format: ''; Depends: '';
-     Default: '72'; MinVal: 7; MaxVal: 10000;
-     Values: '';
-     Doc: 'The Fortran standard specifies that for fixed formatted Fortran code all' + #10 +
-      'characters from position 72 are to be considered as comment. A common' + #10 +
-      'extension is to allow longer lines before the automatic comment starts. The' + #10 +
-      'setting FORTRAN_COMMENT_AFTER will also make it possible that longer lines can' + #10 +
-      'be processed before the automatic comment starts.' + #10 +
-      'Minimum value: 7, maximum value: 10000, default value: 72.'),
     (Name: 'SOURCE_BROWSER';
      Kind: okBool; OrgKind: okBool; Group: 4;
      Format: ''; Depends: '';
@@ -1497,88 +1305,6 @@ const
       'can opt to disable this feature.' + #10 +
       'The default value is: YES.' + #10 +
       'This tag requires that the tag SOURCE_BROWSER is set to YES.'),
-    (Name: 'USE_HTAGS';
-     Kind: okBool; OrgKind: okBool; Group: 4;
-     Format: ''; Depends: 'SOURCE_BROWSER';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the USE_HTAGS tag is set to YES then the references to source code will' + #10 +
-      'point to the HTML generated by the htags(1) tool instead of Doxygen built-in' + #10 +
-      'source browser. The htags tool is part of GNU''s global source tagging system' + #10 +
-      '(see https://www.gnu.org/software/global/global.html). You will need version' + #10 +
-      '4.8.6 or higher.' + #10 +
-      '' + #10 +
-      'To use it do the following:' + #10 +
-      '- Install the latest version of global' + #10 +
-      '- Enable SOURCE_BROWSER and USE_HTAGS in the configuration file' + #10 +
-      '- Make sure the INPUT points to the root of the source tree' + #10 +
-      '- Run doxygen as normal' + #10 +
-      '' + #10 +
-      'Doxygen will invoke htags (and that will in turn invoke gtags), so these tools' + #10 +
-      'must be available from the command line (i.e. in the search path).' + #10 +
-      '' + #10 +
-      'The result: instead of the source browser generated by Doxygen, the links to' + #10 +
-      'source code will now point to the output of htags.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag SOURCE_BROWSER is set to YES.'),
-    (Name: 'VERBATIM_HEADERS';
-     Kind: okBool; OrgKind: okBool; Group: 4;
-     Format: ''; Depends: '';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the VERBATIM_HEADERS tag is set the YES then Doxygen will generate a' + #10 +
-      'verbatim copy of the header file for each class for which an include is' + #10 +
-      'specified. Set to NO to disable this.' + #10 +
-      'See also: Section \class.' + #10 +
-      'The default value is: YES.'),
-    (Name: 'CLANG_ASSISTED_PARSING';
-     Kind: okBool; OrgKind: okBool; Group: 4;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the CLANG_ASSISTED_PARSING tag is set to YES then Doxygen will use the' + #10 +
-      'clang parser (see:' + #10 +
-      'http://clang.llvm.org/) for more accurate parsing at the cost of reduced' + #10 +
-      'performance. This can be particularly helpful with template rich C++ code for' + #10 +
-      'which Doxygen''s built-in parser lacks the necessary type information.' + #10 +
-      'Note: The availability of this option depends on whether or not Doxygen was' + #10 +
-      'generated with the -Duse_libclang=ON option for CMake.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'CLANG_ADD_INC_PATHS';
-     Kind: okBool; OrgKind: okBool; Group: 4;
-     Format: ''; Depends: 'CLANG_ASSISTED_PARSING';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the CLANG_ASSISTED_PARSING tag is set to YES and the CLANG_ADD_INC_PATHS' + #10 +
-      'tag is set to YES then Doxygen will add the directory of each input to the' + #10 +
-      'include path.' + #10 +
-      'The default value is: YES.' + #10 +
-      'This tag requires that the tag CLANG_ASSISTED_PARSING is set to YES.'),
-    (Name: 'CLANG_OPTIONS';
-     Kind: okList; OrgKind: okBool; Group: 4;
-     Format: 'string'; Depends: 'CLANG_ASSISTED_PARSING';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If clang assisted parsing is enabled you can provide the compiler with command' + #10 +
-      'line options that you would normally use when invoking the compiler. Note that' + #10 +
-      'the include paths will already be set by Doxygen for the files and directories' + #10 +
-      'specified with INPUT and INCLUDE_PATH.' + #10 +
-      'This tag requires that the tag CLANG_ASSISTED_PARSING is set to YES.'),
-    (Name: 'CLANG_DATABASE_PATH';
-     Kind: okString; OrgKind: okBool; Group: 4;
-     Format: ''; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If clang assisted parsing is enabled you can provide the clang parser with the' + #10 +
-      'path to the directory containing a file called compile_commands.json. This' + #10 +
-      'file is the compilation database (see:' + #10 +
-      'http://clang.llvm.org/docs/HowToSetupToolingForLLVM.html) containing the' + #10 +
-      'options used when the source files were built. This is equivalent to' + #10 +
-      'specifying the -p option to a clang tool, such as clang-check. These options' + #10 +
-      'will then be passed to the parser. Any options specified with CLANG_OPTIONS' + #10 +
-      'will be added as well.' + #10 +
-      'Note: The availability of this option depends on whether or not Doxygen was' + #10 +
-      'generated with the -Duse_libclang=ON option for CMake.'),
     (Name: 'ALPHABETICAL_INDEX';
      Kind: okBool; OrgKind: okBool; Group: 5;
      Format: ''; Depends: '';
@@ -2898,99 +2624,28 @@ const
       'so different doxyrules.make files included by the same Makefile don''t' + #10 +
       'overwrite each other''s variables.' + #10 +
       'This tag requires that the tag GENERATE_PERLMOD is set to YES.'),
-    (Name: 'ENABLE_PREPROCESSING';
-     Kind: okBool; OrgKind: okBool; Group: 15;
-     Format: ''; Depends: '';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the ENABLE_PREPROCESSING tag is set to YES, Doxygen will evaluate all' + #10 +
-      'C-preprocessor directives found in the sources and include files.' + #10 +
-      'The default value is: YES.'),
-    (Name: 'MACRO_EXPANSION';
-     Kind: okBool; OrgKind: okBool; Group: 15;
-     Format: ''; Depends: 'ENABLE_PREPROCESSING';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the MACRO_EXPANSION tag is set to YES, Doxygen will expand all macro names' + #10 +
-      'in the source code. If set to NO, only conditional compilation will be' + #10 +
-      'performed. Macro expansion can be done in a controlled way by setting' + #10 +
-      'EXPAND_ONLY_PREDEF to YES.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag ENABLE_PREPROCESSING is set to YES.'),
-    (Name: 'EXPAND_ONLY_PREDEF';
-     Kind: okBool; OrgKind: okBool; Group: 15;
-     Format: ''; Depends: 'ENABLE_PREPROCESSING';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the EXPAND_ONLY_PREDEF and MACRO_EXPANSION tags are both set to YES then' + #10 +
-      'the macro expansion is limited to the macros specified with the PREDEFINED and' + #10 +
-      'EXPAND_AS_DEFINED tags.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag ENABLE_PREPROCESSING is set to YES.'),
-    (Name: 'SEARCH_INCLUDES';
-     Kind: okBool; OrgKind: okBool; Group: 15;
-     Format: ''; Depends: 'ENABLE_PREPROCESSING';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the SEARCH_INCLUDES tag is set to YES, the include files in the' + #10 +
-      'INCLUDE_PATH will be searched if a #include is found.' + #10 +
-      'The default value is: YES.' + #10 +
-      'This tag requires that the tag ENABLE_PREPROCESSING is set to YES.'),
     (Name: 'INCLUDE_PATH';
      Kind: okList; OrgKind: okBool; Group: 15;
-     Format: 'dir'; Depends: 'SEARCH_INCLUDES';
+     Format: 'dir'; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;
      Values: '';
-     Doc: 'The INCLUDE_PATH tag can be used to specify one or more directories that' + #10 +
-      'contain include files that are not input files but should be processed by the' + #10 +
-      'preprocessor. Note that the INCLUDE_PATH is not recursive, so the setting of' + #10 +
-      'RECURSIVE has no effect here.' + #10 +
-      'This tag requires that the tag SEARCH_INCLUDES is set to YES.'),
-    (Name: 'INCLUDE_FILE_PATTERNS';
-     Kind: okList; OrgKind: okBool; Group: 15;
-     Format: 'string'; Depends: 'ENABLE_PREPROCESSING';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard' + #10 +
-      'patterns (like *.h and *.hpp) to filter out the header-files in the' + #10 +
-      'directories. If left blank, the patterns specified with FILE_PATTERNS will be' + #10 +
-      'used.' + #10 +
-      'This tag requires that the tag ENABLE_PREPROCESSING is set to YES.'),
+     Doc: 'The INCLUDE_PATH tag can be used to specify one or more directories that are' + #10 +
+      'searched for the files included with {$I file} and {$INCLUDE file}, after the' + #10 +
+      'directory of the source file that includes them (like the include path of' + #10 +
+      'Delphi or the -Fi option of Free Pascal). The directories of a Delphi or' + #10 +
+      'Lazarus project given in DELPHI_PROJECT are added to these. Note that the' + #10 +
+      'INCLUDE_PATH is not recursive, so the setting of RECURSIVE has no effect here.'),
     (Name: 'PREDEFINED';
      Kind: okList; OrgKind: okBool; Group: 15;
-     Format: 'string'; Depends: 'ENABLE_PREPROCESSING';
+     Format: 'string'; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;
      Values: '';
-     Doc: 'The PREDEFINED tag can be used to specify one or more macro names that are' + #10 +
-      'defined before the preprocessor is started (similar to the -D option of e.g.' + #10 +
-      'gcc). The argument of the tag is a list of macros of the form: name or' + #10 +
-      'name=definition (no spaces). If the definition and the "=" are omitted, "=1"' + #10 +
-      'is assumed. To prevent a macro definition from being undefined via #undef or' + #10 +
-      'recursively expanded use the := operator instead of the = operator.' + #10 +
-      'This tag requires that the tag ENABLE_PREPROCESSING is set to YES.'),
-    (Name: 'EXPAND_AS_DEFINED';
-     Kind: okList; OrgKind: okBool; Group: 15;
-     Format: 'string'; Depends: 'ENABLE_PREPROCESSING';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this' + #10 +
-      'tag can be used to specify a list of macro names that should be expanded. The' + #10 +
-      'macro definition that is found in the sources will be used. Use the PREDEFINED' + #10 +
-      'tag if you want to use a different macro definition that overrules the' + #10 +
-      'definition found in the source code.' + #10 +
-      'This tag requires that the tag ENABLE_PREPROCESSING is set to YES.'),
-    (Name: 'SKIP_FUNCTION_MACROS';
-     Kind: okBool; OrgKind: okBool; Group: 15;
-     Format: ''; Depends: 'ENABLE_PREPROCESSING';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the SKIP_FUNCTION_MACROS tag is set to YES then Doxygen''s preprocessor will' + #10 +
-      'remove all references to function-like macros that are alone on a line, have' + #10 +
-      'an all uppercase name, and do not end with a semicolon. Such function macros' + #10 +
-      'are typically used for boiler-plate code, and will confuse the parser if not' + #10 +
-      'removed.' + #10 +
-      'The default value is: YES.' + #10 +
-      'This tag requires that the tag ENABLE_PREPROCESSING is set to YES.'),
+     Doc: 'The PREDEFINED tag can be used to specify one or more conditional symbols that' + #10 +
+      'are defined before a source file is read (like the conditional defines of' + #10 +
+      'Delphi or the -d option of Free Pascal), so that the code between {$IFDEF' + #10 +
+      'name} and {$ENDIF} is the one the compiler would see. The argument of the tag' + #10 +
+      'is a list of the form name or name=value (no spaces); the value is not used.' + #10 +
+      'The symbols of PASCAL_DIALECT and PASCAL_PLATFORM are defined already.'),
     (Name: 'TAGFILES';
      Kind: okList; OrgKind: okBool; Group: 16;
      Format: 'file'; Depends: '';
@@ -3637,6 +3292,186 @@ const
      Values: '';
      Doc: ''),
     (Name: 'SIP_SUPPORT';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MULTILINE_CPP_IS_BRIEF';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PYTHON_DOCSTRING';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'OPTIMIZE_OUTPUT_SLICE';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXTENSION_MAPPING';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'IDL_PROPERTY_SUPPORT';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'TYPEDEF_HIDES_STRUCT';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'STRIP_FROM_INC_PATH';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXTRACT_PACKAGE';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXTRACT_ANON_NSPACES';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'RESOLVE_UNNAMED_PARAMS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXTRACT_LOCAL_METHODS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'HIDE_FRIEND_COMPOUNDS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SHOW_HEADERFILE';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SHOW_GROUPED_MEMB_INC';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'FORCE_LOCAL_INCLUDES';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'STRICT_PROTO_MATCHING';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'FORTRAN_COMMENT_AFTER';
+     Kind: okObsolete; OrgKind: okInt; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'USE_HTAGS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'VERBATIM_HEADERS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'CLANG_ASSISTED_PARSING';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'CLANG_ADD_INC_PATHS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'CLANG_OPTIONS';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'CLANG_DATABASE_PATH';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'ENABLE_PREPROCESSING';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MACRO_EXPANSION';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXPAND_ONLY_PREDEF';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SEARCH_INCLUDES';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'INCLUDE_FILE_PATTERNS';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXPAND_AS_DEFINED';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SKIP_FUNCTION_MACROS';
      Kind: okObsolete; OrgKind: okBool; Group: 17;
      Format: ''; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;

@@ -27,6 +27,7 @@ type
     [Test] procedure SyntaxErrorReturnsPartialTree;
     [Test] procedure Utf8AndAnsiSourcesAreDecoded;
     [Test] procedure ClassMembersKeepVisibilityAndFlags;
+    [Test] procedure ClassConstantsAndNestedTypes;
     [Test] procedure PropertyDetails;
     [Test] procedure DocCommentStyles;
     [Test] procedure PlainCommentsAreNotDocumentation;
@@ -315,6 +316,29 @@ begin
     Assert.IsTrue(C.Children[2].MethodKind = rkFunction);
     Assert.AreEqual('TA', C.Children[2].TypeText);
     Assert.IsTrue(C.Children[3].Protection = prPublished);
+  finally
+    Root.Free;
+  end;
+end;
+
+procedure TPascalParserTests.ClassConstantsAndNestedTypes;
+var
+  Err: string;
+  Root, C: TEntry;
+begin
+  Root := ParseText('unit U; interface type TA = class strict private const Hidden = 1; protected type TInner = Integer; ' +
+    'public const Limit = 5; Name = ''x''; procedure P; end; implementation end.', TPascalParseOptions.Default, Err);
+  try
+    C := Root.Children[0];
+    Assert.AreEqual<Integer>(5, C.Children.Count);
+    Assert.IsTrue(C.Children[0].Kind = ekConstant);
+    Assert.IsTrue(C.Children[0].Protection = prStrictPrivate);
+    Assert.IsTrue(C.Children[1].Kind = ekTypeAlias);
+    Assert.IsTrue(C.Children[1].Protection = prProtected);          // a type has the visibility of its section
+    Assert.AreEqual('Limit', C.Children[2].Name);
+    Assert.IsTrue(C.Children[2].Kind = ekConstant);
+    Assert.IsTrue(C.Children[2].Protection = prPublic);
+    Assert.AreEqual('5', C.Children[2].InitText);
   finally
     Root.Free;
   end;

@@ -451,12 +451,12 @@ end;
 procedure THtmlTemplateTests.TranslatesTexts;
 begin
   SetOutputLanguage('English');
-  Assert.AreEqual('Public Member Functions', TrSection('Public', 'Member Functions'));
-  Assert.AreEqual('Static Private Attributes', TrSection('Private', 'Static Attributes'));
+  Assert.AreEqual('Public Methods', TrSection('Public', 'Methods'));
+  Assert.AreEqual('Strict Private Class Fields', TrSection('Strict Private', 'Class Fields'));
   SetOutputLanguage('Portuguese');
   try
     Assert.AreEqual('Página Principal', Tr('Main Page'));
-    Assert.AreEqual('Atributos (visibilidade privada)', TrSection('Private', 'Attributes'));
+    Assert.AreEqual('Campos (visibilidade privada)', TrSection('Private', 'Fields'));
     Assert.AreEqual('untranslated text', Tr('untranslated text'));
     Assert.AreEqual('pt', LanguageIso);
   finally

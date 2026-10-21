@@ -469,15 +469,6 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='SHORT_NAMES' defval='0'>
-      <docs>
-<![CDATA[
- If the \c SHORT_NAMES tag is set to \c YES, Doxygen will generate much shorter
- (but less readable) file names. This can be useful if your file system
- doesn't support long names like on DOS, Mac, or CD-ROM.
-]]>
-      </docs>
-    </option>
     <option type='bool' id='JAVADOC_AUTOBRIEF' defval='0'>
       <docs>
 <![CDATA[
@@ -663,47 +654,6 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='INLINE_GROUPED_CLASSES' defval='0'>
-      <docs>
-<![CDATA[
- When the \c INLINE_GROUPED_CLASSES tag is set to \c YES, classes, structs and
- unions are shown inside the group in which they are included
- (e.g. using \ref cmdingroup "\\ingroup") instead of on a separate page (for HTML and Man pages)
- or section (for \f$\mbox{\LaTeX}\f$ and RTF).
- <br>Note that this feature does not work in
- combination with \ref cfg_separate_member_pages "SEPARATE_MEMBER_PAGES".
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='INLINE_SIMPLE_STRUCTS' defval='0'>
-      <docs>
-<![CDATA[
- When the \c INLINE_SIMPLE_STRUCTS tag is set to \c YES, structs, classes, and
- unions with only public data fields or simple typedef fields will be shown
- inline in the documentation of the scope in which they are defined (i.e. file,
- namespace, or group documentation), provided this scope is documented. If set
- to \c NO, structs, classes, and unions are shown on a separate
- page (for HTML and Man pages) or section (for \f$\mbox{\LaTeX}\f$ and RTF).
-]]>
-      </docs>
-    </option>
-    <option type='int' id='LOOKUP_CACHE_SIZE' minval='0' maxval='9' defval='0'>
-      <!-- be careful when changing these formulas as they are hard coded in the conversion script -->
-      <docs>
-<![CDATA[
- The size of the symbol lookup cache can be
- set using \c LOOKUP_CACHE_SIZE. This cache is used to resolve symbols given
- their name and scope. Since this can be an expensive process and often the
- same symbol appears multiple times in the code, Doxygen keeps a cache of
- pre-resolved symbols. If the cache is too small Doxygen will become slower.
- If the cache is too large, memory is wasted. The cache size is given by this
- formula: \f$2^{(16+\mbox{LOOKUP\_CACHE\_SIZE})}\f$. The valid range is 0..9, the default is 0,
- corresponding to a cache size of \f$2^{16} = 65536\f$ symbols.
- At the end of a run Doxygen will report the cache usage and suggest the
- optimal cache size from a speed point of view.
-]]>
-      </docs>
-    </option>
     <option type='int' id='NUM_PROC_THREADS' defval='1' minval='0' maxval='512'>
       <docs>
 <![CDATA[
@@ -755,14 +705,6 @@ Go to the <a href="commands.html">next</a> section or return to the
 <![CDATA[
  If the \c EXTRACT_PRIVATE tag is set to \c YES, all <code>private</code> and <code>strict private</code>
  members of a class will be included in the documentation.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='EXTRACT_PRIV_VIRTUAL' defval='0'>
-      <docs>
-<![CDATA[
- If the \c EXTRACT_PRIV_VIRTUAL tag is set to \c YES, documented private
- virtual methods of a class will be included in the documentation.
 ]]>
       </docs>
     </option>
@@ -981,35 +923,6 @@ Go to the <a href="commands.html">next</a> section or return to the
  commands in the documentation.
 ]]>
       </docs>
-    </option>
-    <option type='bool' id='GENERATE_REQUIREMENTS' defval='1'>
-      <docs>
-<![CDATA[
- The \c GENERATE_REQUIREMENTS tag can be used to enable (\c YES) or
- disable (\c NO) the requirements page. When enabled, this page is
- automatically created when at least one comment block with
- a \ref cmdrequirement "\\requirement" command appears in the input.
-]]>
-      </docs>
-    </option>
-    <option type='enum' id='REQ_TRACEABILITY_INFO' defval='YES' depends='GENERATE_REQUIREMENTS'>
-      <docs>
-<![CDATA[
- The \c REQ_TRACEABILITY_INFO tag controls if traceability information
- is shown on the requirements page (only relevant when using
- \ref cmdrequirement "\\requirement" comment blocks).
- The setting \c NO will disable the traceability information altogether.
- The setting \c UNSATISFIED_ONLY will show a list of requirements that are missing
- a satisfies relation (through the command: \ref cmdsatisfies "\\satisfies").
- Similarly the setting \c UNVERIFIED_ONLY will show a list of requirements that
- are missing a verifies relation (through the command: \ref cmdverifies "\\verifies").
- Setting the tag to \c YES (the default) will show both lists if applicable.
-]]>
-      </docs>
-      <value name="YES" />
-      <value name="NO" />
-      <value name="UNSATISFIED_ONLY" />
-      <value name="UNVERIFIED_ONLY" />
     </option>
     <option type='list' id='ENABLED_SECTIONS' format='string'>
       <docs>
@@ -2402,88 +2315,6 @@ MATHJAX_CODEFILE = disableRenderer.js
 ]]>
       </docs>
     </option>
-    <option type='bool' id='SERVER_BASED_SEARCH' defval='0' depends='SEARCHENGINE'>
-      <docs>
-<![CDATA[
-When the \c SERVER_BASED_SEARCH tag is enabled the search engine will be
-implemented using a web server instead of a web client using JavaScript.
-
-There are two flavors of web server based searching depending on the
-\ref cfg_external_search "EXTERNAL_SEARCH" setting. When disabled,
-Doxygen will generate a PHP script for searching and an index file used
-by the script. When \ref cfg_external_search "EXTERNAL_SEARCH" is
-enabled the indexing and searching needs to be provided by external tools.
-See the section \ref extsearch for details.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='EXTERNAL_SEARCH' defval='0' depends='SEARCHENGINE'>
-      <docs>
-<![CDATA[
- When \c EXTERNAL_SEARCH tag is enabled Doxygen will no longer generate the PHP
- script for searching. Instead the search results are written to an XML file
- which needs to be processed by an external indexer. Doxygen will invoke an
- external search engine pointed to by the
- \ref cfg_searchengine_url "SEARCHENGINE_URL" option to obtain
- the search results.
- <br>Doxygen ships with an example indexer (\c doxyindexer) and
- search engine (<code>doxysearch.cgi</code>) which are based on the open source search
- engine library <a href="https://xapian.org/">Xapian</a>.
- <br>See the section \ref extsearch for details.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='SEARCHENGINE_URL' format='string' defval='' depends='SEARCHENGINE'>
-      <docs>
-<![CDATA[
- The \c SEARCHENGINE_URL should point to a search engine hosted by a web server
- which will return the search results when \ref cfg_external_search "EXTERNAL_SEARCH"
- is enabled.
- <br>Doxygen ships with an example indexer (\c doxyindexer) and
- search engine (<code>doxysearch.cgi</code>) which are based on the open source search
- engine library <a href="https://xapian.org/">Xapian</a>.
- See the section \ref extsearch for details.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='SEARCHDATA_FILE' format='file' defval='searchdata.xml' depends='SEARCHENGINE'>
-      <docs>
-<![CDATA[
-When \ref cfg_server_based_search "SERVER_BASED_SEARCH" and
-\ref cfg_external_search "EXTERNAL_SEARCH" are both enabled the unindexed
-search data is written to a file for indexing by an external tool. With the
-\c SEARCHDATA_FILE tag the name of this file can be specified.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='EXTERNAL_SEARCH_ID' format='string' defval='' depends='SEARCHENGINE'>
-      <docs>
-<![CDATA[
-When \ref cfg_server_based_search "SERVER_BASED_SEARCH" and
-\ref cfg_external_search "EXTERNAL_SEARCH" are both enabled the
-\c EXTERNAL_SEARCH_ID tag can be used as an identifier for the project. This is
-useful in combination with \ref cfg_extra_search_mappings "EXTRA_SEARCH_MAPPINGS"
-to search through multiple projects and redirect the results back to the right project.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='EXTRA_SEARCH_MAPPINGS' format='string' depends='SEARCHENGINE'>
-      <docs>
-<![CDATA[
- The \c EXTRA_SEARCH_MAPPINGS tag can be used to enable searching through Doxygen
- projects other than the one defined by this configuration file, but that are
- all added to the same external search index. Each project needs to have a
- unique id set via \ref cfg_external_search_id "EXTERNAL_SEARCH_ID".
- The search mapping then maps the id of to a relative location where the
- documentation can be found.
-
- The format is:
-\verbatim
-EXTRA_SEARCH_MAPPINGS = tagname1=loc1 tagname2=loc2 ...
-\endverbatim
-]]>
-      </docs>
-    </option>
   </group>
   <group name='LaTeX' docs='Configuration options related to the LaTeX output'>
     <option type='bool' id='GENERATE_LATEX' defval='1'>
@@ -2833,16 +2664,6 @@ The following block name is set based on whether or not a feature is used in the
 ]]>
       </docs>
     </option>
-    <option type='string' id='LATEX_EMOJI_DIRECTORY' format='dir' defval='' depends='GENERATE_LATEX'>
-      <docs>
-<![CDATA[
- The \c LATEX_EMOJI_DIRECTORY tag is used to specify the (relative or absolute)
- path from which the emoji images will be read.
- If a relative path is entered, it will be relative to the \ref cfg_latex_output "LATEX_OUTPUT"
- directory. If left blank the \ref cfg_latex_output "LATEX_OUTPUT" directory will be used.
-]]>
-      </docs>
-    </option>
   </group>
   <group name='RTF' docs='Configuration options related to the RTF output'>
   </group>
@@ -2877,15 +2698,6 @@ The following block name is set based on whether or not a feature is used in the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='XML_NS_MEMB_FILE_SCOPE' defval='0' depends='GENERATE_XML'>
-      <docs>
-<![CDATA[
- If the \c XML_NS_MEMB_FILE_SCOPE tag is set to \c YES, Doxygen
- will include namespace members in file scope as well, matching the HTML
- output.
-]]>
-      </docs>
-    </option>
   </group>
   <group name='Docbook' docs='Configuration options related to the DOCBOOK output'>
   </group>
@@ -2906,15 +2718,6 @@ If the \c GENERATE_SQLITE3 tag is set to \c YES Doxygen will generate a
 The \c SQLITE3_OUTPUT tag is used to specify where the \c Sqlite3 database will be put.
 If a relative path is entered the value of \ref cfg_output_directory "OUTPUT_DIRECTORY" will be
 put in front of it.
-]]>
-      </docs>
-    </option>
-    <option type='bool' id='SQLITE3_RECREATE_DB' defval='1' depends='GENERATE_SQLITE3'>
-      <docs>
-<![CDATA[
-The \c SQLITE3_RECREATE_DB tag is set to \c YES, the existing doxygen_sqlite3.db
-database file will be recreated with each Doxygen run.
-If set to \c NO, Doxygen will warn if a database file is already found and not modify it.
 ]]>
       </docs>
     </option>
@@ -3386,148 +3189,6 @@ UML notation for the relationships.
 ]]>
       </docs>
     </option>
-    <option type='string' id='DIA_PATH' format='dir' defval=''>
-      <docs>
-<![CDATA[
-You can include diagrams made with dia in Doxygen documentation. Doxygen will then run
-dia to produce the diagram and insert it in the documentation. The DIA_PATH tag allows
-you to specify the directory where the dia binary resides. If left empty dia is assumed
-to be found in the default search path.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='DIAFILE_DIRS' format='dir'>
-      <docs>
-<![CDATA[
- The \c DIAFILE_DIRS tag can be used to specify one or more directories that
- contain dia files that are included in the documentation (see the
- \ref cmddiafile "\\diafile" command).
-]]>
-      </docs>
-    </option>
-    <option type='string' id='PLANTUML_JAR_PATH' format='filedir' defval=''>
-      <docs>
-<![CDATA[
- When using PlantUML, the \c PLANTUML_JAR_PATH tag should be used to specify the path where
- java can find the \c plantuml.jar file or to the filename of \c jar file to be used.
- If left blank, it is assumed PlantUML is not used or
- called during a preprocessing step. Doxygen will generate a warning when it encounters a
- \ref cmdstartuml "\\startuml" command in this case and will not generate output for the diagram.
- <br>Note that this tag is not used when \ref cfg_plantuml_tool "PLANTUML_TOOL" is set.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='PLANTUML_JAVA_PATH' format='file' defval=''>
-      <docs>
-<![CDATA[
- When using PlantUML, the \c PLANTUML_JAVA_PATH tag can be used to specify the
- \c java executable that is used to run the jar file given via
- \ref cfg_plantuml_jar_path "PLANTUML_JAR_PATH".
- If left blank, the \c java executable of the Java runtime environment the
- \c JAVA_HOME environment variable points to is used, if that variable is set, and
- otherwise the \c java executable is searched for in the default search path.
- <br>Note that this tag is not used when \ref cfg_plantuml_tool "PLANTUML_TOOL" is set.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='PLANTUML_TOOL' format='file' defval=''>
-      <docs>
-<![CDATA[
- The \c PLANTUML_TOOL tag can be used to specify a PlantUML executable, e.g. a
- PlantUML native image or a script wrapping PlantUML, that is run instead of the jar
- file given via \ref cfg_plantuml_jar_path "PLANTUML_JAR_PATH". As such an executable
- does not need a Java runtime environment, the tags
- \ref cfg_plantuml_jar_path "PLANTUML_JAR_PATH" and
- \ref cfg_plantuml_java_path "PLANTUML_JAVA_PATH" are not used in this case.
- <br>Note that the paths given via
- \ref cfg_plantuml_include_path "PLANTUML_INCLUDE_PATH" are passed to the executable
- by means of the \c PLANTUML_INCLUDE_PATH environment variable.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='PLANTUML_CFG_FILE' format='file' defval=''>
-      <docs>
-<![CDATA[
- When using PlantUML, the \c PLANTUML_CFG_FILE tag can be used to specify a configuration
- file for PlantUML.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='PLANTUML_INCLUDE_PATH' format='dir' defval=''>
-      <docs>
-<![CDATA[
- When using PlantUML, the specified paths are searched for files specified by the \c !include
- statement in a PlantUML block.
-]]>
-      </docs>
-    </option>
-    <option type='list' id='PLANTUMLFILE_DIRS' format='dir'>
-      <docs>
-<![CDATA[
- The \c PLANTUMLFILE_DIRS tag can be used to specify one or more directories that
- contain PlantUml files that are included in the documentation (see the
- \ref cmdplantumlfile "\\plantumlfile" command).
-]]>
-      </docs>
-    </option>
-    <option type='string' id='MERMAID_PATH' format='filedir' defval=''>
-      <docs>
-<![CDATA[
- When using Mermaid diagrams with CLI rendering, the \c MERMAID_PATH tag should be used to
- specify the directory where the \c mmdc (Mermaid CLI) executable can be found.
- If left blank, CLI-based rendering is disabled. For HTML output, client-side rendering
- via JavaScript is used by default and does not require \c mmdc. For LaTeX/PDF output,
- \c mmdc is required to pre-generate images.
- Doxygen will generate a warning when CLI rendering is needed but \c mmdc is not available.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='MERMAID_CONFIG_FILE' format='file' defval=''>
-      <docs>
-<![CDATA[
- When using Mermaid diagrams, the \c MERMAID_CONFIG_FILE tag can be used to specify a
- JSON configuration file for the Mermaid CLI tool (\c mmdc). This file can contain theme
- settings and other Mermaid configuration options.
-]]>
-      </docs>
-    </option>
-    <option type='enum' id='MERMAID_RENDER_MODE' defval='AUTO'>
-      <docs>
-<![CDATA[
- The \c MERMAID_RENDER_MODE tag selects how Mermaid diagrams are rendered.
-]]>
-      </docs>
-      <value name='AUTO' desc='(use client-side rendering for HTML and \c mmdc for LaTeX/PDF and other formats. If \c MERMAID_PATH is not set, non-HTML diagrams will produce a warning)'/>
-      <value name='CLI' desc='(use the \c mmdc tool to pre-generate images (requires \c Node.js and &lt;code&gt;mermaid-js/mermaid-cli&lt;/code&gt;). Works for all output formats)'/>
-      <value name='CLIENT_SIDE' desc='(embed \c mermaid.js in HTML output for client-side rendering. Does not require \c mmdc but only works for HTML output)'/>
-    </option>
-    <option type='string' id='MERMAID_JS_URL' format='string'
-            defval='https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'>
-      <docs>
-<![CDATA[
- The \c MERMAID_JS_URL tag specifies the URL to load \c mermaid.js from when using
- client-side rendering (\c MERMAID_RENDER_MODE is \c CLIENT_SIDE or \c AUTO).
- The default points to the latest Mermaid v11 release on the jsDelivr CDN.
- <br>
- The default CDN URL requires internet access when viewing the generated documentation.
- For offline use, download \c mermaid.esm.min.mjs and set this to a relative path,
- or use \c MERMAID_RENDER_MODE=CLI to pre-generate images instead.
- \par Examples:
- - Latest v11 (default): <code>https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs</code>
- - Pinned version: <code>https://cdn.jsdelivr.net/npm/mermaid@11.3.0/dist/mermaid.esm.min.mjs</code>
- - Local copy: <code>./mermaid.esm.min.mjs</code> (user must place file in HTML output directory)
-]]>
-      </docs>
-    </option>
-    <option type='list' id='MERMAIDFILE_DIRS' format='dir'>
-      <docs>
-<![CDATA[
- The \c MERMAIDFILE_DIRS tag can be used to specify one or more directories that
- contain Mermaid files that are included in the documentation (see the
- \ref cmdmermaidfile "\\mermaidfile" command).
-]]>
-      </docs>
-    </option>
     <option type='int' id='DOT_GRAPH_MAX_NODES' minval='0' maxval='10000' defval='50' depends='HAVE_DOT'>
       <docs>
 <![CDATA[
@@ -3573,28 +3234,6 @@ If the \c DOT_CLEANUP tag is set to \c YES, Doxygen will
 remove the intermediate files that are used to generate the various graphs.
  <br>Note:
 This setting is not only used for dot files but also for msc temporary files.
-]]>
-      </docs>
-    </option>
-    <option type='string' id='MSCGEN_TOOL' format='file' defval=''>
-      <docs>
-<![CDATA[
- You can define message sequence charts within Doxygen comments using the \ref cmdmsc "\\msc"
- command. If the \c MSCGEN_TOOL tag is left empty (the default), then Doxygen will use a built-in
- version of mscgen tool to produce the charts.
- Alternatively, the \c MSCGEN_TOOL tag can also specify the name an external tool.
- For instance, specifying `prog` as the value, Doxygen will call the tool
- as `prog -T <outfile_format> -o <outputfile> <inputfile>`. The external tool
- should support output file formats "png", "eps", "svg", and "ismap".
-]]>
-      </docs>
-    </option>
-    <option type='list' id='MSCFILE_DIRS' format='dir'>
-      <docs>
-<![CDATA[
- The \c MSCFILE_DIRS tag can be used to specify one or more directories that
- contain msc files that are included in the documentation (see the
- \ref cmdmscfile "\\mscfile" command).
 ]]>
       </docs>
     </option>
@@ -3670,6 +3309,37 @@ This setting is not only used for dot files but also for msc temporary files.
     <option type='obsolete' orgtype='string' id='QHG_LOCATION'/>
     <option type='obsolete' orgtype='bool' id='GENERATE_ECLIPSEHELP'/>
     <option type='obsolete' orgtype='string' id='ECLIPSE_DOC_ID'/>
+    <option type='obsolete' orgtype='string' id='PLANTUML_JAR_PATH'/>
+    <option type='obsolete' orgtype='string' id='PLANTUML_JAVA_PATH'/>
+    <option type='obsolete' orgtype='string' id='PLANTUML_TOOL'/>
+    <option type='obsolete' orgtype='string' id='PLANTUML_CFG_FILE'/>
+    <option type='obsolete' orgtype='list' id='PLANTUML_INCLUDE_PATH'/>
+    <option type='obsolete' orgtype='list' id='PLANTUMLFILE_DIRS'/>
+    <option type='obsolete' orgtype='string' id='MERMAID_PATH'/>
+    <option type='obsolete' orgtype='string' id='MERMAID_CONFIG_FILE'/>
+    <option type='obsolete' orgtype='string' id='MERMAID_RENDER_MODE'/>
+    <option type='obsolete' orgtype='string' id='MERMAID_JS_URL'/>
+    <option type='obsolete' orgtype='list' id='MERMAIDFILE_DIRS'/>
+    <option type='obsolete' orgtype='string' id='MSCGEN_TOOL'/>
+    <option type='obsolete' orgtype='list' id='MSCFILE_DIRS'/>
+    <option type='obsolete' orgtype='string' id='DIA_PATH'/>
+    <option type='obsolete' orgtype='list' id='DIAFILE_DIRS'/>
+    <option type='obsolete' orgtype='bool' id='SERVER_BASED_SEARCH'/>
+    <option type='obsolete' orgtype='bool' id='EXTERNAL_SEARCH'/>
+    <option type='obsolete' orgtype='string' id='SEARCHENGINE_URL'/>
+    <option type='obsolete' orgtype='string' id='SEARCHDATA_FILE'/>
+    <option type='obsolete' orgtype='string' id='EXTERNAL_SEARCH_ID'/>
+    <option type='obsolete' orgtype='list' id='EXTRA_SEARCH_MAPPINGS'/>
+    <option type='obsolete' orgtype='bool' id='INLINE_GROUPED_CLASSES'/>
+    <option type='obsolete' orgtype='bool' id='INLINE_SIMPLE_STRUCTS'/>
+    <option type='obsolete' orgtype='bool' id='EXTRACT_PRIV_VIRTUAL'/>
+    <option type='obsolete' orgtype='bool' id='SHORT_NAMES'/>
+    <option type='obsolete' orgtype='int' id='LOOKUP_CACHE_SIZE'/>
+    <option type='obsolete' orgtype='string' id='LATEX_EMOJI_DIRECTORY'/>
+    <option type='obsolete' orgtype='bool' id='XML_NS_MEMB_FILE_SCOPE'/>
+    <option type='obsolete' orgtype='bool' id='SQLITE3_RECREATE_DB'/>
+    <option type='obsolete' orgtype='bool' id='GENERATE_REQUIREMENTS'/>
+    <option type='obsolete' orgtype='string' id='REQ_TRACEABILITY_INFO'/>
     <option type='obsolete' orgtype='bool' id='USE_WINDOWS_ENCODING'/>
     <option type='obsolete' orgtype='bool' id='DETAILS_AT_TOP'/>
     <option type='obsolete' orgtype='string' id='QTHELP_FILE'/>

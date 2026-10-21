@@ -267,15 +267,6 @@ const
       'Note that you can specify absolute paths here, but also relative paths, which' + #10 +
       'will be relative from the directory where Doxygen is started.' + #10 +
       'This tag requires that the tag FULL_PATH_NAMES is set to YES.'),
-    (Name: 'SHORT_NAMES';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the SHORT_NAMES tag is set to YES, Doxygen will generate much shorter (but' + #10 +
-      'less readable) file names. This can be useful if your file system doesn''t' + #10 +
-      'support long names like on DOS, Mac, or CD-ROM.' + #10 +
-      'The default value is: NO.'),
     (Name: 'JAVADOC_AUTOBRIEF';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
@@ -457,46 +448,6 @@ const
       'subgrouping. Alternatively, this can be done per class using the' + #10 +
       '\nosubgrouping command.' + #10 +
       'The default value is: YES.'),
-    (Name: 'INLINE_GROUPED_CLASSES';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When the INLINE_GROUPED_CLASSES tag is set to YES, classes, structs and unions' + #10 +
-      'are shown inside the group in which they are included (e.g. using \ingroup)' + #10 +
-      'instead of on a separate page (for HTML and Man pages) or section (for LaTeX' + #10 +
-      'and RTF).' + #10 +
-      '' + #10 +
-      'Note that this feature does not work in combination with' + #10 +
-      'SEPARATE_MEMBER_PAGES.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'INLINE_SIMPLE_STRUCTS';
-     Kind: okBool; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When the INLINE_SIMPLE_STRUCTS tag is set to YES, structs, classes, and unions' + #10 +
-      'with only public data fields or simple typedef fields will be shown inline in' + #10 +
-      'the documentation of the scope in which they are defined (i.e. file,' + #10 +
-      'namespace, or group documentation), provided this scope is documented. If set' + #10 +
-      'to NO, structs, classes, and unions are shown on a separate page (for HTML and' + #10 +
-      'Man pages) or section (for LaTeX and RTF).' + #10 +
-      'The default value is: NO.'),
-    (Name: 'LOOKUP_CACHE_SIZE';
-     Kind: okInt; OrgKind: okBool; Group: 0;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 9;
-     Values: '';
-     Doc: 'The size of the symbol lookup cache can be set using LOOKUP_CACHE_SIZE. This' + #10 +
-      'cache is used to resolve symbols given their name and scope. Since this can be' + #10 +
-      'an expensive process and often the same symbol appears multiple times in the' + #10 +
-      'code, Doxygen keeps a cache of pre-resolved symbols. If the cache is too small' + #10 +
-      'Doxygen will become slower. If the cache is too large, memory is wasted. The' + #10 +
-      'cache size is given by this formula: 2^(16+LOOKUP_CACHE_SIZE). The valid range' + #10 +
-      'is 0..9, the default is 0, corresponding to a cache size of 2^16=65536' + #10 +
-      'symbols. At the end of a run Doxygen will report the cache usage and suggest' + #10 +
-      'the optimal cache size from a speed point of view.' + #10 +
-      'Minimum value: 0, maximum value: 9, default value: 0.'),
     (Name: 'NUM_PROC_THREADS';
      Kind: okInt; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
@@ -541,14 +492,6 @@ const
      Values: '';
      Doc: 'If the EXTRACT_PRIVATE tag is set to YES, all private and strict private' + #10 +
       'members of a class will be included in the documentation.' + #10 +
-      'The default value is: NO.'),
-    (Name: 'EXTRACT_PRIV_VIRTUAL';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the EXTRACT_PRIV_VIRTUAL tag is set to YES, documented private virtual' + #10 +
-      'methods of a class will be included in the documentation.' + #10 +
       'The default value is: NO.'),
     (Name: 'EXTRACT_STATIC';
      Kind: okBool; OrgKind: okBool; Group: 1;
@@ -751,31 +694,6 @@ const
       'the deprecated list. This list is created by putting \deprecated commands in' + #10 +
       'the documentation.' + #10 +
       'The default value is: YES.'),
-    (Name: 'GENERATE_REQUIREMENTS';
-     Kind: okBool; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: '';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The GENERATE_REQUIREMENTS tag can be used to enable (YES) or disable (NO) the' + #10 +
-      'requirements page. When enabled, this page is automatically created when at' + #10 +
-      'least one comment block with a \requirement command appears in the input.' + #10 +
-      'The default value is: YES.'),
-    (Name: 'REQ_TRACEABILITY_INFO';
-     Kind: okEnum; OrgKind: okBool; Group: 1;
-     Format: ''; Depends: 'GENERATE_REQUIREMENTS';
-     Default: 'YES'; MinVal: 0; MaxVal: 0;
-     Values: 'YES|NO|UNSATISFIED_ONLY|UNVERIFIED_ONLY';
-     Doc: 'The REQ_TRACEABILITY_INFO tag controls if traceability information is shown on' + #10 +
-      'the requirements page (only relevant when using \requirement comment blocks).' + #10 +
-      'The setting NO will disable the traceability information altogether. The' + #10 +
-      'setting UNSATISFIED_ONLY will show a list of requirements that are missing a' + #10 +
-      'satisfies relation (through the command: \satisfies). Similarly the setting' + #10 +
-      'UNVERIFIED_ONLY will show a list of requirements that are missing a verifies' + #10 +
-      'relation (through the command: \verifies). Setting the tag to YES (the' + #10 +
-      'default) will show both lists if applicable.' + #10 +
-      'Possible values are: YES, NO, UNSATISFIED_ONLY and UNVERIFIED_ONLY.' + #10 +
-      'The default value is: YES.' + #10 +
-      'This tag requires that the tag GENERATE_REQUIREMENTS is set to YES.'),
     (Name: 'ENABLED_SECTIONS';
      Kind: okList; OrgKind: okBool; Group: 1;
      Format: 'string'; Depends: '';
@@ -1902,85 +1820,6 @@ const
       'option.' + #10 +
       'The default value is: YES.' + #10 +
       'This tag requires that the tag GENERATE_HTML is set to YES.'),
-    (Name: 'SERVER_BASED_SEARCH';
-     Kind: okBool; OrgKind: okBool; Group: 6;
-     Format: ''; Depends: 'SEARCHENGINE';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When the SERVER_BASED_SEARCH tag is enabled the search engine will be' + #10 +
-      'implemented using a web server instead of a web client using JavaScript. There' + #10 +
-      'are two flavors of web server based searching depending on the EXTERNAL_SEARCH' + #10 +
-      'setting. When disabled, Doxygen will generate a PHP script for searching and' + #10 +
-      'an index file used by the script. When EXTERNAL_SEARCH is enabled the indexing' + #10 +
-      'and searching needs to be provided by external tools. See the section' + #10 +
-      '"External Indexing and Searching" for details.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag SEARCHENGINE is set to YES.'),
-    (Name: 'EXTERNAL_SEARCH';
-     Kind: okBool; OrgKind: okBool; Group: 6;
-     Format: ''; Depends: 'SEARCHENGINE';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When EXTERNAL_SEARCH tag is enabled Doxygen will no longer generate the PHP' + #10 +
-      'script for searching. Instead the search results are written to an XML file' + #10 +
-      'which needs to be processed by an external indexer. Doxygen will invoke an' + #10 +
-      'external search engine pointed to by the SEARCHENGINE_URL option to obtain the' + #10 +
-      'search results.' + #10 +
-      '' + #10 +
-      'Doxygen ships with an example indexer (doxyindexer) and search engine' + #10 +
-      '(doxysearch.cgi) which are based on the open source search engine library' + #10 +
-      'Xapian (see:' + #10 +
-      'https://xapian.org/).' + #10 +
-      '' + #10 +
-      'See the section "External Indexing and Searching" for details.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag SEARCHENGINE is set to YES.'),
-    (Name: 'SEARCHENGINE_URL';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'SEARCHENGINE';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The SEARCHENGINE_URL should point to a search engine hosted by a web server' + #10 +
-      'which will return the search results when EXTERNAL_SEARCH is enabled.' + #10 +
-      '' + #10 +
-      'Doxygen ships with an example indexer (doxyindexer) and search engine' + #10 +
-      '(doxysearch.cgi) which are based on the open source search engine library' + #10 +
-      'Xapian (see:' + #10 +
-      'https://xapian.org/). See the section "External Indexing and Searching" for' + #10 +
-      'details.' + #10 +
-      'This tag requires that the tag SEARCHENGINE is set to YES.'),
-    (Name: 'SEARCHDATA_FILE';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'file'; Depends: 'SEARCHENGINE';
-     Default: 'searchdata.xml'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When SERVER_BASED_SEARCH and EXTERNAL_SEARCH are both enabled the unindexed' + #10 +
-      'search data is written to a file for indexing by an external tool. With the' + #10 +
-      'SEARCHDATA_FILE tag the name of this file can be specified.' + #10 +
-      'The default file is: searchdata.xml.' + #10 +
-      'This tag requires that the tag SEARCHENGINE is set to YES.'),
-    (Name: 'EXTERNAL_SEARCH_ID';
-     Kind: okString; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'SEARCHENGINE';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When SERVER_BASED_SEARCH and EXTERNAL_SEARCH are both enabled the' + #10 +
-      'EXTERNAL_SEARCH_ID tag can be used as an identifier for the project. This is' + #10 +
-      'useful in combination with EXTRA_SEARCH_MAPPINGS to search through multiple' + #10 +
-      'projects and redirect the results back to the right project.' + #10 +
-      'This tag requires that the tag SEARCHENGINE is set to YES.'),
-    (Name: 'EXTRA_SEARCH_MAPPINGS';
-     Kind: okList; OrgKind: okBool; Group: 6;
-     Format: 'string'; Depends: 'SEARCHENGINE';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The EXTRA_SEARCH_MAPPINGS tag can be used to enable searching through Doxygen' + #10 +
-      'projects other than the one defined by this configuration file, but that are' + #10 +
-      'all added to the same external search index. Each project needs to have a' + #10 +
-      'unique id set via EXTERNAL_SEARCH_ID. The search mapping then maps the id of' + #10 +
-      'to a relative location where the documentation can be found. The format is:' + #10 +
-      'EXTRA_SEARCH_MAPPINGS = tagname1=loc1 tagname2=loc2 ...' + #10 +
-      'This tag requires that the tag SEARCHENGINE is set to YES.'),
     (Name: 'GENERATE_LATEX';
      Kind: okBool; OrgKind: okBool; Group: 7;
      Format: ''; Depends: '';
@@ -2185,16 +2024,6 @@ const
       'https://en.wikipedia.org/wiki/BibTeX and \cite for more info.' + #10 +
       'The default value is: plainnat.' + #10 +
       'This tag requires that the tag GENERATE_LATEX is set to YES.'),
-    (Name: 'LATEX_EMOJI_DIRECTORY';
-     Kind: okString; OrgKind: okBool; Group: 7;
-     Format: 'dir'; Depends: 'GENERATE_LATEX';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The LATEX_EMOJI_DIRECTORY tag is used to specify the (relative or absolute)' + #10 +
-      'path from which the emoji images will be read. If a relative path is entered,' + #10 +
-      'it will be relative to the LATEX_OUTPUT directory. If left blank the' + #10 +
-      'LATEX_OUTPUT directory will be used.' + #10 +
-      'This tag requires that the tag GENERATE_LATEX is set to YES.'),
     (Name: 'GENERATE_XML';
      Kind: okBool; OrgKind: okBool; Group: 10;
      Format: ''; Depends: '';
@@ -2224,15 +2053,6 @@ const
       'of the XML output.' + #10 +
       'The default value is: YES.' + #10 +
       'This tag requires that the tag GENERATE_XML is set to YES.'),
-    (Name: 'XML_NS_MEMB_FILE_SCOPE';
-     Kind: okBool; OrgKind: okBool; Group: 10;
-     Format: ''; Depends: 'GENERATE_XML';
-     Default: '0'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'If the XML_NS_MEMB_FILE_SCOPE tag is set to YES, Doxygen will include' + #10 +
-      'namespace members in file scope as well, matching the HTML output.' + #10 +
-      'The default value is: NO.' + #10 +
-      'This tag requires that the tag GENERATE_XML is set to YES.'),
     (Name: 'GENERATE_SQLITE3';
      Kind: okBool; OrgKind: okBool; Group: 13;
      Format: ''; Depends: '';
@@ -2250,16 +2070,6 @@ const
       'put. If a relative path is entered the value of OUTPUT_DIRECTORY will be put' + #10 +
       'in front of it.' + #10 +
       'The default directory is: sqlite3.' + #10 +
-      'This tag requires that the tag GENERATE_SQLITE3 is set to YES.'),
-    (Name: 'SQLITE3_RECREATE_DB';
-     Kind: okBool; OrgKind: okBool; Group: 13;
-     Format: ''; Depends: 'GENERATE_SQLITE3';
-     Default: '1'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The SQLITE3_RECREATE_DB tag is set to YES, the existing doxygen_sqlite3.db' + #10 +
-      'database file will be recreated with each Doxygen run. If set to NO, Doxygen' + #10 +
-      'will warn if a database file is already found and not modify it.' + #10 +
-      'The default value is: YES.' + #10 +
       'This tag requires that the tag GENERATE_SQLITE3 is set to YES.'),
     (Name: 'INCLUDE_PATH';
      Kind: okList; OrgKind: okBool; Group: 15;
@@ -2683,144 +2493,6 @@ const
       'contain dot files that are included in the documentation (see the \dotfile' + #10 +
       'command).' + #10 +
       'This tag requires that the tag HAVE_DOT is set to YES.'),
-    (Name: 'DIA_PATH';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'dir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'You can include diagrams made with dia in Doxygen documentation. Doxygen will' + #10 +
-      'then run dia to produce the diagram and insert it in the documentation. The' + #10 +
-      'DIA_PATH tag allows you to specify the directory where the dia binary resides.' + #10 +
-      'If left empty dia is assumed to be found in the default search path.'),
-    (Name: 'DIAFILE_DIRS';
-     Kind: okList; OrgKind: okBool; Group: 17;
-     Format: 'dir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The DIAFILE_DIRS tag can be used to specify one or more directories that' + #10 +
-      'contain dia files that are included in the documentation (see the \diafile' + #10 +
-      'command).'),
-    (Name: 'PLANTUML_JAR_PATH';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'filedir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When using PlantUML, the PLANTUML_JAR_PATH tag should be used to specify the' + #10 +
-      'path where java can find the plantuml.jar file or to the filename of jar file' + #10 +
-      'to be used. If left blank, it is assumed PlantUML is not used or called during' + #10 +
-      'a preprocessing step. Doxygen will generate a warning when it encounters a' + #10 +
-      '\startuml command in this case and will not generate output for the diagram.' + #10 +
-      '' + #10 +
-      'Note that this tag is not used when PLANTUML_TOOL is set.'),
-    (Name: 'PLANTUML_JAVA_PATH';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'file'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When using PlantUML, the PLANTUML_JAVA_PATH tag can be used to specify the' + #10 +
-      'java executable that is used to run the jar file given via PLANTUML_JAR_PATH.' + #10 +
-      'If left blank, the java executable of the Java runtime environment the' + #10 +
-      'JAVA_HOME environment variable points to is used, if that variable is set, and' + #10 +
-      'otherwise the java executable is searched for in the default search path.' + #10 +
-      '' + #10 +
-      'Note that this tag is not used when PLANTUML_TOOL is set.'),
-    (Name: 'PLANTUML_TOOL';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'file'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The PLANTUML_TOOL tag can be used to specify a PlantUML executable, e.g. a' + #10 +
-      'PlantUML native image or a script wrapping PlantUML, that is run instead of' + #10 +
-      'the jar file given via PLANTUML_JAR_PATH. As such an executable does not need' + #10 +
-      'a Java runtime environment, the tags PLANTUML_JAR_PATH and PLANTUML_JAVA_PATH' + #10 +
-      'are not used in this case.' + #10 +
-      '' + #10 +
-      'Note that the paths given via PLANTUML_INCLUDE_PATH are passed to the' + #10 +
-      'executable by means of the PLANTUML_INCLUDE_PATH environment variable.'),
-    (Name: 'PLANTUML_CFG_FILE';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'file'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When using PlantUML, the PLANTUML_CFG_FILE tag can be used to specify a' + #10 +
-      'configuration file for PlantUML.'),
-    (Name: 'PLANTUML_INCLUDE_PATH';
-     Kind: okList; OrgKind: okBool; Group: 17;
-     Format: 'dir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When using PlantUML, the specified paths are searched for files specified by' + #10 +
-      'the !include statement in a PlantUML block.'),
-    (Name: 'PLANTUMLFILE_DIRS';
-     Kind: okList; OrgKind: okBool; Group: 17;
-     Format: 'dir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The PLANTUMLFILE_DIRS tag can be used to specify one or more directories that' + #10 +
-      'contain PlantUml files that are included in the documentation (see the' + #10 +
-      '\plantumlfile command).'),
-    (Name: 'MERMAID_PATH';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'filedir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When using Mermaid diagrams with CLI rendering, the MERMAID_PATH tag should be' + #10 +
-      'used to specify the directory where the mmdc (Mermaid CLI) executable can be' + #10 +
-      'found. If left blank, CLI-based rendering is disabled. For HTML output,' + #10 +
-      'client-side rendering via JavaScript is used by default and does not require' + #10 +
-      'mmdc. For LaTeX/PDF output, mmdc is required to pre-generate images. Doxygen' + #10 +
-      'will generate a warning when CLI rendering is needed but mmdc is not' + #10 +
-      'available.'),
-    (Name: 'MERMAID_CONFIG_FILE';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'file'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'When using Mermaid diagrams, the MERMAID_CONFIG_FILE tag can be used to' + #10 +
-      'specify a JSON configuration file for the Mermaid CLI tool (mmdc). This file' + #10 +
-      'can contain theme settings and other Mermaid configuration options.'),
-    (Name: 'MERMAID_RENDER_MODE';
-     Kind: okEnum; OrgKind: okBool; Group: 17;
-     Format: ''; Depends: '';
-     Default: 'AUTO'; MinVal: 0; MaxVal: 0;
-     Values: 'AUTO|CLI|CLIENT_SIDE';
-     Doc: 'The MERMAID_RENDER_MODE tag selects how Mermaid diagrams are rendered.' + #10 +
-      'Possible values are: AUTO (use client-side rendering for HTML and mmdc for' + #10 +
-      'LaTeX/PDF and other formats. If MERMAID_PATH is not set, non-HTML diagrams' + #10 +
-      'will produce a warning), CLI (use the mmdc tool to pre-generate images' + #10 +
-      '(requires Node.js and mermaid-js/mermaid-cli). Works for all output formats)' + #10 +
-      'and CLIENT_SIDE (embed mermaid.js in HTML output for client-side rendering.' + #10 +
-      'Does not require mmdc but only works for HTML output).' + #10 +
-      'The default value is: AUTO.'),
-    (Name: 'MERMAID_JS_URL';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'string'; Depends: '';
-     Default: 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The MERMAID_JS_URL tag specifies the URL to load mermaid.js from when using' + #10 +
-      'client-side rendering (MERMAID_RENDER_MODE is CLIENT_SIDE or AUTO). The' + #10 +
-      'default points to the latest Mermaid v11 release on the jsDelivr CDN.' + #10 +
-      '' + #10 +
-      'The default CDN URL requires internet access when viewing the generated' + #10 +
-      'documentation. For offline use, download mermaid.esm.min.mjs and set this to a' + #10 +
-      'relative path, or use MERMAID_RENDER_MODE=CLI to pre-generate images instead.' + #10 +
-      'Examples:' + #10 +
-      '- Latest v11 (default):' + #10 +
-      'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs' + #10 +
-      '- Pinned version:' + #10 +
-      'https://cdn.jsdelivr.net/npm/mermaid@11.3.0/dist/mermaid.esm.min.mjs' + #10 +
-      '- Local copy: ./mermaid.esm.min.mjs (user must place file in HTML output' + #10 +
-      'directory)' + #10 +
-      'The default value is:' + #10 +
-      'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs.'),
-    (Name: 'MERMAIDFILE_DIRS';
-     Kind: okList; OrgKind: okBool; Group: 17;
-     Format: 'dir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The MERMAIDFILE_DIRS tag can be used to specify one or more directories that' + #10 +
-      'contain Mermaid files that are included in the documentation (see the' + #10 +
-      '\mermaidfile command).'),
     (Name: 'DOT_GRAPH_MAX_NODES';
      Kind: okInt; OrgKind: okBool; Group: 17;
      Format: ''; Depends: 'HAVE_DOT';
@@ -2872,26 +2544,6 @@ const
       'Note: This setting is not only used for dot files but also for msc temporary' + #10 +
       'files.' + #10 +
       'The default value is: YES.'),
-    (Name: 'MSCGEN_TOOL';
-     Kind: okString; OrgKind: okBool; Group: 17;
-     Format: 'file'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'You can define message sequence charts within Doxygen comments using the \msc' + #10 +
-      'command. If the MSCGEN_TOOL tag is left empty (the default), then Doxygen will' + #10 +
-      'use a built-in version of mscgen tool to produce the charts. Alternatively,' + #10 +
-      'the MSCGEN_TOOL tag can also specify the name an external tool. For instance,' + #10 +
-      'specifying prog as the value, Doxygen will call the tool as prog -T' + #10 +
-      '<outfile_format> -o <outputfile> <inputfile>. The external tool should support' + #10 +
-      'output file formats "png", "eps", "svg", and "ismap".'),
-    (Name: 'MSCFILE_DIRS';
-     Kind: okList; OrgKind: okBool; Group: 17;
-     Format: 'dir'; Depends: '';
-     Default: ''; MinVal: 0; MaxVal: 0;
-     Values: '';
-     Doc: 'The MSCFILE_DIRS tag can be used to specify one or more directories that' + #10 +
-      'contain msc files that are included in the documentation (see the \mscfile' + #10 +
-      'command).'),
     (Name: 'OPTIMIZE_OUTPUT_FOR_C';
      Kind: okObsolete; OrgKind: okBool; Group: 17;
      Format: ''; Depends: '';
@@ -3319,6 +2971,192 @@ const
      Values: '';
      Doc: ''),
     (Name: 'ECLIPSE_DOC_ID';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PLANTUML_JAR_PATH';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PLANTUML_JAVA_PATH';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PLANTUML_TOOL';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PLANTUML_CFG_FILE';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PLANTUML_INCLUDE_PATH';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'PLANTUMLFILE_DIRS';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MERMAID_PATH';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MERMAID_CONFIG_FILE';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MERMAID_RENDER_MODE';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MERMAID_JS_URL';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MERMAIDFILE_DIRS';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MSCGEN_TOOL';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'MSCFILE_DIRS';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'DIA_PATH';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'DIAFILE_DIRS';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SERVER_BASED_SEARCH';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXTERNAL_SEARCH';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SEARCHENGINE_URL';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SEARCHDATA_FILE';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXTERNAL_SEARCH_ID';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXTRA_SEARCH_MAPPINGS';
+     Kind: okObsolete; OrgKind: okList; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'INLINE_GROUPED_CLASSES';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'INLINE_SIMPLE_STRUCTS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'EXTRACT_PRIV_VIRTUAL';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SHORT_NAMES';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'LOOKUP_CACHE_SIZE';
+     Kind: okObsolete; OrgKind: okInt; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'LATEX_EMOJI_DIRECTORY';
+     Kind: okObsolete; OrgKind: okString; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'XML_NS_MEMB_FILE_SCOPE';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'SQLITE3_RECREATE_DB';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'GENERATE_REQUIREMENTS';
+     Kind: okObsolete; OrgKind: okBool; Group: 17;
+     Format: ''; Depends: '';
+     Default: ''; MinVal: 0; MaxVal: 0;
+     Values: '';
+     Doc: ''),
+    (Name: 'REQ_TRACEABILITY_INFO';
      Kind: okObsolete; OrgKind: okString; Group: 17;
      Format: ''; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;

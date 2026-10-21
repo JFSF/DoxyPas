@@ -12,9 +12,10 @@ type
   /// <summary>The URL an identifier links to, or '' for no link.</summary>
   TWordLinker = reference to function(const AWord: string): string;
 
-/// <summary>Like HighlightPascal, with Doxygen's line numbers and anchors (l00001) and links on identifiers.</summary>
+/// <summary>Like HighlightPascal, with Doxygen's line numbers and anchors (l00001) and links on identifiers.
+/// AStripDocComments (STRIP_CODE_COMMENTS) leaves out the documentation comments (///, //!, {**, (**) and keeps their lines.</summary>
 function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker;
-  AFirstLine: Integer = 1): string;
+  AFirstLine: Integer = 1; AStripDocComments: Boolean = False): string;
 
 /// <summary>&lt;span class="keyword"&gt;AWord&lt;/span&gt;</summary>
 function KeywordSpan(const AWord: string): string;
@@ -168,14 +169,21 @@ begin
   end;
 end;
 
+// A comment Doxygen treats as documentation: ///, //!, {*, {!, (** and (*!
+function IsDocComment(const AText: string): Boolean;
+begin
+  Result := AText.StartsWith('///') or AText.StartsWith('//!') or AText.StartsWith('{*') or AText.StartsWith('{!') or
+    AText.StartsWith('(**') or AText.StartsWith('(*!');
+end;
+
 function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker;
-  AFirstLine: Integer = 1): string;
+  AFirstLine: Integer = 1; AStripDocComments: Boolean = False): string;
 var
   SB: TStringBuilder;
   T: TTok;
   Parts: TArray<string>;
   K, Line: Integer;
-  Open: Boolean;
+  Open, Strip: Boolean;
   Href: string;
 
   procedure StartLine;
@@ -203,6 +211,9 @@ begin
           Inc(Line);
           StartLine;
         end;
+        Strip := AStripDocComments and (T.Cls = 'comment') and IsDocComment(T.Text);
+        if Strip then
+          Continue;
         Open := (T.Cls <> '') and (Parts[K] <> '');
         if Open then
           SB.Append('<span class="' + T.Cls + '">');

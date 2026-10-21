@@ -1893,7 +1893,8 @@ begin
   try
     for K := First to Last do
       SB.Append(All[K - 1]).Append(#10);
-    Result := '<div class="fragment">' + HighlightSource(SB.ToString, True, WordLinker(M), First) + '</div>'#10;
+    Result := '<div class="fragment">' + HighlightSource(SB.ToString, True, WordLinker(M), First,
+      FConfig.GetBool('STRIP_CODE_COMMENTS')) + '</div>'#10;
   finally
     SB.Free;
   end;
@@ -1957,7 +1958,8 @@ begin
   Name := ExtractFileName(FProject.OutputPath(U.FileName));
   BeginPage(U.DiskName + '_source', Name);
   PageHeader(Name);
-  W('<div class="fragment">' + HighlightSource(ReadSourceText(U.FileName), True, WordLinker(U)) + '</div>'#10);
+  W('<div class="fragment">' + HighlightSource(ReadSourceText(U.FileName), True, WordLinker(U), 1,
+    FConfig.GetBool('STRIP_CODE_COMMENTS')) + '</div>'#10);
   EndPage(NavPathOf(U));
 end;
 { ------------------------------------------------------------------ directories }

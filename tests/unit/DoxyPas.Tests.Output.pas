@@ -26,6 +26,7 @@ type
     [Test] procedure ReplacesColorMarkers;
     [Test] procedure HighlightsPascalKeywords;
     [Test] procedure NumbersAndLinksSourceLines;
+    [Test] procedure StripsDocComments;
     [Test] procedure FindsBodyEnds;
     [Test] procedure EscapesLatex;
     [Test] procedure QuotesSql;
@@ -387,6 +388,17 @@ begin
   Assert.Contains(Html, '<a id="l00002" name="l00002"></a><span class="lineno">&#160;&#160;&#160;&#160;2</span>');
   Assert.Contains(Html, '<a class="code" href="b.html">B</a>');
   Assert.IsFalse(Html.Contains('href="b.html">A<'));
+end;
+
+procedure THtmlTemplateTests.StripsDocComments;
+var
+  Html: string;
+begin
+  Html := HighlightSource('/// doc'#10'X; // keep'#10'{** a'#10'b *}'#10'Y', True, nil, 1, True);
+  Assert.IsFalse(Html.Contains('doc'));
+  Assert.IsFalse(Html.Contains('{**'));
+  Assert.Contains(Html, '// keep');
+  Assert.Contains(Html, 'lineno">&#160;&#160;&#160;&#160;5');
 end;
 
 procedure THtmlTemplateTests.FindsBodyEnds;

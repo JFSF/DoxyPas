@@ -79,7 +79,7 @@ __recovery/
 *.stat
 
 # DoxyPas
-build/
+/build/
 Linux64/
 modules/
 /html/

@@ -3,6 +3,7 @@ program DoxyPas;
 {$APPTYPE CONSOLE}
 
 uses
+  DoxyPas.Core.HeapMM in 'Core\DoxyPas.Core.HeapMM.pas',
   System.SysUtils,
   DoxyPas.Core.Version in 'Core\DoxyPas.Core.Version.pas',
   DoxyPas.Core.Log in 'Core\DoxyPas.Core.Log.pas',

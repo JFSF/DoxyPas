@@ -232,8 +232,9 @@ end;
 function BuildProject(AConfig: TConfig; const AFiles: TArray<string>; AParallel: Boolean): TProject;
 var
   Job: TParseJob;
-  I, Last: Integer;
+  I, Last, Threads: Integer;
   W: string;
+  Pool: TThreadPool;
 begin
   Job := TParseJob.Create;
   try
@@ -244,11 +245,31 @@ begin
     SetLength(Job.Parsed, Length(AFiles));
     Last := Length(AFiles) - 1;
     if AParallel and (Last > 0) then
-      TParallel.For(0, Last,
-        procedure(AIndex: Integer)
-        begin
-          Job.ParseOne(AIndex);
-        end)
+    begin
+      // DOXYPAS_THREADS: how many threads parse (development: to see how the parse scales)
+      Threads := StrToIntDef(GetEnvironmentVariable('DOXYPAS_THREADS'), 0);
+      if Threads > 0 then
+      begin
+        Pool := TThreadPool.Create;
+        try
+          Pool.SetMinWorkerThreads(Threads);
+          Pool.SetMaxWorkerThreads(Threads);
+          TParallel.For(0, Last,
+            procedure(AIndex: Integer)
+            begin
+              Job.ParseOne(AIndex);
+            end, Pool);
+        finally
+          Pool.Free;
+        end;
+      end
+      else
+        TParallel.For(0, Last,
+          procedure(AIndex: Integer)
+          begin
+            Job.ParseOne(AIndex);
+          end);
+    end
     else
       for I := 0 to Last do
         Job.ParseOne(I);

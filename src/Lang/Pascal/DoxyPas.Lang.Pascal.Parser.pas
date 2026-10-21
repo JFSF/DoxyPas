@@ -44,6 +44,7 @@ uses
   DelphiAST,
   DelphiAST.Classes,
   DelphiAST.Consts,
+  DoxyPas.Core.SourceText,
   DoxyPas.Lang.Pascal.Source,
   DoxyPas.Lang.Pascal.DocBlocks;
 
@@ -114,13 +115,11 @@ begin
     if TFile.Exists(F) then
     begin
       FileName := F;
-      Content := TFile.ReadAllText(F);
+      Content := ReadSourceFile(F);
       Exit(True);
     end;
   end;
 end;
-
-function DecodeSource(const ABytes: TBytes): string; forward;
 
 type
   { Turns the DelphiAST tree into TEntry objects. }
@@ -211,7 +210,7 @@ begin
   if not FIncluded.TryGetValue(Key, S) then
   begin
     try
-      S := TPasSource.Create(DecodeSource(TFile.ReadAllBytes(ANode.FileName)));
+      S := TPasSource.Create(ReadSourceFile(ANode.FileName));
     except
       S := TPasSource.Create('');
     end;
@@ -823,28 +822,6 @@ begin
   AttachDocComments(FMain, Result, FFileName);
 end;
 
-function DecodeSource(const ABytes: TBytes): string;
-var
-  Enc: TEncoding;
-  Offset: Integer;
-begin
-  Enc := nil;
-  Offset := TEncoding.GetBufferEncoding(ABytes, Enc, nil);
-  if Enc = nil then
-  begin
-    // no BOM: UTF-8 if it decodes without replacement characters, else the ANSI code page
-    try
-      Result := TEncoding.UTF8.GetString(ABytes);
-      if Result.IndexOf(#$FFFD) < 0 then
-        Exit;
-    except
-      on EEncodingError do; // invalid UTF-8
-    end;
-    Enc := TEncoding.ANSI;
-  end;
-  Result := Enc.GetString(ABytes, Offset, Length(ABytes) - Offset);
-end;
-
 function ParsePascalText(const AText, AFileName: string; const AOptions: TPascalParseOptions): TPascalParseResult;
 var
   Src: TPasSource;
@@ -896,7 +873,7 @@ end;
 
 function ParsePascalFile(const AFileName: string; const AOptions: TPascalParseOptions): TPascalParseResult;
 begin
-  Result := ParsePascalText(DecodeSource(TFile.ReadAllBytes(AFileName)), AFileName, AOptions);
+  Result := ParsePascalText(ReadSourceFile(AFileName), AFileName, AOptions);
 end;
 
 end.

@@ -59,30 +59,19 @@ type
 /// is none (an external declaration).</summary>
 function FindBodyEnd(const ALines: TArray<string>; AStart, ALimit: Integer): Integer;
 
-/// <summary>The text of a source file: UTF-8 (BOM or not), else the ANSI code page.</summary>
+/// <summary>The text of a source file (INPUT_ENCODING, see DoxyPas.Core.SourceText).</summary>
 function ReadSourceText(const AFile: string): string;
 
 implementation
 
 uses
   System.SysUtils,
-  System.IOUtils;
+  System.IOUtils,
+  DoxyPas.Core.SourceText;
 
 function ReadSourceText(const AFile: string): string;
-var
-  Bytes: TBytes;
-  Enc: TEncoding;
-  Skip: Integer;
 begin
-  Bytes := TFile.ReadAllBytes(AFile);
-  Enc := nil;
-  Skip := TEncoding.GetBufferEncoding(Bytes, Enc, TEncoding.UTF8);
-  try
-    Result := Enc.GetString(Bytes, Skip, Length(Bytes) - Skip);   // UTF-8 raises on an invalid sequence
-  except
-    on EEncodingError do
-      Result := TEncoding.ANSI.GetString(Bytes, Skip, Length(Bytes) - Skip);
-  end;
+  Result := ReadSourceFile(AFile);
 end;
 
 const

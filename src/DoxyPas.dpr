@@ -8,6 +8,7 @@ uses
   DoxyPas.Core.Version in 'Core\DoxyPas.Core.Version.pas',
   DoxyPas.Core.Log in 'Core\DoxyPas.Core.Log.pas',
   DoxyPas.Core.Timing in 'Core\DoxyPas.Core.Timing.pas',
+  DoxyPas.Core.SourceText in 'Core\DoxyPas.Core.SourceText.pas',
   DoxyPas.Config.Options in 'Config\DoxyPas.Config.Options.pas',
   DoxyPas.Config.Implemented in 'Config\DoxyPas.Config.Implemented.pas',
   DoxyPas.Config in 'Config\DoxyPas.Config.pas',

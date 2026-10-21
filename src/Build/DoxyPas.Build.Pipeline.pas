@@ -23,6 +23,7 @@ function BuildProject(AConfig: TConfig; const AFiles: TArray<string>; AParallel:
 implementation
 
 uses
+  DoxyPas.Core.SourceText,
   DoxyPas.Core.Timing,
   System.SysUtils,
   System.IOUtils,
@@ -245,6 +246,7 @@ var
   W: string;
   Pool: TThreadPool;
 begin
+  SetInputEncoding(AConfig.GetString('INPUT_ENCODING'), AConfig.GetList('INPUT_FILE_ENCODING'));
   Job := TParseJob.Create;
   try
     Job.Files := AFiles;

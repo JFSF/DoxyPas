@@ -951,10 +951,12 @@ const
      Default: 'UTF-8'; MinVal: 0; MaxVal: 0;
      Values: '';
      Doc: 'This tag can be used to specify the character encoding of the source files' + #10 +
-      'that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses' + #10 +
-      'libiconv (or the iconv built into libc) for the transcoding. See the libiconv' + #10 +
-      'documentation (see:' + #10 +
-      'https://www.gnu.org/software/libiconv/) for the list of possible encodings.' + #10 +
+      'that DoxyPas reads. The default is UTF-8 and a file that is not valid UTF-8 is' + #10 +
+      'read in the ANSI code page of the system (that is how the Delphi sources' + #10 +
+      'written before Unicode are), so the tag is needed only when the files are in' + #10 +
+      'another encoding: ISO-8859-1, windows-1252, windows-1250, UTF-16... A file' + #10 +
+      'that starts with a byte order mark is read in the encoding of the mark,' + #10 +
+      'whatever this tag says.' + #10 +
       'See also: INPUT_FILE_ENCODING' + #10 +
       'The default value is: UTF-8.'),
     (Name: 'INPUT_FILE_ENCODING';
@@ -962,12 +964,11 @@ const
      Format: 'string'; Depends: '';
      Default: ''; MinVal: 0; MaxVal: 0;
      Values: '';
-     Doc: 'This tag can be used to specify the character encoding of the source files' + #10 +
-      'that Doxygen parses. The INPUT_FILE_ENCODING tag can be used to specify' + #10 +
-      'character encoding on a per file pattern basis. Doxygen will compare the file' + #10 +
-      'name with each pattern and apply the encoding instead of the default' + #10 +
-      'INPUT_ENCODING if there is a match. The character encodings are a list of the' + #10 +
-      'form: pattern=encoding (like *.php=ISO-8859-1).' + #10 +
+     Doc: 'The INPUT_FILE_ENCODING tag can be used to specify the character encoding on a' + #10 +
+      'per file pattern basis. DoxyPas will compare the file name with each pattern' + #10 +
+      'and apply the encoding instead of the default INPUT_ENCODING if there is a' + #10 +
+      'match. The character encodings are a list of the form: pattern=encoding (like' + #10 +
+      '*.pas=windows-1252).' + #10 +
       'See also: INPUT_ENCODING for further information on supported encodings.'),
     (Name: 'FILE_PATTERNS';
      Kind: okList; OrgKind: okBool; Group: 3;

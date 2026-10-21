@@ -33,6 +33,7 @@ uses
   DoxyPas.Model.Defs,
   DoxyPas.Model.Links,
   DoxyPas.Model.Calls,
+  DoxyPas.Model.Dirs,
   DoxyPas.Output.HtmlTemplate,
   DoxyPas.Output.Translator,
   DoxyPas.Output.HtmlDoc,
@@ -94,6 +95,7 @@ type
     FHasPages, FHasGroups, FHasClasses, FHasUnits: Boolean;
     FDotGraphs: Boolean;      // HAVE_DOT: draw the graphs (Windows only for now)
     FPendingGraphs: TList<string>;   // .dot files written, not converted yet
+    FDirs: TDirTree;          // SHOW_FILES: the directories of the unit files, nil when there is none
     FCalls: TCallIndex;       // CALL_GRAPH / CALLER_GRAPH, nil otherwise
     FDotPath: string;
     FSource: Boolean;         // SOURCE_BROWSER: a highlighted page with line numbers for every unit
@@ -150,6 +152,11 @@ type
     procedure WriteClass(C: TClassDef);
     procedure WriteMembersPage(C: TClassDef);
     procedure WriteUnit(U: TUnitDef);
+    function DirDot(D: TDirDef): string;
+    function DirNavPath(D: TDirDef): string;
+    procedure WriteDirectory(D: TDirDef);
+    procedure DirTreeRows(D: TDirDef; ALevel: Integer; var ARow: Integer);
+    procedure WriteDirsIndex;
     function HasSource(U: TUnitDef): Boolean;
     function SourceUrl(U: TUnitDef): string;
     procedure WriteSource(U: TUnitDef);
@@ -376,6 +383,7 @@ begin
   FNav.Free;
   FDoc.Free;
   FCalls.Free;
+  FDirs.Free;
   FPendingGraphs.Free;
   FLinks.Free;
   inherited;
@@ -1456,7 +1464,8 @@ begin
       Svg := Dot + '.svg';
       if TFile.Exists(Svg) then
       begin
-        TFile.Delete(TPath.Combine(FDir, FPendingGraphs[J] + '.svg'));  // no-op when absent
+        if TFile.Exists(TPath.Combine(FDir, FPendingGraphs[J] + '.svg')) then
+          TFile.Delete(TPath.Combine(FDir, FPendingGraphs[J] + '.svg'));
         TFile.Move(Svg, TPath.Combine(FDir, FPendingGraphs[J] + '.svg'));
         Inc(FFiles);
       end;
@@ -1864,6 +1873,116 @@ begin
   end;
 end;
 
+{ ------------------------------------------------------------------ directories }
+
+const
+  FolderIcon = '<span class="iconfolder"><div class="folder-icon"></div></span>';
+
+function THtmlGenerator.DirNavPath(D: TDirDef): string;
+begin
+  Result := '';
+  while D <> nil do
+  begin
+    Result := '<li class="navelem"><a class="el" href="' + D.DiskName + FExt + '">' + HtmlEscape(D.Name) + '</a></li>' +
+      Result;
+    D := D.Parent;
+  end;
+end;
+
+// The directory dependency graph: the directory, the ones its units use and the ones that use it; the edges say how
+// many units are involved.
+function THtmlGenerator.DirDot(D: TDirDef): string;
+var
+  G: TDotBuilder;
+  Root: Integer;
+  Dep: TDirDependency;
+begin
+  G := TDotBuilder.Create(D.Path, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'TB');
+  try
+    Root := G.Node(D.DiskName, D.Name, '', ', fillcolor="#bfbfbf"');
+    for Dep in FDirs.Dependencies(D, False) do
+      if not G.Full then
+        G.Edge(Root, G.Node(Dep.Dir.DiskName, Dep.Dir.Name, Dep.Dir.DiskName + FExt, ''),
+          'color="midnightblue", arrowhead="open", label=' + DotQuote(IntToStr(Dep.Count)));
+    for Dep in FDirs.Dependencies(D, True) do
+      if not G.Full then
+        G.Edge(G.Node(Dep.Dir.DiskName, Dep.Dir.Name, Dep.Dir.DiskName + FExt, ''), Root,
+          'color="midnightblue", arrowhead="open", label=' + DotQuote(IntToStr(Dep.Count)));
+    Result := G.Finish;
+  finally
+    G.Free;
+  end;
+end;
+
+procedure THtmlGenerator.WriteDirectory(D: TDirDef);
+var
+  Title, Graph: string;
+  Sub: TDirDef;
+  U: TUnitDef;
+begin
+  Title := Format(Tr('%s Directory Reference'), [D.Path]);
+  Graph := '';
+  if FDotGraphs and FConfig.GetBool('DIRECTORY_GRAPH') and
+    ((Length(FDirs.Dependencies(D, False)) > 0) or (Length(FDirs.Dependencies(D, True)) > 0)) then
+    Graph := RunGraph(D.DiskName + '_dep', Format(Tr('Directory dependency graph for %s:'), [HtmlEscape(D.Name)]),
+      DirDot(D));
+  BeginPage(D.DiskName, Title);
+  PageHeader(Title);
+  W(Graph);
+  if (D.Dirs.Count > 0) or (D.Units.Count > 0) then
+  begin
+    W('<table class="memberdecls">'#10);
+    if D.Dirs.Count > 0 then
+    begin
+      W('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="subdirs" name="subdirs"></a>'#10 +
+        Tr('Directories') + '</h2></td></tr>'#10);
+      for Sub in D.Dirs do
+        W('<tr class="memitem:' + Sub.DiskName + '"><td class="memItemLeft" align="right" valign="top">' + FolderIcon +
+          '&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="' + Sub.DiskName + FExt + '">' +
+          HtmlEscape(Sub.Name) + '</a></td></tr>'#10'<tr class="separator:' + Sub.DiskName +
+          '"><td class="memSeparator" colspan="2">&#160;</td></tr>'#10);
+    end;
+    if D.Units.Count > 0 then
+    begin
+      W('<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="files" name="files"></a>'#10 +
+        Tr('Files') + '</h2></td></tr>'#10);
+      for U in D.Units do
+        W('<tr class="memitem:' + U.DiskName + '"><td class="memItemLeft" align="right" valign="top">' +
+          '<span class="icondoc"><div class="doc-icon"></div></span>&#160;</td>' +
+          '<td class="memItemRight" valign="bottom">' + FDoc.Link(U, ExtractFileName(U.FileName)) + '</td></tr>'#10 +
+          '<tr class="separator:' + U.DiskName + '"><td class="memSeparator" colspan="2">&#160;</td></tr>'#10);
+    end;
+    W('</table>'#10);
+  end;
+  EndPage(DirNavPath(D));
+end;
+
+procedure THtmlGenerator.DirTreeRows(D: TDirDef; ALevel: Integer; var ARow: Integer);
+var
+  Sub: TDirDef;
+  U: TUnitDef;
+begin
+  DirRow(ARow, ALevel, FolderIcon, '<a class="el" href="' + D.DiskName + FExt + '">' + HtmlEscape(D.Name) + '</a>', '');
+  for Sub in D.Dirs do
+    DirTreeRows(Sub, ALevel + 1, ARow);
+  for U in D.Units do
+    DirRow(ARow, ALevel + 1, '<span class="icondoc"><div class="doc-icon"></div></span>',
+      FDoc.Link(U, ExtractFileName(U.FileName)), BriefOf(U));
+end;
+
+procedure THtmlGenerator.WriteDirsIndex;
+var
+  Row: Integer;
+begin
+  BeginPage('dirs', Tr('Directory Hierarchy'));
+  PageHeader(Tr('Directory Hierarchy'));
+  W('<div class="textblock">' + Tr('Here is the directory hierarchy of the source files:') + '</div>'#10 +
+    '<div class="directory">'#10'<table class="directory">'#10);
+  Row := 0;
+  DirTreeRows(FDirs.Root, 0, Row);
+  W('</table>'#10'</div><!-- directory -->'#10);
+  EndPage;
+end;
 procedure THtmlGenerator.WriteGroup(G: TGroupDef);
 var
   Rows, Summary: TStringBuilder;
@@ -2310,6 +2429,8 @@ begin
       SB.Append(',children:['#10);
       First := True;
       Item(Tr('Unit List'), 'namespaces' + FExt, False);
+      if FDirs <> nil then
+        Item(Tr('Directory Hierarchy'), 'dirs' + FExt, False);
       SB.Append(']}');
       First := False;
     end;
@@ -2339,7 +2460,20 @@ var
   G: TGroupDef;
   U: TUnitDef;
   C: TClassDef;
-  Topics, Units, Classes, List, Node: TNavNode;
+  Topics, Units, Classes, List, Node, Dirs: TNavNode;
+
+  procedure AddDir(AParent: TNavNode; ADir: TDirDef);
+  var
+    N: TNavNode;
+    S: TDirDef;
+    X: TUnitDef;
+  begin
+    N := AParent.Add(ADir.Name, Url(ADir.DiskName));
+    for S in ADir.Dirs do
+      AddDir(N, S);
+    for X in ADir.Units do
+      N.Add(ExtractFileName(X.FileName), Url(X.DiskName));
+  end;
 
   procedure AddGroup(AParent: TNavNode; AGroup: TGroupDef);
   var
@@ -2381,6 +2515,12 @@ begin
     for U in FProject.Units do
       if FLinks.IsLinkable(U) then
         Units.Add(U.Name, Url(U.DiskName));
+  end;
+  if FDirs <> nil then
+  begin
+    Dirs := TNavNode.Create(Tr('Directory Hierarchy'), Url('dirs'));
+    FNav.Add(Dirs);
+    AddDir(Dirs, FDirs.Root);
   end;
   if FHasClasses then
   begin
@@ -2950,6 +3090,7 @@ var
   U: TUnitDef;
   G: TGroupDef;
   P: TPageDef;
+  D: TDirDef;
 begin
   TDirectory.CreateDirectory(FDir);
   for C in FProject.Classes do
@@ -2962,6 +3103,12 @@ begin
   for P in FProject.Pages do
     if not P.IsMainPage then
       FHasPages := True;
+  if FHasUnits and FConfig.GetBool('SHOW_FILES') then
+  begin
+    FDirs := TDirTree.Create(FProject, FLinks);
+    if FDirs.Root = nil then
+      FreeAndNil(FDirs);
+  end;
   WriteStatic;
   WriteMainPage;
   for C in FProject.Classes do
@@ -2988,6 +3135,12 @@ begin
     WriteTopics;
   if FHasUnits then
     WriteUnitList;
+  if FDirs <> nil then
+  begin
+    WriteDirsIndex;
+    for D in FDirs.All do
+      WriteDirectory(D);
+  end;
   if FHasClasses then
   begin
     WriteAnnotated;

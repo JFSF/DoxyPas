@@ -32,6 +32,7 @@ uses
   DoxyPas.Model.ProjectDump in '..\..\src\Model\DoxyPas.Model.ProjectDump.pas',
   DoxyPas.Model.Links in '..\..\src\Model\DoxyPas.Model.Links.pas',
   DoxyPas.Model.Calls in '..\..\src\Model\DoxyPas.Model.Calls.pas',
+  DoxyPas.Model.Dirs in '..\..\src\Model\DoxyPas.Model.Dirs.pas',
   DoxyPas.Output.XmlWriter in '..\..\src\Output\DoxyPas.Output.XmlWriter.pas',
   DoxyPas.Output.XmlDoc in '..\..\src\Output\DoxyPas.Output.XmlDoc.pas',
   DoxyPas.Output.XmlGen in '..\..\src\Output\DoxyPas.Output.XmlGen.pas',

@@ -85,6 +85,18 @@ begin
   Add('Here is the caller graph for this function:', 'Segue o grafo de quem chama esta função:', '',
     'Este es el gráfico de llamadores de esta función:', 'Voici le graphe des appelants de cette fonction :',
     'Hier ist der Aufrufer-Graph für diese Funktion:');
+  Add('Directory Hierarchy', 'Hierarquia de Diretórios', '', 'Jerarquía de Directorios', 'Hiérarchie des répertoires',
+    'Verzeichnishierarchie');
+  Add('%s Directory Reference', 'Referência do Diretório %s', '', 'Referencia del Directorio %s',
+    'Référence du répertoire %s', 'Verzeichnisreferenz von %s');
+  Add('Directories', 'Diretórios', '', 'Directorios', 'Répertoires', 'Verzeichnisse');
+  Add('Files', 'Ficheiros', 'Arquivos', 'Archivos', 'Fichiers', 'Dateien');
+  Add('Directory dependency graph for %s:', 'Grafo de dependências de diretórios para %s:', '',
+    'Gráfico de dependencias de directorios para %s:', 'Graphe des dépendances de répertoires pour %s :',
+    'Verzeichnisabhängigkeitsdiagramm für %s:');
+  Add('Here is the directory hierarchy of the source files:', 'Segue a hierarquia de diretórios dos ficheiros de código:',
+    '', 'Esta es la jerarquía de directorios de los archivos de código:',
+    'Voici la hiérarchie des répertoires des fichiers source :', 'Hier ist die Verzeichnishierarchie der Quelldateien:');
   Add('Collaboration diagram for %s:', 'Diagrama de colaboração para %s:', '', 'Diagrama de colaboración para %s:',
     'Graphe de collaboration de %s :', 'Zusammenarbeitsdiagramm für %s:');
   Add('Dependency graph for %s:', 'Grafo de dependências para %s:', '', 'Gráfico de dependencias para %s:',

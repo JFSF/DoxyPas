@@ -73,8 +73,13 @@ type
     function Render(const AText: string): string;
     function LabelOf(ADef: TDefinition): string;
     function MemberText(M: TMemberDef): string;
-    function Members(AList: TList<TMemberDef>): string;
+    function Visible(AList: TList<TMemberDef>): TList<TMemberDef>;
+    function Summary(AList: TList<TMemberDef>; AInClass: Boolean): string;
+    function Members(AList: TList<TMemberDef>; const AParent: string): string;
     function Chapter(ADef: TDefinition; const ATitle: string): string;
+    function ClassKind(C: TClassDef): string;
+    function ClassChapter(C: TClassDef): string;
+    function UnitChapter(U: TUnitDef): string;
     procedure Save(const AName, AText: string);
   public
     constructor Create(AProject: TProject; AConfig: TConfig; const ADir: string);
@@ -321,19 +326,113 @@ begin
   end;
 end;
 
-function TLatexGenerator.Members(AList: TList<TMemberDef>): string;
+function IndexEntry(const AName: string; const AParent: string = ''): string;
+begin
+  Result := '\index{';
+  if AParent <> '' then
+    Result := Result + LatexEscape(AParent) + '@\texttt{' + LatexEscape(AParent) + '}!';
+  Result := Result + LatexEscape(AName) + '@\texttt{' + LatexEscape(AName) + '}}';
+end;
+
+// Doxygen's order of the sections of a class: by visibility, then types, constants, routines, fields, properties.
+function GroupOrder(M: TMemberDef; AInClass: Boolean): Integer;
+begin
+  Result := 0;
+  if AInClass then
+    case M.Protection of
+      prPublished: Result := 0;
+      prPublic: Result := 10;
+      prProtected: Result := 20;
+      prStrictProtected: Result := 30;
+      prPrivate: Result := 40;
+      prStrictPrivate: Result := 50;
+    end;
+  case M.Kind of
+    memTypedef, memEnumeration: Inc(Result, 0);
+    memConstant: Inc(Result, 1);
+    memFunction: Inc(Result, 2);
+    memVariable: Inc(Result, 3);
+    memProperty: Inc(Result, 4);
+  end;
+end;
+
+function GroupTitle(AOrder: Integer; AInClass: Boolean): string;
+const
+  Prot: array[0..5] of string = ('Published', 'Public', 'Protected', 'Strict Protected', 'Private', 'Strict Private');
+  KindsClass: array[0..4] of string = ('Types', 'Constants', 'Member Functions', 'Attributes', 'Properties');
+  KindsUnit: array[0..4] of string = ('Types', 'Constants', 'Functions', 'Variables', 'Properties');
+begin
+  if AInClass then
+    Result := Prot[AOrder div 10] + ' ' + KindsClass[AOrder mod 10]
+  else
+    Result := KindsUnit[AOrder mod 10];
+end;
+
+function TLatexGenerator.Visible(AList: TList<TMemberDef>): TList<TMemberDef>;
 var
+  M: TMemberDef;
+begin
+  Result := TList<TMemberDef>.Create;
+  for M in AList do
+    if (M.Kind <> memEnumValue) and FProject.IsVisible(M) and FLinks.IsLinkable(M) then
+      Result.Add(M);
+end;
+
+// The overview tables: one list per group of members, each member with its signature and brief description.
+function TLatexGenerator.Summary(AList: TList<TMemberDef>; AInClass: Boolean): string;
+var
+  Vis: TList<TMemberDef>;
+  Orders: TList<Integer>;
+  O: Integer;
+  M: TMemberDef;
+  Brief: string;
+begin
+  Result := '';
+  Vis := Visible(AList);
+  Orders := TList<Integer>.Create;
+  try
+    for M in Vis do
+      if not Orders.Contains(GroupOrder(M, AInClass)) then
+        Orders.Add(GroupOrder(M, AInClass));
+    Orders.Sort;
+    for O in Orders do
+    begin
+      Result := Result + '\subsection*{' + GroupTitle(O, AInClass) + '}'#10'\begin{DoxyCompactItemize}'#10;
+      for M in Vis do
+        if GroupOrder(M, AInClass) = O then
+        begin
+          Brief := Trim(Render(M.Brief).Replace(#10#10, ' ').Replace(#10, ' '));
+          Result := Result + '\item \hyperref[' + LabelOf(M) + ']{\texttt{' + LatexEscape(MemberText(M)) + '}}';
+          if Brief <> '' then
+            Result := Result + '\\'#10'\hspace*{1em}' + Brief;
+          Result := Result + #10;
+        end;
+      Result := Result + '\end{DoxyCompactItemize}'#10;
+    end;
+  finally
+    Orders.Free;
+    Vis.Free;
+  end;
+end;
+
+function TLatexGenerator.Members(AList: TList<TMemberDef>; const AParent: string): string;
+var
+  Vis: TList<TMemberDef>;
   M: TMemberDef;
   Body: string;
 begin
   Result := '';
-  for M in AList do
-    if FProject.IsVisible(M) and FLinks.IsLinkable(M) then
+  Vis := Visible(AList);
+  try
+    for M in Vis do
     begin
       Body := Render(M.Brief + #10#10 + M.Detailed);
       Result := Result + '\subsection*{' + LatexEscape(M.Name) + '}'#10'\label{' + LabelOf(M) + '}'#10 +
-        '{\raggedright\texttt{' + LatexEscape(MemberText(M)) + '}\par}'#10 + Body + #10;
+        IndexEntry(M.Name, AParent) + #10'\DoxyProto{' + LatexEscape(MemberText(M)) + '}'#10 + Body + #10;
     end;
+  finally
+    Vis.Free;
+  end;
 end;
 
 function TLatexGenerator.Chapter(ADef: TDefinition; const ATitle: string): string;
@@ -342,18 +441,185 @@ begin
     Render(ADef.Brief + #10#10 + ADef.Detailed);
 end;
 
+function TLatexGenerator.ClassChapter(C: TClassDef): string;
+var
+  B: TBaseRef;
+  D: TClassDef;
+  Text, Detail: string;
+  Vis: TList<TMemberDef>;
+begin
+  Result := '\chapter{' + LatexEscape(C.QualifiedName) + ' ' + ClassKind(C) + ' Reference}'#10'\label{' + LabelOf(C) + '}'#10 +
+    IndexEntry(C.Name) + #10;
+  if Trim(C.Brief) <> '' then
+    Result := Result + Render(C.Brief);
+  Text := '';
+  for B in C.Bases do
+  begin
+    if Text <> '' then
+      Text := Text + ', ';
+    if (B.ClassDef <> nil) and FLinks.IsLinkable(B.ClassDef) then
+      Text := Text + '\hyperref[' + LabelOf(B.ClassDef) + ']{' + LatexEscape(B.Text) + '}'
+    else
+      Text := Text + LatexEscape(B.Text);
+  end;
+  if Text <> '' then
+    Result := Result + '\noindent Inherits ' + Text + '.\par'#10;
+  Text := '';
+  for D in C.Derived do
+    if FLinks.IsLinkable(D) then
+    begin
+      if Text <> '' then
+        Text := Text + ', ';
+      Text := Text + '\hyperref[' + LabelOf(D) + ']{' + LatexEscape(D.Name) + '}';
+    end;
+  if Text <> '' then
+    Result := Result + '\noindent Inherited by ' + Text + '.\par'#10;
+  Vis := Visible(C.Members);
+  try
+    if Vis.Count > 0 then
+      Result := Result + '\section*{Member Overview}'#10 + Summary(C.Members, True);
+  finally
+    Vis.Free;
+  end;
+  Detail := Render(C.Detailed);
+  if Detail <> '' then
+    Result := Result + '\section*{Detailed Description}'#10 + Detail;
+  Text := Members(C.Members, C.Name);
+  if Text <> '' then
+    Result := Result + '\section*{Member Documentation}'#10 + Text;
+end;
+
+function TLatexGenerator.UnitChapter(U: TUnitDef): string;
+var
+  Text, S, Detail: string;
+  T: TUnitDef;
+  C: TClassDef;
+  Vis: TList<TMemberDef>;
+begin
+  Result := '\chapter{Unit ' + LatexEscape(U.Name) + ' Reference}'#10'\label{' + LabelOf(U) + '}'#10 +
+    IndexEntry(U.Name) + #10;
+  if Trim(U.Brief) <> '' then
+    Result := Result + Render(U.Brief);
+  Text := '';
+  for S in U.UsesInterfaceNames do
+  begin
+    T := FProject.FindUnit(S);
+    if Text <> '' then
+      Text := Text + ', ';
+    if (T <> nil) and FLinks.IsLinkable(T) then
+      Text := Text + '\hyperref[' + LabelOf(T) + ']{' + LatexEscape(S) + '}'
+    else
+      Text := Text + LatexEscape(S);
+  end;
+  if Text <> '' then
+    Result := Result + '\noindent Uses ' + Text + '.\par'#10;
+  Text := '';
+  for C in U.Classes do
+    if FLinks.IsLinkable(C) and (C.Scope = U) then
+      Text := Text + '\item \hyperref[' + LabelOf(C) + ']{\texttt{' + LatexEscape(C.Name) + '}}'#10;
+  if Text <> '' then
+    Result := Result + '\subsection*{Classes}'#10'\begin{DoxyCompactItemize}'#10 + Text + '\end{DoxyCompactItemize}'#10;
+  Vis := Visible(U.Members);
+  try
+    if Vis.Count > 0 then
+      Result := Result + Summary(U.Members, False);
+  finally
+    Vis.Free;
+  end;
+  Detail := Render(U.Detailed);
+  if Detail <> '' then
+    Result := Result + '\section*{Detailed Description}'#10 + Detail;
+  Text := Members(U.Members, U.Name);
+  if Text <> '' then
+    Result := Result + '\section*{Member Documentation}'#10 + Text;
+end;
+
+function TLatexGenerator.ClassKind(C: TClassDef): string;
+begin
+  case C.ClassKind of
+    ckRecord, ckRecordHelper: Result := 'Record';
+    ckInterface, ckDispInterface: Result := 'Interface';
+    ckObject: Result := 'Object';
+    ckClassHelper, ckTypeHelper: Result := 'Helper';
+  else
+    Result := 'Class';
+  end;
+end;
+
+const
+  StyleText =
+    '\NeedsTeXFormat{LaTeX2e}'#10 +
+    '\ProvidesPackage{doxypas}[2026/10/21 Style of the LaTeX output of DoxyPas]'#10 +
+    '\RequirePackage[a4paper,margin=2.5cm]{geometry}'#10 +
+    '\RequirePackage{xcolor}'#10 +
+    '\RequirePackage{fancyhdr}'#10 +
+    '\RequirePackage{titlesec}'#10 +
+    '\RequirePackage{longtable}'#10 +
+    '\RequirePackage{fvextra}'#10 +
+    '\RequirePackage{makeidx}'#10 +
+    '\RequirePackage{multicol}'#10 +
+    '\definecolor{doxyblue}{HTML}{354C7B}'#10 +
+    '\definecolor{doxyframe}{HTML}{C4CFE5}'#10 +
+    '\definecolor{doxyback}{HTML}{F9FAFC}'#10 +
+    '\setcounter{secnumdepth}{-1}'#10 +
+    '\setcounter{tocdepth}{1}'#10 +
+    '\emergencystretch=3em'#10 +
+    '\setlength{\parindent}{0pt}'#10 +
+    '\setlength{\parskip}{0.6ex plus 0.2ex}'#10 +
+    '\titleformat{\part}[display]{\normalfont\Huge\bfseries\color{doxyblue}}{}{0pt}{}'#10 +
+    '\titleformat{\chapter}[hang]{\normalfont\huge\bfseries\color{doxyblue}}{}{0pt}{}[\vspace{2pt}\color{doxyframe}\titlerule]'#10 +
+    '\titleformat{\section}{\normalfont\Large\bfseries\color{doxyblue}}{}{0pt}{}'#10 +
+    '\titleformat{\subsection}{\normalfont\large\bfseries\color{doxyblue}}{}{0pt}{}'#10 +
+    '\titlespacing*{\chapter}{0pt}{0pt}{20pt}'#10 +
+    '\pagestyle{fancy}'#10 +
+    '\fancyhf{}'#10 +
+    '\fancyhead[LE,RO]{\bfseries\thepage}'#10 +
+    '\fancyhead[LO]{\bfseries\nouppercase{\rightmark}}'#10 +
+    '\fancyhead[RE]{\bfseries\nouppercase{\leftmark}}'#10 +
+    '\fancyfoot[C]{\scriptsize\textcolor{gray}{Generated by DoxyPas}}'#10 +
+    '\renewcommand{\headrulewidth}{0.4pt}'#10 +
+    '\renewcommand{\footrulewidth}{0pt}'#10 +
+    '\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\scriptsize\textcolor{gray}{Generated by DoxyPas}}\renewcommand{\headrulewidth}{0pt}}'#10 +
+    '\newenvironment{DoxyCompactItemize}'#10 +
+    '  {\begin{itemize}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}\setlength{\topsep}{2pt}}'#10 +
+    '  {\end{itemize}}'#10 +
+    '\newcommand{\DoxyProto}[1]{\par\noindent\colorbox{doxyback}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}'#10 +
+    '  {\raggedright\ttfamily\small #1}}\par\smallskip}'#10 +
+    '\makeindex'#10 +
+    '\endinput'#10;
+
+  MakeBat =
+    '@echo off'#13#10'pdflatex refman'#13#10'makeindex refman.idx'#13#10'pdflatex refman'#13#10'pdflatex refman'#13#10;
+  MakeFile =
+    'all: refman.pdf'#10#10'refman.pdf: refman.tex'#10#9'pdflatex refman'#10#9'makeindex refman.idx'#10 +
+    #9'pdflatex refman'#10#9'pdflatex refman'#10#10'clean:'#10#9'rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out refman.pdf'#10;
+
 function TLatexGenerator.Run: Integer;
 var
   U: TUnitDef;
   C: TClassDef;
   G: TGroupDef;
   P: TPageDef;
-  Main, Name, Title: string;
-  Names: TStringList;
-  Text: string;
+  Main, Name, Title, Brief: string;
+  Pages, Topics, Units, Classes: TStringList;
+
+  procedure Part(const ATitle: string; AList: TStringList);
+  var
+    N: string;
+  begin
+    if AList.Count = 0 then
+      Exit;
+    Main := Main + '\part{' + ATitle + '}'#10;
+    for N in AList do
+      Main := Main + '\input{' + N + '}'#10;
+  end;
+
 begin
   TDirectory.CreateDirectory(FDir);
-  Names := TStringList.Create;
+  Pages := TStringList.Create;
+  Topics := TStringList.Create;
+  Units := TStringList.Create;
+  Classes := TStringList.Create;
   try
     for P in FProject.Pages do
     begin
@@ -361,39 +627,53 @@ begin
       if Title = '' then Title := P.Name;
       Name := 'page_' + P.DiskName;
       Save(Name + '.tex', Chapter(P, Title));
-      Names.Add(Name);
+      Pages.Add(Name);
+    end;
+    for G in FProject.Groups do
+    begin
+      Save(G.DiskName + '.tex', Chapter(G, G.Title));
+      Topics.Add(G.DiskName);
     end;
     for U in FProject.Units do
       if FLinks.IsLinkable(U) then
       begin
-        Text := Chapter(U, 'Unit ' + U.Name) + Members(U.Members);
-        Save(U.DiskName + '.tex', Text);
-        Names.Add(U.DiskName);
+        Save(U.DiskName + '.tex', UnitChapter(U));
+        Units.Add(U.DiskName);
       end;
     for C in FProject.Classes do
       if FLinks.IsLinkable(C) then
       begin
-        Text := Chapter(C, C.QualifiedName);
-        Text := Text + Members(C.Members);
-        Save(C.DiskName + '.tex', Text);
-        Names.Add(C.DiskName);
+        Save(C.DiskName + '.tex', ClassChapter(C));
+        Classes.Add(C.DiskName);
       end;
-    for G in FProject.Groups do
-    begin
-      Save(G.DiskName + '.tex', Chapter(G, G.Title));
-      Names.Add(G.DiskName);
-    end;
+    Brief := FConfig.GetString('PROJECT_BRIEF');
     Main := '\documentclass[a4paper,11pt]{report}'#10'\usepackage[utf8]{inputenc}'#10'\usepackage[T1]{fontenc}'#10 +
-      '\usepackage{lmodern}'#10'\usepackage{fvextra}'#10'\emergencystretch=3em'#10'\usepackage{longtable}'#10'\usepackage[colorlinks=true,linkcolor=blue]{hyperref}'#10 +
-      '\title{' + LatexEscape(FConfig.GetString('PROJECT_NAME')) + '\\ \large ' +
-      LatexEscape(FConfig.GetString('PROJECT_NUMBER')) + '}'#10'\author{Generated by DoxyPas ' +
-      LatexEscape(DoxyPasVersion) + '}'#10'\begin{document}'#10'\maketitle'#10'\tableofcontents'#10;
-    for Name in Names do
-      Main := Main + '\input{' + Name + '}'#10;
-    Main := Main + '\end{document}'#10;
+      '\usepackage{lmodern}'#10'\usepackage{doxypas}'#10'\usepackage[colorlinks=true,linkcolor=doxyblue,urlcolor=doxyblue]{hyperref}'#10 +
+      '\begin{document}'#10'\begin{titlepage}'#10'\vspace*{3cm}'#10'\begin{center}'#10 +
+      '{\Huge\bfseries\color{doxyblue} ' + LatexEscape(FConfig.GetString('PROJECT_NAME')) + '}\par\vspace{1ex}'#10;
+    if FConfig.GetString('PROJECT_NUMBER') <> '' then
+      Main := Main + '{\Large ' + LatexEscape(FConfig.GetString('PROJECT_NUMBER')) + '}\par\vspace{3ex}'#10;
+    if Brief <> '' then
+      Main := Main + '{\large\itshape ' + LatexEscape(Brief) + '}\par\vspace{3ex}'#10;
+    Main := Main + '\rule{0.6\linewidth}{0.6pt}\par\vspace{3ex}'#10'\today\par\vspace{1ex}'#10'{\small Generated by DoxyPas ' +
+      LatexEscape(DoxyPasVersion) + '}'#10'\end{center}'#10'\end{titlepage}'#10'\pagenumbering{roman}'#10 +
+      '\tableofcontents'#10'\clearpage'#10'\pagenumbering{arabic}'#10;
+    Part('Introduction', Pages);
+    Part('Topic Documentation', Topics);
+    Part('Unit Documentation', Units);
+    Part('Class Documentation', Classes);
+    Main := Main + '\cleardoublepage'#10'\phantomsection'#10'\addcontentsline{toc}{chapter}{Index}'#10 +
+      '\printindex'#10'\end{document}'#10;
     Save('refman.tex', Main);
+    Save('doxypas.sty', StyleText);
+    TFile.WriteAllText(TPath.Combine(FDir, 'make.bat'), MakeBat, TEncoding.ASCII);
+    TFile.WriteAllText(TPath.Combine(FDir, 'Makefile'), MakeFile, TEncoding.ASCII);
+    Inc(FFiles, 2);
   finally
-    Names.Free;
+    Classes.Free;
+    Units.Free;
+    Topics.Free;
+    Pages.Free;
   end;
   Result := FFiles;
 end;

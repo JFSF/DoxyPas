@@ -12,9 +12,9 @@
         <qualifiedname>Circles.TUnitCircle.Area</qualifiedname>
         <reimplements refid="class_circles_1_1_t_circle_1a61d7cf46d76747f55df2c5ae175c9b3b">Area</reimplements>
         <briefdescription>
+          <para>Area of the shape.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Area of the shape.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>

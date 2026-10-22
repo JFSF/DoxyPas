@@ -270,14 +270,14 @@ const
     (Name: 'JAVADOC_AUTOBRIEF';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';
-     Default: '0'; MinVal: 0; MaxVal: 0;
+     Default: '1'; MinVal: 0; MaxVal: 0;
      Values: '';
      Doc: 'If the JAVADOC_AUTOBRIEF tag is set to YES then Doxygen will interpret the' + #10 +
       'first line (until the first dot, question mark or exclamation mark) of a' + #10 +
       'Javadoc-style comment as the brief description. If set to NO, the' + #10 +
       'Javadoc-style will behave just like regular Qt-style comments (thus requiring' + #10 +
       'an explicit @brief command for a brief description.)' + #10 +
-      'The default value is: NO.'),
+      'The default value is: YES.'),
     (Name: 'JAVADOC_BANNER';
      Kind: okBool; OrgKind: okBool; Group: 0;
      Format: ''; Depends: '';

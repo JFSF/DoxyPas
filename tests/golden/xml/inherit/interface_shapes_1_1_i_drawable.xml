@@ -12,9 +12,9 @@
         <qualifiedname>Shapes.IDrawable.Draw</qualifiedname>
         <reimplementedby refid="class_circles_1_1_t_circle_1a2fe88d29d1d8b958f8fba1c362e4f4f0">Draw</reimplementedby>
         <briefdescription>
+          <para>Draws the object.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Draws the object.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -22,9 +22,9 @@
         </memberdef>
       </sectiondef>
     <briefdescription>
+      <para>Something that can be drawn.</para>
       </briefdescription>
     <detaileddescription>
-      <para>Something that can be drawn.</para>
       </detaileddescription>
     <location file="inherit/Shapes.pas" line="7" column="3" bodyfile="inherit/Shapes.pas" bodystart="7" bodyend="11"/>
     <listofallmembers>

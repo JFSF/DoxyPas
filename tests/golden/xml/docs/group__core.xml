@@ -7,9 +7,9 @@
       <member refid="class_docs_1_1_t_base_1ac3febc9880901994746b4cce63f904f8" kind="function"><name>Other</name></member>
       </sectiondef>
     <briefdescription>
+      <para>Core routines.</para>
       </briefdescription>
     <detaileddescription>
-      <para>Core routines.</para>
       </detaileddescription>
     <location file="docs/Docs.pas" line="5" column="1" bodyfile="docs/Docs.pas" bodystart="5" bodyend="6"/>
     </compounddef>

@@ -11,10 +11,9 @@
         <qualifiedname>Impl.TWorker.Run</qualifiedname>
         <param><type>Integer</type><declname>A</declname></param>
         <briefdescription>
+          <para>Declared doc.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Declared doc.</para>
-          <para>Implementation doc for Run(Integer).</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -42,9 +41,9 @@
         <name>Calc</name>
         <qualifiedname>Impl.TWorker.Calc</qualifiedname>
         <briefdescription>
+          <para>Doc only in the implementation.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Doc only in the implementation.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -52,9 +51,9 @@
         </memberdef>
       </sectiondef>
     <briefdescription>
+      <para>A class whose methods are implemented below.</para>
       </briefdescription>
     <detaileddescription>
-      <para>A class whose methods are implemented below.</para>
       </detaileddescription>
     <location file="impl/Impl.pas" line="7" column="3" bodyfile="impl/Impl.pas" bodystart="7" bodyend="13"/>
     <listofallmembers>

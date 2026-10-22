@@ -439,6 +439,7 @@ mORMot 2 completo (excessivo para o núcleo; manter como opção p/ SQLite/JSON 
 | 2026-10-22 | **Parse: heap do Windows como gestor de memória** (D-094): parse 18,9 -> 4,3 s; HTML 43,3 -> 27,7 s; 100 testes. |
 | 2026-10-22 | **Ordenação, caminhos, ficheiros usados, data, e-mails, EXCLUDE_SYMBOLS** (D-104, 5.ª parte); 105 testes. |
 | 2026-10-22 | **Opções de descrições e enumerações** (D-104, 4.ª parte); 105 testes. |
+| 2026-10-22 | **JAVADOC_AUTOBRIEF = YES por omissão** (D-104): `/// texto` passa a gerar o resumo (frase até ao primeiro ponto); referências de teste regeneradas (modelo e XML); 105 testes. |
 | 2026-10-22 | **Opções do dot, EXTERNAL_TOOL_PATH** (D-104, 3.ª parte); 105 testes. |
 | 2026-10-22 | **IGNORE_PREFIX, opções de avisos e documentação da unidade** (D-104, 2.ª parte); 105 testes. |
 | 2026-10-22 | **INPUT_ENCODING e INPUT_FILE_ENCODING** (D-104, 1.ª parte); 103 testes. |

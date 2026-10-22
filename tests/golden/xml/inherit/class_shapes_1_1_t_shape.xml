@@ -13,9 +13,9 @@
         <qualifiedname>Shapes.TShape.Create</qualifiedname>
         <param><attributes>const</attributes><type>string</type><declname>AName</declname></param>
         <briefdescription>
+          <para>Creates a shape.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Creates a shape.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -29,9 +29,9 @@
         <qualifiedname>Shapes.TShape.Area</qualifiedname>
         <reimplementedby refid="class_circles_1_1_t_circle_1a61d7cf46d76747f55df2c5ae175c9b3b">Area</reimplementedby>
         <briefdescription>
+          <para>Area of the shape.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Area of the shape.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -77,9 +77,9 @@
         <name>Prepare</name>
         <qualifiedname>Shapes.TShape.Prepare</qualifiedname>
         <briefdescription>
+          <para>Called before drawing.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Called before drawing.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -112,9 +112,9 @@
         <read>FName</read>
         <write>FName</write>
         <briefdescription>
+          <para>The shape name.</para>
           </briefdescription>
         <detaileddescription>
-          <para>The shape name.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -122,9 +122,9 @@
         </memberdef>
       </sectiondef>
     <briefdescription>
+      <para>Base class of all shapes.</para>
       </briefdescription>
     <detaileddescription>
-      <para>Base class of all shapes.</para>
       </detaileddescription>
     <location file="inherit/Shapes.pas" line="14" column="3" bodyfile="inherit/Shapes.pas" bodystart="14" bodyend="29"/>
     <listofallmembers>

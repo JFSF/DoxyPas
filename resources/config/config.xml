@@ -469,7 +469,7 @@ Go to the <a href="commands.html">next</a> section or return to the
 ]]>
       </docs>
     </option>
-    <option type='bool' id='JAVADOC_AUTOBRIEF' defval='0'>
+    <option type='bool' id='JAVADOC_AUTOBRIEF' defval='1'>
       <docs>
 <![CDATA[
   If the \c JAVADOC_AUTOBRIEF tag is set to \c YES then Doxygen

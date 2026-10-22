@@ -31,9 +31,9 @@
         <reimplements refid="class_shapes_1_1_t_shape_1a99e2163448feecec2a9ef2a63de0eb98">Area</reimplements>
         <reimplementedby refid="class_circles_1_1_t_unit_circle_1a74e50acb12c7358086fa2c8ae72be43f">Area</reimplementedby>
         <briefdescription>
+          <para>Area of the shape.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Area of the shape.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -47,9 +47,9 @@
         <qualifiedname>Circles.TCircle.Draw</qualifiedname>
         <reimplements refid="interface_shapes_1_1_i_drawable_1a9ebf14006d3ec27f5032de7d5c8273eb">Draw</reimplements>
         <briefdescription>
+          <para>Draws the object.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Draws the object.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -129,9 +129,9 @@
         <qualifiedname>Circles.TCircle.Diameter</qualifiedname>
         <read>GetDiameter</read>
         <briefdescription>
+          <para>Twice the radius.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Twice the radius.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -139,9 +139,9 @@
         </memberdef>
       </sectiondef>
     <briefdescription>
+      <para>A circle.</para>
       </briefdescription>
     <detaileddescription>
-      <para>A circle.</para>
       </detaileddescription>
     <location file="inherit/Circles.pas" line="10" column="3" bodyfile="inherit/Circles.pas" bodystart="10" bodyend="22"/>
     <listofallmembers>

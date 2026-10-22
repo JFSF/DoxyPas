@@ -4,9 +4,9 @@
     <compoundname>index</compoundname>
     <title>Docs Project</title>
     <briefdescription>
+      <para>See <ref refid="class_docs_1_1_t_base" kindref="compound">TBase</ref> and Missing and <ref refid="group__core" kindref="compound">core</ref>.</para>
       </briefdescription>
     <detaileddescription>
-      <para>See <ref refid="class_docs_1_1_t_base" kindref="compound">TBase</ref> and Missing and <ref refid="group__core" kindref="compound">core</ref>.</para>
       </detaileddescription>
     <location file="docs/Docs.pas" line="8" column="1" bodyfile="docs/Docs.pas" bodystart="8" bodyend="9"/>
     </compounddef>

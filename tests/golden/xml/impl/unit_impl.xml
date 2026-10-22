@@ -13,9 +13,9 @@
         <qualifiedname>Impl.Twice</qualifiedname>
         <param><type>Integer</type><declname>X</declname></param>
         <briefdescription>
+          <para>Interface routine.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Interface routine.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>

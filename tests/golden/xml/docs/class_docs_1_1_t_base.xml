@@ -12,9 +12,10 @@
         <reimplementedby refid="class_docs_1_1_t_derived_1adf9de637c4d86d4ff6f5199e3b58cff2">Work</reimplementedby>
         <param><type>Integer</type><declname>A</declname></param>
         <briefdescription>
+          <para>Does the work.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Does the work. 
+          <para>
             <parameterlist kind="param"><parameteritem><parameternamelist><parametername>A</parametername></parameternamelist><parameterdescription>
                   <para>the first value</para></parameterdescription></parameteritem><parameteritem><parameternamelist><parametername>Wrong</parametername></parameternamelist><parameterdescription>
                   <para>not an argument</para></parameterdescription></parameteritem></parameterlist></para>
@@ -30,9 +31,9 @@
         <name>Other</name>
         <qualifiedname>Docs.TBase.Other</qualifiedname>
         <briefdescription>
+          <para>Brief of Other.</para>
           </briefdescription>
         <detaileddescription>
-          <para>Brief of Other.</para>
           </detaileddescription>
         <inbodydescription>
           </inbodydescription>
@@ -40,9 +41,9 @@
         </memberdef>
       </sectiondef>
     <briefdescription>
+      <para>Base with docs.</para>
       </briefdescription>
     <detaileddescription>
-      <para>Base with docs.</para>
       </detaileddescription>
     <location file="docs/Docs.pas" line="15" column="3" bodyfile="docs/Docs.pas" bodystart="15" bodyend="23"/>
     <listofallmembers>

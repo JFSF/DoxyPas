@@ -1,21 +1,24 @@
-unit Docs {detailed} -> unit_docs
-  detailed: The unit documentation.
-  class TBase (class) {detailed} -> class_docs_1_1_t_base
+unit Docs {brief} -> unit_docs
+  brief: The unit documentation.
+  class TBase (class) {brief} -> class_docs_1_1_t_base
     derived: Docs.TDerived
-    detailed: Base with docs.
-    function Work(A: Integer) [public] {detailed}
+    brief: Base with docs.
+    function Work(A: Integer) [public] {brief detailed}
       reimplemented by: Docs.TDerived.Work
-      detailed: Does the work. | \param A the first value | \param Wrong not an argument
-    function Other() [public] {detailed}
-      detailed: Brief of Other.
+      brief: Does the work.
+      detailed: \param A the first value | \param Wrong not an argument
+    function Other() [public] {brief}
+      brief: Brief of Other.
   class TDerived (class) : TBase -> class_docs_1_1_t_derived
-    function Work(A: Integer) [public] {detailed inherited}
+    function Work(A: Integer) [public] {brief detailed inherited}
       reimplements: Docs.TBase.Work
-      detailed: Does the work. | \param A the first value | \param Wrong not an argument
-    function Copy1() [public] {detailed}
-      detailed: Brief of Other.
+      brief: Does the work.
+      detailed: \param A the first value | \param Wrong not an argument
+    function Copy1() [public] {brief}
+      brief: Brief of Other.
     function Copy2() [public] hidden
-    function Copy3() [public] hidden
+    function Copy3() [public] {brief}
+      brief: Does the work.
     function Nothing() [public] hidden
     all members: TDerived.Work TDerived.Copy1 TDerived.Copy2 TDerived.Copy3 TDerived.Nothing TBase.Other
 group core "Core" -> group__core

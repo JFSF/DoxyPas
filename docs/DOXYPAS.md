@@ -448,8 +448,7 @@ mORMot 2 completo (excessivo para o núcleo; manter como opção p/ SQLite/JSON 
 | 2026-10-22 | **UML_LOOK, DOT_UML_DETAILS, UML_LIMIT_NUM_FIELDS, UML_MAX_EDGE_LABELS** (D-106); 107 testes. |
 | 2026-10-22 | **FILTER_SOURCE_FILES, EXAMPLE_PATTERNS, \dontinclude/\skip/\line/\until** (D-107); 107 testes. |
 | 2026-10-22 | **\tableofcontents, TOC_INCLUDE_HEADINGS** (D-108); 108 testes. |
-| 2026-10-22 | **Grupos de membros (`@{ @}`, `
-ame`), `defgroup` por intervalo, SUBGROUPING, DISTRIBUTE_GROUP_DOC** (D-109); 110 testes. |
+| 2026-10-22 | **Grupos de membros (`@{ @}`, `\name`), `\defgroup` por intervalo, SUBGROUPING, DISTRIBUTE_GROUP_DOC** (D-109); 110 testes. |
 | 2026-10-22 | **JAVADOC_AUTOBRIEF = YES por omissão** (D-104): `/// texto` passa a gerar o resumo (frase até ao primeiro ponto); referências de teste regeneradas (modelo e XML); 105 testes. |
 | 2026-10-22 | **Opções do dot, EXTERNAL_TOOL_PATH** (D-104, 3.ª parte); 105 testes. |
 | 2026-10-22 | **IGNORE_PREFIX, opções de avisos e documentação da unidade** (D-104, 2.ª parte); 105 testes. |

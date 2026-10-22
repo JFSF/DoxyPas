@@ -221,6 +221,18 @@ var
   T: TLinkTarget;
   Word: string;
   Accept: Boolean;
+
+  // AUTOLINK_IGNORE_WORDS: the words that start with one of them are not linked
+  function StartsIgnored(const AWord: string): Boolean;
+  var
+    S: string;
+  begin
+    for S in FProject.Options.AutolinkIgnoreWords do
+      if (S <> '') and AWord.StartsWith(S) then
+        Exit(True);
+    Result := False;
+  end;
+
 begin
   if not FProject.Options.AutolinkSupport then
   begin
@@ -234,6 +246,8 @@ begin
     Word := M.Value;
     // "%Word" suppresses the link; words glued to other characters (a_b-c) are not matched separately
     if (M.Index > 1) and (AText[M.Index - 1] = '%') then
+      Accept := False
+    else if StartsIgnored(Word) then
       Accept := False
     else
     begin

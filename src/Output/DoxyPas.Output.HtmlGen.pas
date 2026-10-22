@@ -83,7 +83,8 @@ type
     FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
     FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
     FBriefMemberDesc, FRepeatBrief, FInlineInfo, FShowEnumValues: Boolean;
-    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping: Boolean;
+    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping, FHideCompoundRef, FAlwaysDetailed: Boolean;
+    FAbbreviate: TArray<string>;      // ABBREVIATE_BRIEF (the defaults when it is empty)
     FTimestamp: string;            // TIMESTAMP: NO, YES / DATETIME or DATE
     FMaxInitLines, FEnumPerLine: Integer;
     FPageLayout: string;      // the layout page the member tables follow when it is not the one of the kind of definition ('group')
@@ -217,6 +218,7 @@ type
     procedure WriteMenuData;
     procedure BuildNav;
     procedure WriteHtmlHelp;
+    procedure WriteSitemap;
     function NavJs(ANodes: TObjectList<TNavNode>; ALevel: Integer; const APath: string; var AFirst: Boolean): Boolean;
     procedure RegisterNav(ANodes: TObjectList<TNavNode>; const APath: string);
     procedure WriteNavTree;
@@ -336,6 +338,12 @@ begin
   FSortByScope := AConfig.GetBool('SORT_BY_SCOPE_NAME');
   FShowUsedFiles := AConfig.GetBool('SHOW_USED_FILES');
   FSubgrouping := AConfig.GetBool('SUBGROUPING');
+  FHideCompoundRef := AConfig.GetBool('HIDE_COMPOUND_REFERENCE');
+  FAlwaysDetailed := AConfig.GetBool('ALWAYS_DETAILED_SEC');
+  FAbbreviate := AConfig.GetList('ABBREVIATE_BRIEF');
+  if Length(FAbbreviate) = 0 then
+    FAbbreviate := ['The $name class', 'The $name widget', 'The $name file', 'is', 'provides', 'specifies', 'contains',
+      'represents', 'a', 'an', 'the'];
   FTimestamp := UpperCase(AConfig.GetString('TIMESTAMP'));
   FBriefMemberDesc := AConfig.GetBool('BRIEF_MEMBER_DESC');
   FRepeatBrief := AConfig.GetBool('REPEAT_BRIEF');
@@ -900,12 +908,18 @@ end;
 
 function THtmlGenerator.ClassTitle(C: TClassDef): string;
 begin
-  Result := Format(Tr('%0:s %1:s Reference'), [C.QualifiedName, Tr(ClassKindText(C))]);
+  if FHideCompoundRef then
+    Result := C.QualifiedName
+  else
+    Result := Format(Tr('%0:s %1:s Reference'), [C.QualifiedName, Tr(ClassKindText(C))]);
 end;
 
 function THtmlGenerator.UnitTitle(U: TUnitDef): string;
 begin
-  Result := Format(Tr('%0:s %1:s Reference'), [U.Name, Tr('Unit')]);
+  if FHideCompoundRef then
+    Result := U.Name
+  else
+    Result := Format(Tr('%0:s %1:s Reference'), [U.Name, Tr('Unit')]);
 end;
 
 function THtmlGenerator.ClassKindText(C: TClassDef): string;
@@ -920,9 +934,23 @@ begin
   end;
 end;
 
+// ABBREVIATE_BRIEF: each string of the list that the brief description starts with (a whole word, any case) is taken off;
+// "$name" is the name of the definition; the first letter of what is left is a capital.
 function THtmlGenerator.BriefOf(ADef: TDefinition): string;
+var
+  S, T, Prefix: string;
 begin
-  Result := FDoc.RenderBrief(ADef.Brief, ADef);
+  T := Trim(ADef.Brief);
+  for S in FAbbreviate do
+  begin
+    Prefix := S.Replace('$name', ADef.Name);
+    if (Prefix <> '') and (Length(T) > Length(Prefix)) and SameText(Copy(T, 1, Length(Prefix)), Prefix) and
+      CharInSet(T[Length(Prefix) + 1], [' ', #9, #10, #13]) then
+      T := Trim(Copy(T, Length(Prefix) + 1, MaxInt));
+  end;
+  if (T <> '') and (T <> Trim(ADef.Brief)) then
+    T := UpperCase(Copy(T, 1, 1)) + Copy(T, 2, MaxInt);
+  Result := FDoc.RenderBrief(T, ADef);
 end;
 
 function THtmlGenerator.DefinedAt(ADef: TDefinition): string;
@@ -1840,6 +1868,8 @@ begin
   if (ADef is TUnitDef) and not LayoutShows('file', 'detaileddescription') then
     Exit('');       // a unit is also a file
   Text := FDoc.Render(ADef.Detailed, ADef);
+  if FAlwaysDetailed and FRepeatBrief and (Text = '') then
+    Text := FDoc.Render(ADef.Brief, ADef);          // ALWAYS_DETAILED_SEC: the section even when there is only a brief
   if (Text = '') and (DefinedAt(ADef) = '') then
     Exit('');
   Result := '<a name="details" id="details"></a><h2 class="groupheader">' + HtmlEscape(DetailTitle(ADef)) + '</h2>'#10 +
@@ -2589,7 +2619,10 @@ var
   end;
 
 begin
-  Title := Format(Tr('%s Directory Reference'), [D.Path]);
+  if FHideCompoundRef then
+    Title := D.Path
+  else
+    Title := Format(Tr('%s Directory Reference'), [D.Path]);
   Graph := '';
   if FDotGraphs and FConfig.GetBool('DIRECTORY_GRAPH') and
     LayoutShows('directory', 'directorygraph') and
@@ -3893,6 +3926,31 @@ end;
 
 { ------------------------------------------------------------------ driver }
 
+// SITEMAP_URL: sitemap.xml with the URL of every page (https://www.sitemaps.org).
+procedure THtmlGenerator.WriteSitemap;
+var
+  SB: TStringBuilder;
+  Files: TArray<string>;
+  F, Base: string;
+begin
+  Base := FConfig.GetString('SITEMAP_URL');
+  if not Base.EndsWith('/') then
+    Base := Base + '/';
+  Files := TDirectory.GetFiles(FDir, '*' + FExt);
+  TArray.Sort<string>(Files);
+  SB := TStringBuilder.Create;
+  try
+    SB.Append('<?xml version="1.0" encoding="UTF-8"?>'#10 +
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'#10);
+    for F in Files do
+      SB.Append('  <url><loc>').Append(HtmlEscape(Base + ExtractFileName(F))).Append('</loc></url>'#10);
+    SB.Append('</urlset>'#10);
+    SaveText('sitemap.xml', SB.ToString);
+  finally
+    SB.Free;
+  end;
+end;
+
 function THtmlGenerator.Run: Integer;
 var
   S: string;
@@ -3997,6 +4055,8 @@ begin
   end;
   if FConfig.GetBool('GENERATE_HTMLHELP') then
     WriteHtmlHelp;
+  if FConfig.GetString('SITEMAP_URL') <> '' then
+    WriteSitemap;
   Result := FFiles;
 end;
 

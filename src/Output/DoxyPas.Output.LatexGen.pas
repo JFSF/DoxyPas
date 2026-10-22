@@ -78,6 +78,7 @@ type
     FRunner: TDotRunner;
     FBodies: TBodyLocator;
     FCalls: TCallIndex;
+    function RefTitle(const AName, AKind: string): string;
     function GraphBlock(const ABase, ATitle, ADot: string): string;
     function ClassGraphs(C: TClassDef): string;
     function UnitGraphs(U: TUnitDef): string;
@@ -151,6 +152,15 @@ procedure TLatexGenerator.Save(const AName, AText: string);
 begin
   TFile.WriteAllText(TPath.Combine(FDir, AName), AText, TUTF8Encoding.Create(False));
   Inc(FFiles);
+end;
+
+// HIDE_COMPOUND_REFERENCE: the title is the name alone, without \"Class Reference\".
+function TLatexGenerator.RefTitle(const AName, AKind: string): string;
+begin
+  if FConfig.GetBool('HIDE_COMPOUND_REFERENCE') then
+    Result := AName
+  else
+    Result := Format(Tr('%0:s %1:s Reference'), [AName, AKind]);
 end;
 
 function TLatexGenerator.LabelOf(ADef: TDefinition): string;
@@ -561,7 +571,7 @@ var
   Text, Detail: string;
   Vis: TList<TMemberDef>;
 begin
-  Result := '\DoxyChapter{' + LatexEscape(Format(Tr('%0:s %1:s Reference'), [C.QualifiedName, Tr(ClassKind(C))])) + '}'#10'\label{' + LabelOf(C) + '}'#10 +
+  Result := '\DoxyChapter{' + LatexEscape(RefTitle(C.QualifiedName, Tr(ClassKind(C)))) + '}'#10'\label{' + LabelOf(C) + '}'#10 +
     IndexEntry(C.Name) + #10;
   if Trim(C.Brief) <> '' then
     Result := Result + Render(C.Brief);
@@ -610,7 +620,7 @@ var
   C: TClassDef;
   Vis: TList<TMemberDef>;
 begin
-  Result := '\DoxyChapter{' + LatexEscape(Format(Tr('%0:s %1:s Reference'), [U.Name, Tr('Unit')])) + '}'#10'\label{' + LabelOf(U) + '}'#10 +
+  Result := '\DoxyChapter{' + LatexEscape(RefTitle(U.Name, Tr('Unit'))) + '}'#10'\label{' + LabelOf(U) + '}'#10 +
     IndexEntry(U.Name) + #10;
   if Trim(U.Brief) <> '' then
     Result := Result + Render(U.Brief);

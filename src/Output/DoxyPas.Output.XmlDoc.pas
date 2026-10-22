@@ -70,9 +70,9 @@ var
 begin
   if ATarget.IsMember then Kind := 'member' else Kind := 'compound';
   if ATarget.External then
-    FW.Open('ref', ['refid', ATarget.RefId, 'kindref', Kind, 'external', ATarget.TagName])
+    FW.Open('ref', ['refid', FlatName(ATarget.RefId), 'kindref', Kind, 'external', ATarget.TagName])
   else
-    FW.Open('ref', ['refid', ATarget.RefId, 'kindref', Kind]);
+    FW.Open('ref', ['refid', FlatName(ATarget.RefId), 'kindref', Kind]);
   FW.Text(ADisplay);
   FW.Close('ref');
 end;
@@ -358,11 +358,11 @@ begin
         if T.Resolved then
         begin
           if T.External then
-            FW.Open('ref', ['refid', T.RefId, 'kindref', 'compound', 'external', T.TagName])
+            FW.Open('ref', ['refid', FlatName(T.RefId), 'kindref', 'compound', 'external', T.TagName])
           else if T.IsMember then
-            FW.Open('ref', ['refid', T.RefId, 'kindref', 'member'])
+            FW.Open('ref', ['refid', FlatName(T.RefId), 'kindref', 'member'])
           else
-            FW.Open('ref', ['refid', T.RefId, 'kindref', 'compound']);
+            FW.Open('ref', ['refid', FlatName(T.RefId), 'kindref', 'compound']);
           WriteChildren(ANode, False);
           FW.Close('ref');
         end

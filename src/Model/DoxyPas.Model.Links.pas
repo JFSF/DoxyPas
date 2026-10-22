@@ -20,6 +20,7 @@ type
     Url: string;           // external: base url + file name + anchor
     TagName: string;       // external: the tag file it comes from
     Resolved: Boolean;
+    Page, Anchor: string;  // \section / \anchor label: the page (without the extension, with its directory) and the anchor
   end;
 
   TLinkText = reference to procedure(const AText: string);
@@ -28,7 +29,7 @@ type
   TLinkResolver = class
   strict private
     FProject: TProject;
-    FSections: TDictionary<string, string>;  // \section / \anchor label -> refid
+    FSections: TDictionary<string, string>;  // \section / \anchor label -> owner page + #1 + label
     FCache: TDictionary<string, TLinkTarget>;  // what Resolve answered: the same words come back all the time
     FWord: TRegEx;                             // compiled once (TRegEx.Match compiles at every call)
     procedure CollectSections;
@@ -39,7 +40,7 @@ type
     property Project: TProject read FProject;
     /// <summary>A definition that gets its own documentation or entry (visible and documented, or EXTRACT_ALL).</summary>
     function IsLinkable(ADef: TDefinition): Boolean;
-    function RefIdOf(ADef: TDefinition): string;
+    function RefIdOf(ADef: TDefinition; AFlat: Boolean = True): string;
     /// <summary>The target of a \ref / \link argument or of a word, seen from AScope.</summary>
     function Resolve(const AText: string; AScope: TDefinition): TLinkTarget;
     /// <summary>Splits AText into plain text and links to classes, units and "Name()" members (AUTOLINK_SUPPORT);
@@ -80,23 +81,28 @@ begin
     (ADef is TUnitDef) or (ADef is TGroupDef) or (ADef is TPageDef));
 end;
 
-function TLinkResolver.RefIdOf(ADef: TDefinition): string;
+function TLinkResolver.RefIdOf(ADef: TDefinition; AFlat: Boolean): string;
+  function Base(const ADisk: string): string;
+  begin
+    if AFlat then Result := FlatName(ADisk) else Result := ADisk;
+  end;
+
 begin
   if ADef is TPageDef then
   begin
     if TPageDef(ADef).IsMainPage then
       Exit('indexpage');
-    Exit(FlatName(ADef.DiskName));
+    Exit(Base(ADef.DiskName));
   end;
   if ADef is TMemberDef then
   begin
     if ADef.Scope <> nil then
-      Result := FlatName(ADef.Scope.DiskName) + '_1' + FlatName(ADef.DiskName)
+      Result := Base(ADef.Scope.DiskName) + '_1' + FlatName(ADef.DiskName)
     else
-      Result := FlatName(ADef.DiskName);
+      Result := Base(ADef.DiskName);
     Exit;
   end;
-  Result := FlatName(ADef.DiskName);
+  Result := Base(ADef.DiskName);
 end;
 
 { Labels of \section, \subsection... and \anchor, found in the documentation of every definition. }
@@ -107,9 +113,9 @@ procedure TLinkResolver.CollectSections;
     C: TDocNode;
   begin
     if (ANode.Kind = dnSection) and (ANode.Id <> '') and (ANode.Name <> 'page') and (ANode.Name <> 'mainpage') then
-      FSections.AddOrSetValue(LowerCase(ANode.Id), AOwnerRef + '_1' + ANode.Id)
+      FSections.AddOrSetValue(LowerCase(ANode.Id), AOwnerRef + #1 + ANode.Id)
     else if (ANode.Kind = dnAnchor) and (ANode.Text <> '') then
-      FSections.AddOrSetValue(LowerCase(ANode.Text), AOwnerRef + '_1' + ANode.Text);
+      FSections.AddOrSetValue(LowerCase(ANode.Text), AOwnerRef + #1 + ANode.Text);
     for C in ANode.Children do
       Walk(C, AOwnerRef);
   end;
@@ -122,7 +128,7 @@ procedure TLinkResolver.CollectSections;
       Exit;
     Root := ParseDoc(ADef.Brief + #10#10 + ADef.Detailed);
     try
-      Walk(Root, RefIdOf(ADef));
+      Walk(Root, RefIdOf(ADef, False));
     finally
       Root.Free;
     end;
@@ -190,7 +196,9 @@ begin
     end;
   if FSections.TryGetValue(LowerCase(Name), Ref) then
   begin
-    Result.RefId := Ref;
+    Result.Page := Copy(Ref, 1, Pos(#1, Ref) - 1);
+    Result.Anchor := Copy(Ref, Pos(#1, Ref) + 1, MaxInt);
+    Result.RefId := FlatName(Result.Page) + '_1' + Result.Anchor;
     Result.IsMember := True;
     Result.Resolved := True;
     Exit;

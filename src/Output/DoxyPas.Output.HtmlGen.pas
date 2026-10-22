@@ -100,6 +100,10 @@ type
     FProjectId: string;
     FPage: TStringBuilder;
     FPageFile, FPageTitle: string;
+    FSepMembers: Boolean;     // SEPARATE_MEMBER_PAGES
+    FMemberPages: TList<TMemberDef>;     // the pages still to write (they are made after the page of the scope)
+    FMemberDone: TDictionary<TMemberDef, Boolean>;
+    FDraining: Boolean;
     FRel: string;             // "../" for every directory the page is below the root (CREATE_SUBDIRS)
     FHasPages, FHasGroups, FHasClasses, FHasUnits: Boolean;
     FDotGraphs: Boolean;      // HAVE_DOT: draw the graphs (Windows only for now)
@@ -177,6 +181,8 @@ type
     // pages
     function RunGraph(const ABase, ATitle, ADot: string): string;
     procedure FlushGraphs;
+    procedure FlushMemberPages;
+    procedure WriteMemberPage(M: TMemberDef);
     function MathJaxScript: string;
     procedure WriteFormulas;
     function ClassGraph(C: TClassDef): string;
@@ -310,6 +316,10 @@ begin
   FDoc.ObfuscateEmails := AConfig.GetBool('OBFUSCATE_EMAILS');
   FDoc.ImagePath := AConfig.GetList('IMAGE_PATH');
   FDoc.TocHeadings := AConfig.GetInt('TOC_INCLUDE_HEADINGS');
+  FSepMembers := AConfig.GetBool('SEPARATE_MEMBER_PAGES');
+  FDoc.SeparateMembers := FSepMembers;
+  FMemberPages := TList<TMemberDef>.Create;
+  FMemberDone := TDictionary<TMemberDef, Boolean>.Create;
   FDoc.GithubIds := SameText(AConfig.GetString('MARKDOWN_ID_STYLE'), 'GITHUB');
   FDoc.DotFileDirs := AConfig.GetList('DOTFILE_DIRS');
   FDoc.OnDot :=
@@ -410,6 +420,8 @@ begin
   FNav.Free;
   FDoc.Free;
   FRunner.Free;
+  FMemberDone.Free;
+  FMemberPages.Free;
   FMenu.Free;
   FTabs.Free;
   FLayout.Free;
@@ -919,6 +931,37 @@ begin
     Page := TRegEx.Replace(Page, '(\b(?:href|src|data)=")(?!#|/|"|\$|[A-Za-z][A-Za-z0-9+.-]*:)', '$1' + FRel);
   SaveText(FPageFile + FExt, Page);
   FreeAndNil(FPage);
+  FlushMemberPages;
+end;
+
+procedure THtmlGenerator.FlushMemberPages;
+var
+  M: TMemberDef;
+begin
+  if FDraining then          // (the pages of the members end here too)
+    Exit;
+  FDraining := True;
+  try
+    while FMemberPages.Count > 0 do
+    begin
+      M := FMemberPages[0];
+      FMemberPages.Delete(0);
+      WriteMemberPage(M);
+    end;
+  finally
+    FDraining := False;
+  end;
+end;
+
+procedure THtmlGenerator.WriteMemberPage(M: TMemberDef);
+var
+  Title: string;
+begin
+  Title := M.QualifiedName;
+  BeginPage(FDoc.MemberPage(M), Title);
+  PageHeader(Title, '');
+  W(MemberDoc(M));
+  EndPage(NavPathOf(M));
 end;
 
 procedure THtmlGenerator.PageHeader(const ATitle, ASummary: string);
@@ -1448,7 +1491,10 @@ begin
   begin
     More := '';
     if IsDocPage(M) and (Trim(M.Detailed) <> '') and (AInheritClass = '') then
-      More := ' <a href="#' + Id + '">More...</a>';
+      if FSepMembers then
+        More := ' <a href="' + HtmlEscape(FDoc.DefUrl(M)) + '">More...</a>'
+      else
+        More := ' <a href="#' + Id + '">More...</a>';
     Result := Result + '<tr class="memdesc:' + Id + '"><td class="mdescLeft">&#160;</td><td class="mdescRight">' +
       Brief + More + '<br /></td></tr>'#10;
   end;
@@ -1834,9 +1880,16 @@ begin
         Title := Tr(UnitGroups[3]);          // (the constructors of a unit: none)
       if Titles[G] <> '' then
         Title := Titles[G];
-      Result := Result + '<h2 class="groupheader">' + HtmlEscape(Title) + '</h2>'#10;
+      if not FSepMembers then
+        Result := Result + '<h2 class="groupheader">' + HtmlEscape(Title) + '</h2>'#10;
       for M in Docs do
-        Result := Result + MemberDoc(M);
+        if not FSepMembers then
+          Result := Result + MemberDoc(M)
+        else if not FMemberDone.ContainsKey(M) then
+        begin
+          FMemberDone.Add(M, True);
+          FMemberPages.Add(M);
+        end;
     end;
   finally
     Groups.Free;

@@ -37,6 +37,7 @@ type
     FDotFileDirs: TArray<string>;
     FUsedImages: TStringList;
     FLinks: TLinkResolver;
+    FSepMembers: Boolean;
     FExt: string;
     FScope: TDefinition;
     FFormulas: Integer;
@@ -99,6 +100,10 @@ type
     /// <summary>"file.html#anchor" of a link target.</summary>
     function UrlOf(const ATarget: TLinkTarget): string;
     function DefUrl(ADef: TDefinition): string;
+    /// <summary>SEPARATE_MEMBER_PAGES: the members that are documented have a page of their own.</summary>
+    property SeparateMembers: Boolean read FSepMembers write FSepMembers;
+    /// <summary>The page (without the extension) of a member in SeparateMembers mode: next to the page of its scope.</summary>
+    function MemberPage(AMember: TDefinition): string;
     function Anchor(const AAnchor: string): string;
     /// <summary>Paragraphs and sections (the content of a "textblock").</summary>
     function Render(const AText: string; AScope: TDefinition): string;
@@ -149,11 +154,18 @@ begin
   Result := '<a class="anchor" id="' + HtmlEscape(AAnchor) + '"></a>';
 end;
 
+function THtmlDocWriter.MemberPage(AMember: TDefinition): string;
+begin
+  Result := AMember.Scope.DiskName + '_' + FlatName(AMember.DiskName);
+end;
+
 function THtmlDocWriter.DefUrl(ADef: TDefinition): string;
 begin
   if ADef is TMemberDef then
   begin
-    if ADef.Scope <> nil then
+    if FSepMembers and (ADef.Scope <> nil) and FLinks.IsLinkable(ADef) then
+      Result := MemberPage(ADef) + FExt
+    else if ADef.Scope <> nil then
       Result := ADef.Scope.DiskName + FExt + '#' + ADef.DiskName
     else
       Result := ADef.DiskName + FExt;
@@ -170,6 +182,8 @@ begin
     Exit(ATarget.Url);
   if ATarget.Def <> nil then
     Exit(DefUrl(ATarget.Def));
+  if ATarget.Anchor <> '' then
+    Exit(ATarget.Page + FExt + '#' + ATarget.Anchor);
   // \section / \anchor label: "<owner disk name>_1<label>"; underscores of the disk name are doubled
   I := 1;
   while I < Length(ATarget.RefId) do

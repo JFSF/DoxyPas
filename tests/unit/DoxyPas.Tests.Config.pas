@@ -101,7 +101,7 @@ begin
       Assert.IsTrue(CompareStr(Names[I - 1], Names[I]) < 0, Names[I] + ' is not in order');
   end;
   Assert.IsTrue(IsImplemented('PROJECT_NAME'));
-  Assert.IsFalse(IsImplemented('SEPARATE_MEMBER_PAGES'));
+  Assert.IsFalse(IsImplemented('JAVADOC_BANNER'));
   Assert.IsFalse(IsImplemented('NO_SUCH_OPTION'));
 end;
 

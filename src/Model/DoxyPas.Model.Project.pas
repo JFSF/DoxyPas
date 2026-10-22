@@ -34,6 +34,7 @@ type
     FullPathNames: Boolean;          // FULL_PATH_NAMES: the path before the file names (after STRIP_FROM_PATH)
     SortGroupNames: Boolean;         // SORT_GROUP_NAMES: the topics by title
     AutolinkSupport: Boolean;        // link words that match a class or unit name
+    MainPageFile: string;            // USE_MDFILE_AS_MAINPAGE: a Markdown file that is the main page
     XrefLists: TArray<string>;       // GENERATE_TODOLIST...: the commands that get a page (todo, test, bug, deprecated)
     class function Default: TProjectOptions; static;
     class function FromConfig(AConfig: TConfig): TProjectOptions; static;
@@ -180,6 +181,7 @@ begin
   Result.ExcludeSymbols := AConfig.GetList('EXCLUDE_SYMBOLS');
   Result.SortGroupNames := AConfig.GetBool('SORT_GROUP_NAMES');
   Result.AutolinkSupport := AConfig.GetBool('AUTOLINK_SUPPORT');
+  Result.MainPageFile := AConfig.GetString('USE_MDFILE_AS_MAINPAGE');
   Result.XrefLists := nil;
   if AConfig.GetBool('GENERATE_TODOLIST') then Result.XrefLists := Result.XrefLists + ['todo'];
   if AConfig.GetBool('GENERATE_TESTLIST') then Result.XrefLists := Result.XrefLists + ['test'];

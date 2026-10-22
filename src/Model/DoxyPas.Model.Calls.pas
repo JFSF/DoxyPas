@@ -71,7 +71,7 @@ uses
 
 function ReadSourceText(const AFile: string): string;
 begin
-  Result := ReadSourceFile(AFile);
+  Result := ReadInputFile(AFile);
 end;
 
 const

@@ -7,6 +7,7 @@ interface
 
 uses
   System.SysUtils,
+  System.Classes,
   System.Generics.Collections,
   DoxyPas.Doc.Nodes,
   DoxyPas.Model.Defs,
@@ -15,7 +16,9 @@ uses
 type
   THtmlDocWriter = class
   strict private
-    FObfuscateEmails, FExternalInWindow: Boolean;
+    FObfuscateEmails, FExternalInWindow, FExampleRecursive: Boolean;
+    FImagePath, FExamplePath: TArray<string>;
+    FUsedImages: TStringList;
     FLinks: TLinkResolver;
     FExt: string;
     FScope: TDefinition;
@@ -34,6 +37,9 @@ type
     function List(ANode: TDocNode): string;
     function Table(ANode: TDocNode): string;
     function Fragment(ANode: TDocNode): string;
+    function FindFile(const AName: string; const APaths: TArray<string>; ARecursive: Boolean): string;
+    function IncludeFragment(ANode: TDocNode): string;
+    function ImageSource(const AName: string): string;
     function Section(ANode: TDocNode; ALevel: Integer): string;
     function RefLink(const ADisplay: string; const ATarget: TLinkTarget): string;
     function Prepare(const AText: string; AScope: TDefinition): TDocNode;
@@ -44,6 +50,12 @@ type
     property ObfuscateEmails: Boolean read FObfuscateEmails write FObfuscateEmails;
     /// <summary>EXT_LINKS_IN_WINDOW: the links to other projects (tag files) open in another window.</summary>
     property ExternalLinksInWindow: Boolean read FExternalInWindow write FExternalInWindow;
+    /// <summary>IMAGE_PATH: where the files of \image are looked for; the ones found are in UsedImages (to be copied).</summary>
+    property ImagePath: TArray<string> read FImagePath write FImagePath;
+    property UsedImages: TStringList read FUsedImages;
+    /// <summary>EXAMPLE_PATH and EXAMPLE_RECURSIVE: where the files of \include, \snippet... are looked for.</summary>
+    property ExamplePath: TArray<string> read FExamplePath write FExamplePath;
+    property ExampleRecursive: Boolean read FExampleRecursive write FExampleRecursive;
     /// <summary>Formulas are images (formula_N.svg, made from FormulaTex) instead of MathJax markup.</summary>
     property ImageFormulas: Boolean read FImageFormulas write FImageFormulas;
     /// <summary>The TeX of the formulas written so far, in the order of their numbers: 'i' + TeX for an inline formula,
@@ -67,7 +79,9 @@ implementation
 
 uses
   System.StrUtils,
-  System.Classes,
+  System.IOUtils,
+  DoxyPas.Core.Log,
+  DoxyPas.Core.SourceText,
   DoxyPas.Core.Timing,
   DoxyPas.Doc.Parser,
   DoxyPas.Output.HtmlCode,
@@ -80,11 +94,15 @@ begin
   FLinks := ALinks;
   FExt := AExt;
   FFormulaTex := TList<string>.Create;
+  FUsedImages := TStringList.Create;
+  FUsedImages.Sorted := True;
+  FUsedImages.Duplicates := dupIgnore;
 end;
 
 destructor THtmlDocWriter.Destroy;
 begin
   FFormulaTex.Free;
+  FUsedImages.Free;
   inherited;
 end;
 
@@ -292,11 +310,103 @@ begin
         Result := ANode.Text;
     dnImage:
       if (ANode.Name = 'html') or (ANode.Name = '') then
-        Result := '<div class="image">'#10'<img src="' + HtmlEscape(ANode.Text) + '" alt="' + HtmlEscape(ANode.Extra) +
+        Result := '<div class="image">'#10'<img src="' + HtmlEscape(ImageSource(ANode.Text)) + '" alt="' + HtmlEscape(ANode.Extra) +
           '"/>'#10'</div>'#10;
     dnCite: Result := '[' + HtmlEscape(ANode.Text) + ']';
-    dnCopyDoc, dnInclude: ; // resolved earlier / not supported
+    dnInclude: Result := IncludeFragment(ANode);
+    dnCopyDoc: ; // resolved earlier
   end;
+end;
+
+// AName in APaths (directories, or files): as it is, and in the sub-directories when ARecursive. '' if it is not there.
+function THtmlDocWriter.FindFile(const AName: string; const APaths: TArray<string>; ARecursive: Boolean): string;
+var
+  P, F, N: string;
+begin
+  N := AName.Replace('/', PathDelim);
+  for P in APaths do
+    if TDirectory.Exists(P) then
+    begin
+      F := TPath.Combine(P, N);
+      if TFile.Exists(F) then
+        Exit(F);
+      if ARecursive then
+        for F in TDirectory.GetFiles(P, ExtractFileName(N), TSearchOption.soAllDirectories) do
+          Exit(F);
+    end
+    else if SameText(ExtractFileName(P), ExtractFileName(N)) and TFile.Exists(P) then
+      Exit(P);
+  Result := '';
+end;
+
+// IMAGE_PATH: the image is copied to the HTML directory (UsedImages) and the page refers to it by its file name.
+function THtmlDocWriter.ImageSource(const AName: string): string;
+var
+  F: string;
+begin
+  Result := AName;
+  if AName.Contains('://') then
+    Exit;
+  F := FindFile(AName, FImagePath, False);
+  if (F = '') and TFile.Exists(AName.Replace('/', PathDelim)) then
+    F := AName.Replace('/', PathDelim);
+  if F = '' then
+    Warn('', 0, 'image file ' + AName + ' is not found in IMAGE_PATH: assuming the image is in the output directory')
+  else
+  begin
+    FUsedImages.Add(F);
+    Result := ExtractFileName(F);
+  end;
+end;
+
+// \include, \verbinclude, \htmlinclude and \snippet (the lines between the two [name] markers) of a file of EXAMPLE_PATH.
+function THtmlDocWriter.IncludeFragment(ANode: TDocNode): string;
+var
+  Path, Text, Mark, L: string;
+  Lines: TArray<string>;
+  SB: TStringBuilder;
+  Inside: Boolean;
+begin
+  Result := '';
+  if (ANode.Name = 'dontinclude') or (ANode.Text = '') then
+    Exit;
+  Path := FindFile(ANode.Text, FExamplePath, FExampleRecursive);
+  if Path = '' then
+  begin
+    Warn('', 0, 'included file ' + ANode.Text + ' is not found. Check your EXAMPLE_PATH');
+    Exit;
+  end;
+  Text := ReadSourceFile(Path).Replace(#13#10, #10);
+  if ANode.Name = 'snippet' then
+  begin
+    Mark := '[' + ANode.Extra + ']';
+    Inside := False;
+    SB := TStringBuilder.Create;
+    try
+      Lines := Text.Split([#10]);
+      for L in Lines do
+        if L.Contains(Mark) then
+        begin
+          if Inside then
+            Break;
+          Inside := True;
+        end
+        else if Inside then
+          SB.Append(L).Append(#10);
+      if not Inside then
+        Warn('', 0, 'block ' + ANode.Extra + ' not found in ' + ANode.Text);
+      Text := SB.ToString;
+    finally
+      SB.Free;
+    end;
+  end;
+  Text := Text.TrimRight([#10]);
+  if ANode.Name = 'htmlinclude' then
+    Result := Text + #10
+  else if (ANode.Name = 'verbinclude') or not MatchText(ExtractFileExt(Path), ['.pas', '.inc', '.dpr', '.dpk', '.lpr', '.pp']) then
+    Result := '<pre class="fragment">' + HtmlEscape(Text) + '</pre>'#10
+  else
+    Result := '<div class="fragment">' + HighlightPascal(Text) + '</div><!-- fragment -->'#10;
 end;
 
 function THtmlDocWriter.Fragment(ANode: TDocNode): string;

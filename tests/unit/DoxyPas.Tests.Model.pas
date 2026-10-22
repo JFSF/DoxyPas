@@ -22,6 +22,7 @@ type
     [Test] procedure PrivateNeedsExtractPrivate;
     [Test] procedure ImplementationOnlyNeedsExtractStatic;
     [Test] procedure TodoAndDeprecatedListsAreOptional;
+    [Test] procedure MarkdownFileIsTheMainPage;
   end;
 
 implementation
@@ -338,6 +339,28 @@ begin
     Assert.IsTrue(P.Pages.Count = 0);
   finally
     P.Free;
+  end;
+end;
+
+procedure TModelTests.MarkdownFileIsTheMainPage;
+var
+  P: TProject;
+  F: string;
+begin
+  F := TPath.Combine(TPath.GetTempPath, 'doxypas_main_' + TGuid.NewGuid.ToString.Substring(1, 8) + '.md');
+  TFile.WriteAllText(F, '# My Project'#10#10'Some **intro**.'#10, TEncoding.UTF8);
+  try
+    P := BuildFromSources(['U.pas'], ['unit U; interface implementation end.'], 'USE_MDFILE_AS_MAINPAGE = ' + F);
+    try
+      Assert.AreEqual(1, Integer(P.Pages.Count));
+      Assert.IsTrue(P.Pages[0].IsMainPage);
+      Assert.AreEqual('My Project', P.Pages[0].Title);
+      Assert.IsFalse(P.Pages[0].Detailed.Contains('**'));      // converted from Markdown
+    finally
+      P.Free;
+    end;
+  finally
+    TFile.Delete(F);
   end;
 end;
 

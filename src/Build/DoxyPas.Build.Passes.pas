@@ -25,11 +25,14 @@ uses
   System.Generics.Collections,
   System.Generics.Defaults,
   System.Hash,
+  System.IOUtils,
   System.Threading,
   System.Character,
   System.RegularExpressions,
   DoxyPas.Model.Entry,
   DoxyPas.Model.Defs,
+  DoxyPas.Core.SourceText,
+  DoxyPas.Doc.Markdown,
   DoxyPas.Doc.Nodes,
   DoxyPas.Doc.Parser;
 
@@ -923,6 +926,45 @@ end;
 
 function PageExists(AProject: TProject; const AName: string): Boolean; forward;
 
+// USE_MDFILE_AS_MAINPAGE: the Markdown file is the main page (a first "# Title" line is the title of the page).
+procedure AddMarkdownMainPage(AProject: TProject);
+var
+  F, Text, Title: string;
+  M: TMatch;
+  E: TEntry;
+  P: TPageDef;
+begin
+  F := AProject.Options.MainPageFile;
+  if F = '' then
+    Exit;
+  if not TFile.Exists(F) then
+  begin
+    AProject.Warn('', 0, 'USE_MDFILE_AS_MAINPAGE: file ' + F + ' not found');
+    Exit;
+  end;
+  Text := ReadSourceFile(F);
+  Title := '';
+  M := TRegEx.Match(Text, '\A\s*#[ \t]+([^\r\n]*?)[ \t#]*\r?\n');
+  if not M.Success then
+    M := TRegEx.Match(Text, '\A\s*([^\r\n]+?)[ \t]*\r?\n=+[ \t]*\r?\n');
+  if M.Success then
+  begin
+    Title := Trim(M.Groups[1].Value);
+    Text := Text.Substring(M.Length);
+  end;
+  for P in AProject.Pages.ToArray do
+    if P.IsMainPage then
+      AProject.Pages.Remove(P);          // the file replaces a \mainpage of the sources
+  E := TEntry.Create(ekPage, 'mainpage');
+  E.TypeText := Title;
+  E.Detailed := MarkdownToDoxygen(Text);
+  AProject.Roots.Add(E);
+  P := TPageDef.Create('mainpage', E);
+  P.Title := Title;
+  P.IsMainPage := True;
+  AProject.AddPage(P);
+end;
+
 // GENERATE_TODOLIST and the like: a page with the \todo (\test, \bug, \deprecated) paragraphs of the documented
 // definitions, each with a link to its definition. A "deprecated" directive of the declaration is listed with its message.
 procedure BuildXrefLists(AProject: TProject);
@@ -1154,6 +1196,7 @@ begin
   Lap('model: copydoc');
   AssignGroups(AProject);
   Lap('model: groups');
+  AddMarkdownMainPage(AProject);
   BuildXrefLists(AProject);
   Lap('model: todo lists');
   AssignDiskNames(AProject);

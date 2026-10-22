@@ -20,9 +20,22 @@ function DecodeSourceBytes(const ABytes: TBytes; const AFileName: string): strin
 /// <summary>The text of a source file.</summary>
 function ReadSourceFile(const AFileName: string): string;
 
+/// <summary>Sets INPUT_FILTER (AFilter) and FILTER_PATTERNS (APatterns: "pattern=filter"). Call it before the files are read.</summary>
+procedure SetInputFilter(const AFilter: string; const APatterns: TArray<string>);
+
+/// <summary>The text of an input file after the filter that applies to it (the command is run with the name of the file and
+/// its output is the text); the file as it is when there is no filter or the filter fails (a warning).</summary>
+function ReadInputFile(const AFileName: string): string;
+
 implementation
 
 uses
+{$IFDEF MSWINDOWS}
+  Winapi.Windows,
+{$ENDIF}
+{$IFDEF POSIX}
+  Posix.Stdlib,
+{$ENDIF}
   System.IOUtils,
   System.Masks,
   DoxyPas.Core.Log;
@@ -134,6 +147,98 @@ end;
 function ReadSourceFile(const AFileName: string): string;
 begin
   Result := DecodeSourceBytes(TFile.ReadAllBytes(AFileName), AFileName);
+end;
+
+type
+  TPatternFilter = record
+    Pattern, Command: string;
+  end;
+
+var
+  InputFilter: string;
+  FilterPatterns: TArray<TPatternFilter>;
+
+procedure SetInputFilter(const AFilter: string; const APatterns: TArray<string>);
+var
+  S: string;
+  P: Integer;
+begin
+  InputFilter := Trim(AFilter);
+  FilterPatterns := nil;
+  for S in APatterns do
+  begin
+    P := S.IndexOf('=');
+    if P <= 0 then
+      Continue;
+    SetLength(FilterPatterns, Length(FilterPatterns) + 1);
+    FilterPatterns[High(FilterPatterns)].Pattern := Trim(S.Substring(0, P));
+    FilterPatterns[High(FilterPatterns)].Command := Trim(S.Substring(P + 1));
+  end;
+end;
+
+// The command that filters this file: the one of the first pattern that matches, else INPUT_FILTER.
+function FilterFor(const AFileName: string): string;
+var
+  F: TPatternFilter;
+  N: string;
+begin
+  N := ExtractFileName(AFileName);
+  for F in FilterPatterns do
+    if MatchesMask(N, F.Pattern) or MatchesMask(AFileName, F.Pattern) then
+      Exit(F.Command);
+  Result := InputFilter;
+end;
+
+// Runs the command through the shell with its output in AOutFile; True when it ended with exit code 0.
+function RunFilter(const ACommand, AOutFile: string): Boolean;
+{$IFDEF MSWINDOWS}
+var
+  SI: TStartupInfo;
+  PI: TProcessInformation;
+  Cmd: string;
+  Code: Cardinal;
+begin
+  Result := False;
+  ZeroMemory(@SI, SizeOf(SI));
+  SI.cb := SizeOf(SI);
+  Cmd := 'cmd.exe /s /c "' + ACommand + ' > "' + AOutFile + '""';
+  if CreateProcess(nil, PChar(Cmd), nil, nil, False, CREATE_NO_WINDOW, nil, nil, SI, PI) then
+  begin
+    WaitForSingleObject(PI.hProcess, 600000);
+    GetExitCodeProcess(PI.hProcess, Code);
+    Result := Code = 0;
+    CloseHandle(PI.hProcess);
+    CloseHandle(PI.hThread);
+  end;
+end;
+{$ELSE}
+var
+  M: TMarshaller;
+begin
+  Result := _system(M.AsAnsi(ACommand + ' > ''' + AOutFile.Replace('''', '''\''''') + '''').ToPointer) = 0;
+end;
+{$ENDIF}
+
+function ReadInputFile(const AFileName: string): string;
+var
+  Cmd, Tmp: string;
+begin
+  Cmd := FilterFor(AFileName);
+  if Cmd = '' then
+    Exit(ReadSourceFile(AFileName));
+  Tmp := TPath.Combine(TPath.GetTempPath, 'doxypas_' + TGuid.NewGuid.ToString.Substring(1, 8) + '.tmp');
+  try
+    if RunFilter(Cmd + ' "' + AFileName + '"', Tmp) and TFile.Exists(Tmp) then
+      Result := DecodeSourceBytes(TFile.ReadAllBytes(Tmp), AFileName)
+    else
+    begin
+      Warn(AFileName, 0, 'the input filter ' + Cmd + ' failed: the file is read as it is');
+      Result := ReadSourceFile(AFileName);
+    end;
+  finally
+    if TFile.Exists(Tmp) then
+      TFile.Delete(Tmp);
+  end;
 end;
 
 initialization

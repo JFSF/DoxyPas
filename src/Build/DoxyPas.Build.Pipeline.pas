@@ -265,6 +265,7 @@ var
   Pool: TThreadPool;
 begin
   SetInputEncoding(AConfig.GetString('INPUT_ENCODING'), AConfig.GetList('INPUT_FILE_ENCODING'));
+  SetInputFilter(AConfig.GetString('INPUT_FILTER'), AConfig.GetList('FILTER_PATTERNS'));
   Job := TParseJob.Create;
   try
     Job.Files := AFiles;

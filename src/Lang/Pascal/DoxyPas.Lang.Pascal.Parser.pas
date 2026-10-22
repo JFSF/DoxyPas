@@ -115,7 +115,7 @@ begin
     if TFile.Exists(F) then
     begin
       FileName := F;
-      Content := ReadSourceFile(F);
+      Content := ReadInputFile(F);
       Exit(True);
     end;
   end;
@@ -210,7 +210,7 @@ begin
   if not FIncluded.TryGetValue(Key, S) then
   begin
     try
-      S := TPasSource.Create(ReadSourceFile(ANode.FileName));
+      S := TPasSource.Create(ReadInputFile(ANode.FileName));
     except
       S := TPasSource.Create('');
     end;
@@ -873,7 +873,7 @@ end;
 
 function ParsePascalFile(const AFileName: string; const AOptions: TPascalParseOptions): TPascalParseResult;
 begin
-  Result := ParsePascalText(ReadSourceFile(AFileName), AFileName, AOptions);
+  Result := ParsePascalText(ReadInputFile(AFileName), AFileName, AOptions);
 end;
 
 end.

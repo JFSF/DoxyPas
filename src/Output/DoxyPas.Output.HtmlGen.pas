@@ -292,6 +292,9 @@ begin
     FExt := '.' + FExt;
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
   FDoc.ObfuscateEmails := AConfig.GetBool('OBFUSCATE_EMAILS');
+  FDoc.ImagePath := AConfig.GetList('IMAGE_PATH');
+  FDoc.ExamplePath := AConfig.GetList('EXAMPLE_PATH');
+  FDoc.ExampleRecursive := AConfig.GetBool('EXAMPLE_RECURSIVE');
   FDoc.ExternalLinksInWindow := AConfig.GetBool('EXT_LINKS_IN_WINDOW');
   FSource := AConfig.GetBool('SOURCE_BROWSER');
   FWordCache := TDictionary<string, string>.Create;
@@ -3804,6 +3807,7 @@ end;
 
 function THtmlGenerator.Run: Integer;
 var
+  S: string;
   C: TClassDef;
   U: TUnitDef;
   G: TGroupDef;
@@ -3898,6 +3902,11 @@ begin
   FlushGraphs;
   if FDoc.ImageFormulas then
     WriteFormulas;
+  for S in FDoc.UsedImages do          // IMAGE_PATH: the images of \image
+  begin
+    CopyIntoOutput(S);
+    Inc(FFiles);
+  end;
   if FConfig.GetBool('GENERATE_HTMLHELP') then
     WriteHtmlHelp;
   Result := FFiles;

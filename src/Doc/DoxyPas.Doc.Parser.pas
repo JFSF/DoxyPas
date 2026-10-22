@@ -744,6 +744,8 @@ begin
     N := AParent.Add(TDocNode.Create(dnInclude));
     N.Name := AName;
     N.Text := ReadWord;
+    if AName = 'snippet' then
+      N.Extra := ReadWord;          // the name of the block between the [name] markers
   end
   else if ParamSectionName(AName) <> '' then
   begin

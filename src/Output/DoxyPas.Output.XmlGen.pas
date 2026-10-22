@@ -483,7 +483,7 @@ begin
   Begin_('compound.xsd');
   Attrs := TList<string>.Create;
   try
-    Attrs.AddRange(['id', C.DiskName, 'kind', CompoundKind(C), 'language', 'Pascal', 'prot', ProtText(C.Protection)]);
+    Attrs.AddRange(['id', FlatName(C.DiskName), 'kind', CompoundKind(C), 'language', 'Pascal', 'prot', ProtText(C.Protection)]);
     if (C.Entry <> nil) and (efAbstract in C.Entry.Flags) then
       Attrs.AddRange(['abstract', 'yes']);
     if (C.Entry <> nil) and (efSealed in C.Entry.Flags) then
@@ -499,7 +499,7 @@ begin
   begin
     FW.NewLine;
     if (B.ClassDef <> nil) and FLinks.IsLinkable(B.ClassDef) then
-      FW.Leaf('basecompoundref', B.Text, ['refid', B.ClassDef.DiskName, 'prot', 'public', 'virt', 'non-virtual'])
+      FW.Leaf('basecompoundref', B.Text, ['refid', FlatName(B.ClassDef.DiskName), 'prot', 'public', 'virt', 'non-virtual'])
     else
       FW.Leaf('basecompoundref', B.Text, ['prot', 'public', 'virt', 'non-virtual']);
   end;
@@ -507,13 +507,13 @@ begin
     if FLinks.IsLinkable(D) then
     begin
       FW.NewLine;
-      FW.Leaf('derivedcompoundref', D.Name, ['refid', D.DiskName, 'prot', 'public', 'virt', 'non-virtual']);
+      FW.Leaf('derivedcompoundref', D.Name, ['refid', FlatName(D.DiskName), 'prot', 'public', 'virt', 'non-virtual']);
     end;
   for N in C.NestedClasses do
     if FProject.IsVisible(N) then
     begin
       FW.NewLine;
-      FW.Leaf('innerclass', N.QualifiedName, ['refid', N.DiskName, 'prot', ProtText(N.Protection)]);
+      FW.Leaf('innerclass', N.QualifiedName, ['refid', FlatName(N.DiskName), 'prot', ProtText(N.Protection)]);
     end;
   WriteTypeParams(C.Entry, C);
   Vis := VisibleMembers(C.Members);
@@ -543,7 +543,7 @@ begin
   FW.Close('listofallmembers');
   FW.NewLine;
   FW.Close('compounddef');
-  Finish(C.DiskName);
+  Finish(FlatName(C.DiskName));
 end;
 
 // XML_PROGRAMLISTING: the text of the file of the unit, a <codeline> for each line with its coloured pieces.
@@ -585,7 +585,7 @@ var
 begin
   Begin_('compound.xsd');
   FW.NewLine;
-  FW.Open('compounddef', ['id', U.DiskName, 'kind', 'namespace', 'language', 'Pascal', 'prot', 'public']);
+  FW.Open('compounddef', ['id', FlatName(U.DiskName), 'kind', 'namespace', 'language', 'Pascal', 'prot', 'public']);
   FW.NewLine;
   FW.Leaf('compoundname', U.Name, []);
   // the uses clause plays the role of the include list
@@ -594,7 +594,7 @@ begin
     FW.NewLine;
     T := FProject.FindUnit(S);
     if (T <> nil) and FLinks.IsLinkable(T) then
-      FW.Leaf('includes', S, ['refid', T.DiskName, 'local', 'no'])
+      FW.Leaf('includes', S, ['refid', FlatName(T.DiskName), 'local', 'no'])
     else
       FW.Leaf('includes', S, ['local', 'no']);
   end;
@@ -602,13 +602,13 @@ begin
     if FLinks.IsLinkable(T) then
     begin
       FW.NewLine;
-      FW.Leaf('includedby', T.Name, ['refid', T.DiskName, 'local', 'no']);
+      FW.Leaf('includedby', T.Name, ['refid', FlatName(T.DiskName), 'local', 'no']);
     end;
   for C in U.Classes do
     if FProject.IsVisible(C) then
     begin
       FW.NewLine;
-      FW.Leaf('innerclass', C.QualifiedName, ['refid', C.DiskName, 'prot', 'public']);
+      FW.Leaf('innerclass', C.QualifiedName, ['refid', FlatName(C.DiskName), 'prot', 'public']);
     end;
   Vis := VisibleMembers(U.Members);
   try
@@ -625,7 +625,7 @@ begin
   WriteLocation(U.Entry, nil);
   FW.NewLine;
   FW.Close('compounddef');
-  Finish(U.DiskName);
+  Finish(FlatName(U.DiskName));
 end;
 
 procedure TXmlGenerator.WriteGroup(G: TGroupDef);
@@ -639,7 +639,7 @@ var
 begin
   Begin_('compound.xsd');
   FW.NewLine;
-  FW.Open('compounddef', ['id', G.DiskName, 'kind', 'group']);
+  FW.Open('compounddef', ['id', FlatName(G.DiskName), 'kind', 'group']);
   FW.NewLine;
   FW.Leaf('compoundname', G.Name, []);
   FW.NewLine;
@@ -648,18 +648,18 @@ begin
     if (D is TClassDef) and FProject.IsVisible(D) then
     begin
       FW.NewLine;
-      FW.Leaf('innerclass', D.QualifiedName, ['refid', D.DiskName, 'prot', 'public']);
+      FW.Leaf('innerclass', D.QualifiedName, ['refid', FlatName(D.DiskName), 'prot', 'public']);
     end;
   for D in G.Members do
     if (D is TUnitDef) and FProject.IsVisible(D) then
     begin
       FW.NewLine;
-      FW.Leaf('innernamespace', D.Name, ['refid', D.DiskName]);
+      FW.Leaf('innernamespace', D.Name, ['refid', FlatName(D.DiskName)]);
     end;
   for S in G.Subgroups do
   begin
     FW.NewLine;
-    FW.Leaf('innergroup', S.Title, ['refid', S.DiskName]);
+    FW.Leaf('innergroup', S.Title, ['refid', FlatName(S.DiskName)]);
   end;
   Kinds := TList<string>.Create;
   try
@@ -696,7 +696,7 @@ begin
   WriteLocation(G.Entry, nil);
   FW.NewLine;
   FW.Close('compounddef');
-  Finish(G.DiskName);
+  Finish(FlatName(G.DiskName));
 end;
 
 procedure TXmlGenerator.WritePage(P: TPageDef);
@@ -769,7 +769,7 @@ begin
       begin
         Vis := VisibleMembers(C.Members);
         try
-          Compound(C.DiskName, CompoundKind(C), C.QualifiedName, Vis);
+          Compound(FlatName(C.DiskName), CompoundKind(C), C.QualifiedName, Vis);
         finally
           Vis.Free;
         end;
@@ -779,13 +779,13 @@ begin
       begin
         Vis := VisibleMembers(U.Members);
         try
-          Compound(U.DiskName, 'namespace', U.Name, Vis);
+          Compound(FlatName(U.DiskName), 'namespace', U.Name, Vis);
         finally
           Vis.Free;
         end;
       end;
     for G in FProject.Groups do
-      Compound(G.DiskName, 'group', G.Name, nil);
+      Compound(FlatName(G.DiskName), 'group', G.Name, nil);
     for P in FProject.Pages do
       if P.IsMainPage then
         Compound(FLinks.RefIdOf(P), 'page', 'index', nil)

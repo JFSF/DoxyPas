@@ -25,6 +25,7 @@ uses
   System.Generics.Collections,
   System.Generics.Defaults,
   System.Hash,
+  System.Math,
   System.IOUtils,
   System.Threading,
   System.Character,
@@ -890,6 +891,20 @@ begin
   Result := 'a' + THashMD5.GetHashString(LowerCase(M.QualifiedName + M.Signature + MemberKindName(M.Kind))).ToLower;
 end;
 
+// CREATE_SUBDIRS: "d3/" or, from level 1 on, "d3/d1a/": picked by the MD5 of the name, like Doxygen's 2^(4+level) directories
+function SubdirOf(const AName: string; ALevel: Integer): string;
+var
+  H: TBytes;
+  Idx: Integer;
+begin
+  H := THashMD5.GetHashBytes(AName);
+  Idx := ((H[14] shl 8) or H[15]) mod (1 shl (4 + EnsureRange(ALevel, 0, 8)));
+  if ALevel <= 0 then
+    Result := 'd' + IntToHex(Idx, 1).ToLower + '/'
+  else
+    Result := 'd' + IntToHex(Idx and $F, 1).ToLower + '/d' + IntToHex(Idx shr 4, 2).ToLower + '/';
+end;
+
 procedure AssignDiskNames(AProject: TProject);
 var
   U: TUnitDef;
@@ -899,6 +914,7 @@ var
   Prefix, Q: string;
   Cs: Boolean;
   D: TDefinition;
+  L: Integer;
 
   function ScopedName(ADef: TDefinition): string;
   begin
@@ -946,6 +962,18 @@ begin
       P.DiskName := 'index'
     else
       P.DiskName := ConvertNameToFile(P.Name, Cs);
+  if not AProject.Options.CreateSubdirs then
+    Exit;
+  L := AProject.Options.CreateSubdirsLevel;
+  for U in AProject.Units do
+    U.DiskName := SubdirOf(U.DiskName, L) + U.DiskName;
+  for C in AProject.Classes do
+    C.DiskName := SubdirOf(C.DiskName, L) + C.DiskName;
+  for G in AProject.Groups do
+    G.DiskName := SubdirOf(G.DiskName, L) + G.DiskName;
+  for P in AProject.Pages do
+    if not P.IsMainPage then
+      P.DiskName := SubdirOf(P.DiskName, L) + P.DiskName;
 end;
 
 { ------------------------------------------------------------------ todo, test, bug and deprecated lists }

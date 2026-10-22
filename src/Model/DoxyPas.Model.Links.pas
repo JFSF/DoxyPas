@@ -86,17 +86,17 @@ begin
   begin
     if TPageDef(ADef).IsMainPage then
       Exit('indexpage');
-    Exit(ADef.DiskName);
+    Exit(FlatName(ADef.DiskName));
   end;
   if ADef is TMemberDef then
   begin
     if ADef.Scope <> nil then
-      Result := ADef.Scope.DiskName + '_1' + ADef.DiskName
+      Result := FlatName(ADef.Scope.DiskName) + '_1' + FlatName(ADef.DiskName)
     else
-      Result := ADef.DiskName;
+      Result := FlatName(ADef.DiskName);
     Exit;
   end;
-  Result := ADef.DiskName;
+  Result := FlatName(ADef.DiskName);
 end;
 
 { Labels of \section, \subsection... and \anchor, found in the documentation of every definition. }
@@ -176,7 +176,7 @@ begin
   if G <> nil then
   begin
     Result.Def := G;
-    Result.RefId := G.DiskName;
+    Result.RefId := FlatName(G.DiskName);
     Result.Resolved := True;
     Exit;
   end;

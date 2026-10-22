@@ -9,6 +9,9 @@ uses
   System.Generics.Collections,
   DoxyPas.Model.Entry;
 
+/// <summary>A DiskName without the sub-directory CREATE_SUBDIRS puts in front (d3/d1a/).</summary>
+function FlatName(const ADiskName: string): string;
+
 type
   TMemberKind = (memFunction, memVariable, memProperty, memTypedef, memEnumeration, memEnumValue, memConstant);
 
@@ -150,6 +153,11 @@ uses
   System.SysUtils,
   System.Classes,
   System.Generics.Defaults;
+
+function FlatName(const ADiskName: string): string;
+begin
+  Result := Copy(ADiskName, LastDelimiter('/', ADiskName) + 1, MaxInt);
+end;
 
 type
   TFrozenLists = class

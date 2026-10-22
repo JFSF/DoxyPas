@@ -448,13 +448,13 @@ begin
     if FLinks.IsLinkable(D) then
       Related := True;
   if Related and SameText(FConfig.GetString('CLASS_GRAPH'), 'YES') then
-    Result := GraphBlock(C.DiskName + '_inherit_graph', Format(Tr('Inheritance diagram for %s:'), [C.Name]),
+    Result := GraphBlock(FlatName(C.DiskName) + '_inherit_graph', Format(Tr('Inheritance diagram for %s:'), [C.Name]),
       FDot.ClassDot(C, False));
   if FConfig.GetBool('COLLABORATION_GRAPH') then
     for M in C.Members do
       if (M.Kind in [memVariable, memProperty]) and (M.Entry.TypeText <> '') then
       begin
-        Result := Result + GraphBlock(C.DiskName + '_coll_graph', Format(Tr('Collaboration diagram for %s:'), [C.Name]),
+        Result := Result + GraphBlock(FlatName(C.DiskName) + '_coll_graph', Format(Tr('Collaboration diagram for %s:'), [C.Name]),
           FDot.ClassDot(C, True));
         Break;
       end;
@@ -469,14 +469,14 @@ begin
   if not FDotOn then
     Exit;
   if FConfig.GetBool('INCLUDE_GRAPH') and (U.UsesInterfaceNames.Count > 0) then
-    Result := GraphBlock(U.DiskName + '_uses_graph', Format(Tr('Dependency graph for %s:'), [U.Name]),
+    Result := GraphBlock(FlatName(U.DiskName) + '_uses_graph', Format(Tr('Dependency graph for %s:'), [U.Name]),
       FDot.UnitDot(U, False));
   Used := False;
   for T in U.UsedBy do
     if FLinks.IsLinkable(T) then
       Used := True;
   if Used and FConfig.GetBool('INCLUDED_BY_GRAPH') then
-    Result := Result + GraphBlock(U.DiskName + '_used_by_graph',
+    Result := Result + GraphBlock(FlatName(U.DiskName) + '_used_by_graph',
       Format(Tr('This graph shows which units directly use this unit (%s):'), [U.Name]), FDot.UnitDot(U, True));
 end;
 
@@ -486,9 +486,9 @@ begin
   if not FDotOn or (FCalls = nil) or (M.Kind <> memFunction) then
     Exit;
   if FConfig.GetBool('CALL_GRAPH') and (FCalls.CallsOf(M) <> nil) then
-    Result := GraphBlock(M.DiskName + '_cgraph', Tr('Here is the call graph for this function:'), FDot.CallDot(M, False));
+    Result := GraphBlock(FlatName(M.DiskName) + '_cgraph', Tr('Here is the call graph for this function:'), FDot.CallDot(M, False));
   if FConfig.GetBool('CALLER_GRAPH') and (FCalls.CallersOf(M) <> nil) then
-    Result := Result + GraphBlock(M.DiskName + '_icgraph', Tr('Here is the caller graph for this function:'),
+    Result := Result + GraphBlock(FlatName(M.DiskName) + '_icgraph', Tr('Here is the caller graph for this function:'),
       FDot.CallDot(M, True));
 end;
 function TLatexGenerator.Visible(AList: TList<TMemberDef>): TList<TMemberDef>;
@@ -820,26 +820,26 @@ begin
     begin
       if P.IsMainPage then Title := Tr('Introduction') else Title := P.Title;
       if Title = '' then Title := P.Name;
-      Name := 'page_' + P.DiskName;
+      Name := 'page_' + FlatName(P.DiskName);
       Save(Name + '.tex', Chapter(P, Title));
       Pages.Add(Name);
     end;
     for G in FProject.Groups do
     begin
-      Save(G.DiskName + '.tex', Chapter(G, G.Title));
-      Topics.Add(G.DiskName);
+      Save(FlatName(G.DiskName) + '.tex', Chapter(G, G.Title));
+      Topics.Add(FlatName(G.DiskName));
     end;
     for U in FProject.Units do
       if FLinks.IsLinkable(U) then
       begin
-        Save(U.DiskName + '.tex', UnitChapter(U));
-        Units.Add(U.DiskName);
+        Save(FlatName(U.DiskName) + '.tex', UnitChapter(U));
+        Units.Add(FlatName(U.DiskName));
       end;
     for C in FProject.Classes do
       if FLinks.IsLinkable(C) then
       begin
-        Save(C.DiskName + '.tex', ClassChapter(C));
-        Classes.Add(C.DiskName);
+        Save(FlatName(C.DiskName) + '.tex', ClassChapter(C));
+        Classes.Add(FlatName(C.DiskName));
       end;
 
     // packages: the style, EXTRA_PACKAGES, LATEX_EXTRA_STYLESHEET and hyperref (or what stands in for it)

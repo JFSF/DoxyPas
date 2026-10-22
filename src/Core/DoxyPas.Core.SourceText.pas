@@ -27,6 +27,13 @@ procedure SetInputFilter(const AFilter: string; const APatterns: TArray<string>)
 /// its output is the text); the file as it is when there is no filter or the filter fails (a warning).</summary>
 function ReadInputFile(const AFileName: string): string;
 
+/// <summary>FILTER_SOURCE_FILES and FILTER_SOURCE_PATTERNS ("pattern=filter"): whether the source pages (ReadBrowseFile) use the filters.</summary>
+procedure SetSourceFilter(AEnabled: Boolean; const APatterns: TArray<string>);
+
+/// <summary>The text of a file for the source pages: filtered only with FILTER_SOURCE_FILES (the patterns of FILTER_SOURCE_PATTERNS
+/// first), else the file as it is.</summary>
+function ReadBrowseFile(const AFileName: string): string;
+
 implementation
 
 uses
@@ -157,36 +164,49 @@ type
 var
   InputFilter: string;
   FilterPatterns: TArray<TPatternFilter>;
+  SourceFilterOn: Boolean;
+  SourcePatterns: TArray<TPatternFilter>;
 
-procedure SetInputFilter(const AFilter: string; const APatterns: TArray<string>);
+function ParsePatterns(const APatterns: TArray<string>): TArray<TPatternFilter>;
 var
   S: string;
   P: Integer;
 begin
-  InputFilter := Trim(AFilter);
-  FilterPatterns := nil;
+  Result := nil;
   for S in APatterns do
   begin
     P := S.IndexOf('=');
     if P <= 0 then
       Continue;
-    SetLength(FilterPatterns, Length(FilterPatterns) + 1);
-    FilterPatterns[High(FilterPatterns)].Pattern := Trim(S.Substring(0, P));
-    FilterPatterns[High(FilterPatterns)].Command := Trim(S.Substring(P + 1));
+    SetLength(Result, Length(Result) + 1);
+    Result[High(Result)].Pattern := Trim(S.Substring(0, P));
+    Result[High(Result)].Command := Trim(S.Substring(P + 1));
   end;
 end;
 
-// The command that filters this file: the one of the first pattern that matches, else INPUT_FILTER.
-function FilterFor(const AFileName: string): string;
+procedure SetInputFilter(const AFilter: string; const APatterns: TArray<string>);
+begin
+  InputFilter := Trim(AFilter);
+  FilterPatterns := ParsePatterns(APatterns);
+end;
+
+procedure SetSourceFilter(AEnabled: Boolean; const APatterns: TArray<string>);
+begin
+  SourceFilterOn := AEnabled;
+  SourcePatterns := ParsePatterns(APatterns);
+end;
+
+// The command of the first pattern that matches this file, else ADefault.
+function FilterFor(const AFileName: string; const APatterns: TArray<TPatternFilter>; const ADefault: string): string;
 var
   F: TPatternFilter;
   N: string;
 begin
   N := ExtractFileName(AFileName);
-  for F in FilterPatterns do
+  for F in APatterns do
     if MatchesMask(N, F.Pattern) or MatchesMask(AFileName, F.Pattern) then
       Exit(F.Command);
-  Result := InputFilter;
+  Result := ADefault;
 end;
 
 // Runs the command through the shell with its output in AOutFile; True when it ended with exit code 0.
@@ -219,11 +239,11 @@ begin
 end;
 {$ENDIF}
 
-function ReadInputFile(const AFileName: string): string;
+function ReadFiltered(const AFileName, ACommand: string): string;
 var
   Cmd, Tmp: string;
 begin
-  Cmd := FilterFor(AFileName);
+  Cmd := ACommand;
   if Cmd = '' then
     Exit(ReadSourceFile(AFileName));
   Tmp := TPath.Combine(TPath.GetTempPath, 'doxypas_' + TGuid.NewGuid.ToString.Substring(1, 8) + '.tmp');
@@ -239,6 +259,19 @@ begin
     if TFile.Exists(Tmp) then
       TFile.Delete(Tmp);
   end;
+end;
+
+function ReadInputFile(const AFileName: string): string;
+begin
+  Result := ReadFiltered(AFileName, FilterFor(AFileName, FilterPatterns, InputFilter));
+end;
+
+function ReadBrowseFile(const AFileName: string): string;
+begin
+  if SourceFilterOn then
+    Result := ReadFiltered(AFileName, FilterFor(AFileName, SourcePatterns, FilterFor(AFileName, FilterPatterns, InputFilter)))
+  else
+    Result := ReadSourceFile(AFileName);
 end;
 
 initialization

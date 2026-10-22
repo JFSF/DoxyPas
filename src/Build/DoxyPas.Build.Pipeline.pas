@@ -266,6 +266,7 @@ var
 begin
   SetInputEncoding(AConfig.GetString('INPUT_ENCODING'), AConfig.GetList('INPUT_FILE_ENCODING'));
   SetInputFilter(AConfig.GetString('INPUT_FILTER'), AConfig.GetList('FILTER_PATTERNS'));
+  SetSourceFilter(AConfig.GetBool('FILTER_SOURCE_FILES'), AConfig.GetList('FILTER_SOURCE_PATTERNS'));
   Job := TParseJob.Create;
   try
     Job.Files := AFiles;

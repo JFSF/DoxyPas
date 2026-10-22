@@ -35,6 +35,7 @@ uses
   DoxyPas.Core.Version,
   DoxyPas.Core.Log,
   DoxyPas.Core.Timing,
+  DoxyPas.Core.SourceText,
   DoxyPas.Model.Entry,
   DoxyPas.Model.Defs,
   DoxyPas.Model.Links,
@@ -294,6 +295,7 @@ begin
   FDoc.ObfuscateEmails := AConfig.GetBool('OBFUSCATE_EMAILS');
   FDoc.ImagePath := AConfig.GetList('IMAGE_PATH');
   FDoc.ExamplePath := AConfig.GetList('EXAMPLE_PATH');
+  FDoc.ExamplePatterns := AConfig.GetList('EXAMPLE_PATTERNS');
   FDoc.ExampleRecursive := AConfig.GetBool('EXAMPLE_RECURSIVE');
   FDoc.ExternalLinksInWindow := AConfig.GetBool('EXT_LINKS_IN_WINDOW');
   FSource := AConfig.GetBool('SOURCE_BROWSER');
@@ -2416,7 +2418,7 @@ begin
   Name := ExtractFileName(FProject.OutputPath(U.FileName));
   BeginPage(U.DiskName + '_source', Name);
   PageHeader(Name);
-  W('<div class="fragment">' + HighlightSource(ReadSourceText(U.FileName), True, WordLinker(U), 1,
+  W('<div class="fragment">' + HighlightSource(ReadBrowseFile(U.FileName), True, WordLinker(U), 1,
     FConfig.GetBool('STRIP_CODE_COMMENTS')) + '</div>'#10);
   EndPage(NavPathOf(U));
 end;

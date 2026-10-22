@@ -17,7 +17,10 @@ type
   THtmlDocWriter = class
   strict private
     FObfuscateEmails, FExternalInWindow, FExampleRecursive: Boolean;
-    FImagePath, FExamplePath: TArray<string>;
+    FImagePath, FExamplePath, FExamplePatterns: TArray<string>;
+    FDontLines: TArray<string>;       // the file of the last \dontinclude and the line \line, \skip... go on from
+    FDontPos: Integer;
+    FDontPascal: Boolean;
     FUsedImages: TStringList;
     FLinks: TLinkResolver;
     FExt: string;
@@ -37,7 +40,8 @@ type
     function List(ANode: TDocNode): string;
     function Table(ANode: TDocNode): string;
     function Fragment(ANode: TDocNode): string;
-    function FindFile(const AName: string; const APaths: TArray<string>; ARecursive: Boolean): string;
+    function DontIncludeLines(ANode: TDocNode): string;
+    function FindFile(const AName: string; const APaths: TArray<string>; ARecursive: Boolean; const APatterns: TArray<string>): string;
     function IncludeFragment(ANode: TDocNode): string;
     function ImageSource(const AName: string): string;
     function Section(ANode: TDocNode; ALevel: Integer): string;
@@ -55,6 +59,8 @@ type
     property UsedImages: TStringList read FUsedImages;
     /// <summary>EXAMPLE_PATH and EXAMPLE_RECURSIVE: where the files of \include, \snippet... are looked for.</summary>
     property ExamplePath: TArray<string> read FExamplePath write FExamplePath;
+    /// <summary>EXAMPLE_PATTERNS: the files of the EXAMPLE_PATH directories that can be used (empty: all).</summary>
+    property ExamplePatterns: TArray<string> read FExamplePatterns write FExamplePatterns;
     property ExampleRecursive: Boolean read FExampleRecursive write FExampleRecursive;
     /// <summary>Formulas are images (formula_N.svg, made from FormulaTex) instead of MathJax markup.</summary>
     property ImageFormulas: Boolean read FImageFormulas write FImageFormulas;
@@ -80,6 +86,7 @@ implementation
 uses
   System.StrUtils,
   System.IOUtils,
+  System.Masks,
   DoxyPas.Core.Log,
   DoxyPas.Core.SourceText,
   DoxyPas.Core.Timing,
@@ -319,20 +326,32 @@ begin
 end;
 
 // AName in APaths (directories, or files): as it is, and in the sub-directories when ARecursive. '' if it is not there.
-function THtmlDocWriter.FindFile(const AName: string; const APaths: TArray<string>; ARecursive: Boolean): string;
+function THtmlDocWriter.FindFile(const AName: string; const APaths: TArray<string>; ARecursive: Boolean; const APatterns: TArray<string>): string;
 var
   P, F, N: string;
+
+  function Allowed(const AFile: string): Boolean;
+  var
+    Pat: string;
+  begin
+    Result := Length(APatterns) = 0;
+    for Pat in APatterns do
+      if MatchesMask(ExtractFileName(AFile), Pat) then
+        Exit(True);
+  end;
+
 begin
   N := AName.Replace('/', PathDelim);
   for P in APaths do
     if TDirectory.Exists(P) then
     begin
       F := TPath.Combine(P, N);
-      if TFile.Exists(F) then
+      if TFile.Exists(F) and Allowed(F) then
         Exit(F);
       if ARecursive then
         for F in TDirectory.GetFiles(P, ExtractFileName(N), TSearchOption.soAllDirectories) do
-          Exit(F);
+          if Allowed(F) then
+            Exit(F);
     end
     else if SameText(ExtractFileName(P), ExtractFileName(N)) and TFile.Exists(P) then
       Exit(P);
@@ -347,7 +366,7 @@ begin
   Result := AName;
   if AName.Contains('://') then
     Exit;
-  F := FindFile(AName, FImagePath, False);
+  F := FindFile(AName, FImagePath, False, nil);
   if (F = '') and TFile.Exists(AName.Replace('/', PathDelim)) then
     F := AName.Replace('/', PathDelim);
   if F = '' then
@@ -359,6 +378,60 @@ begin
   end;
 end;
 
+// \dontinclude opens the file; \line (the next line with the pattern), \skip (go to it), \skipline (go to it and show it)
+// and \until (show the lines up to it) walk it.
+// shortcut: each command is its own code box (Doxygen joins the consecutive ones), join them if it is wanted.
+function THtmlDocWriter.DontIncludeLines(ANode: TDocNode): string;
+var
+  Path, Shown: string;
+  I, Stop: Integer;
+begin
+  Result := '';
+  if ANode.Name = 'dontinclude' then
+  begin
+    FDontLines := nil;
+    FDontPos := 0;
+    Path := FindFile(ANode.Text, FExamplePath, FExampleRecursive, FExamplePatterns);
+    if Path = '' then
+      Warn('', 0, 'included file ' + ANode.Text + ' is not found. Check your EXAMPLE_PATH')
+    else
+    begin
+      FDontLines := ReadSourceFile(Path).Replace(#13#10, #10).Split([#10]);
+      FDontPascal := MatchText(ExtractFileExt(Path), ['.pas', '.inc', '.dpr', '.dpk', '.lpr', '.pp']);
+    end;
+    Exit;
+  end;
+  Stop := -1;
+  for I := FDontPos to High(FDontLines) do
+    if FDontLines[I].Contains(ANode.Text) then
+    begin
+      Stop := I;
+      Break;
+    end;
+  if Stop < 0 then
+  begin
+    Warn('', 0, 'no line with "' + ANode.Text + '" after \dontinclude');
+    Exit;
+  end;
+  Shown := '';
+  if ANode.Name = 'line' then
+    Shown := FDontLines[Stop]
+  else if ANode.Name = 'skipline' then
+    Shown := FDontLines[Stop]
+  else if ANode.Name = 'until' then
+    Shown := string.Join(#10, Copy(FDontLines, FDontPos, Stop - FDontPos + 1));
+  if ANode.Name = 'skip' then
+    FDontPos := Stop
+  else
+    FDontPos := Stop + 1;
+  if Shown = '' then
+    Exit;
+  if FDontPascal then
+    Result := '<div class="fragment">' + HighlightPascal(Shown) + '</div><!-- fragment -->'#10
+  else
+    Result := '<pre class="fragment">' + HtmlEscape(Shown) + '</pre>'#10;
+end;
+
 // \include, \verbinclude, \htmlinclude and \snippet (the lines between the two [name] markers) of a file of EXAMPLE_PATH.
 function THtmlDocWriter.IncludeFragment(ANode: TDocNode): string;
 var
@@ -368,9 +441,11 @@ var
   Inside: Boolean;
 begin
   Result := '';
-  if (ANode.Name = 'dontinclude') or (ANode.Text = '') then
+  if MatchText(ANode.Name, ['dontinclude', 'line', 'skip', 'skipline', 'until']) then
+    Exit(DontIncludeLines(ANode));
+  if ANode.Text = '' then
     Exit;
-  Path := FindFile(ANode.Text, FExamplePath, FExampleRecursive);
+  Path := FindFile(ANode.Text, FExamplePath, FExampleRecursive, FExamplePatterns);
   if Path = '' then
   begin
     Warn('', 0, 'included file ' + ANode.Text + ' is not found. Check your EXAMPLE_PATH');

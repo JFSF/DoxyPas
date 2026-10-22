@@ -747,6 +747,12 @@ begin
     if AName = 'snippet' then
       N.Extra := ReadWord;          // the name of the block between the [name] markers
   end
+  else if (AName = 'line') or (AName = 'skip') or (AName = 'skipline') or (AName = 'until') then
+  begin
+    N := AParent.Add(TDocNode.Create(dnInclude));     // they walk the file of the last \dontinclude
+    N.Name := AName;
+    N.Text := Trim(ReadLine);
+  end
   else if ParamSectionName(AName) <> '' then
   begin
     Dir := ReadOptions('[', ']');

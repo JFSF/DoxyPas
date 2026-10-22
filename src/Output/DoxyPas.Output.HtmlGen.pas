@@ -274,6 +274,7 @@ end;
 constructor THtmlGenerator.Create(AProject: TProject; AConfig: TConfig; const ADir: string);
 var
   I: Integer;
+  P: TPageDef;
 begin
   inherited Create;
   FProject := AProject;
@@ -281,6 +282,9 @@ begin
   FDir := ADir;
   FLinks := TLinkResolver.Create(AProject);
   SetOutputLanguage(AConfig.GetString('OUTPUT_LANGUAGE'));
+  for P in AProject.Pages do          // the pages of the todo, test, bug and deprecated lists are made by DoxyPas
+    if (P.Entry <> nil) and (P.Entry.FileName = '') then
+      P.Title := Tr(P.Title);
   FExt := AConfig.GetString('HTML_FILE_EXTENSION');
   if FExt = '' then
     FExt := '.html';

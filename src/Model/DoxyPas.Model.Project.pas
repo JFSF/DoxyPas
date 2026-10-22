@@ -34,6 +34,7 @@ type
     FullPathNames: Boolean;          // FULL_PATH_NAMES: the path before the file names (after STRIP_FROM_PATH)
     SortGroupNames: Boolean;         // SORT_GROUP_NAMES: the topics by title
     AutolinkSupport: Boolean;        // link words that match a class or unit name
+    XrefLists: TArray<string>;       // GENERATE_TODOLIST...: the commands that get a page (todo, test, bug, deprecated)
     class function Default: TProjectOptions; static;
     class function FromConfig(AConfig: TConfig): TProjectOptions; static;
   end;
@@ -146,6 +147,7 @@ begin
   Result.StripFromPath := nil;
   Result.FullPathNames := True;
   Result.AutolinkSupport := True;
+  Result.XrefLists := nil;
 end;
 
 class function TProjectOptions.FromConfig(AConfig: TConfig): TProjectOptions;
@@ -178,6 +180,11 @@ begin
   Result.ExcludeSymbols := AConfig.GetList('EXCLUDE_SYMBOLS');
   Result.SortGroupNames := AConfig.GetBool('SORT_GROUP_NAMES');
   Result.AutolinkSupport := AConfig.GetBool('AUTOLINK_SUPPORT');
+  Result.XrefLists := nil;
+  if AConfig.GetBool('GENERATE_TODOLIST') then Result.XrefLists := Result.XrefLists + ['todo'];
+  if AConfig.GetBool('GENERATE_TESTLIST') then Result.XrefLists := Result.XrefLists + ['test'];
+  if AConfig.GetBool('GENERATE_BUGLIST') then Result.XrefLists := Result.XrefLists + ['bug'];
+  if AConfig.GetBool('GENERATE_DEPRECATEDLIST') then Result.XrefLists := Result.XrefLists + ['deprecated'];
 end;
 
 { TProject }

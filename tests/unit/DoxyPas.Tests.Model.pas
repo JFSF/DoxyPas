@@ -21,6 +21,7 @@ type
     [Test] procedure UndocumentedIsHiddenUnlessExtractAll;
     [Test] procedure PrivateNeedsExtractPrivate;
     [Test] procedure ImplementationOnlyNeedsExtractStatic;
+    [Test] procedure TodoAndDeprecatedListsAreOptional;
   end;
 
 implementation
@@ -308,6 +309,33 @@ begin
       if M.Name = 'H' then
         H := M;
     Assert.IsTrue(P.IsVisible(H));
+  finally
+    P.Free;
+  end;
+end;
+
+procedure TModelTests.TodoAndDeprecatedListsAreOptional;
+const
+  Src = 'unit U; interface /// u'#10'procedure A; /// a'#10'/// \todo Fix A.'#10'/// \bug Wrong.'#10'procedure B; deprecated ''use A'';' +
+    ' implementation procedure A; begin end; procedure B; begin end; end.';
+var
+  P: TProject;
+  Pg: TPageDef;
+  Names: string;
+begin
+  P := BuildFromSources(['U.pas'], [Src], '');
+  try
+    Names := '';
+    for Pg in P.Pages do
+      Names := Names + Pg.Name + ' ';
+    Assert.AreEqual('todo bug deprecated ', Names);
+    Assert.IsTrue(P.Pages[0].Detailed.Contains('Fix A.'));
+  finally
+    P.Free;
+  end;
+  P := BuildFromSources(['U.pas'], [Src], 'GENERATE_TODOLIST = NO'#10'GENERATE_BUGLIST = NO'#10'GENERATE_DEPRECATEDLIST = NO');
+  try
+    Assert.IsTrue(P.Pages.Count = 0);
   finally
     P.Free;
   end;

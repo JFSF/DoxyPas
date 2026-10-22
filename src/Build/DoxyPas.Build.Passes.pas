@@ -919,6 +919,72 @@ begin
       P.DiskName := ConvertNameToFile(P.Name, Cs);
 end;
 
+{ ------------------------------------------------------------------ todo, test, bug and deprecated lists }
+
+function PageExists(AProject: TProject; const AName: string): Boolean; forward;
+
+// GENERATE_TODOLIST and the like: a page with the \todo (\test, \bug, \deprecated) paragraphs of the documented
+// definitions, each with a link to its definition. A "deprecated" directive of the declaration is listed with its message.
+procedure BuildXrefLists(AProject: TProject);
+const
+  Titles: array[0..3] of string = ('Todo List', 'Test List', 'Bug List', 'Deprecated List');
+  Cmds: array[0..3] of string = ('todo', 'test', 'bug', 'deprecated');
+var
+  All: TList<TDefinition>;
+  D: TDefinition;
+  Text: TStringBuilder;
+  M: TMatch;
+  Item, Cmd: string;
+  I: Integer;
+  E: TEntry;
+  P: TPageDef;
+begin
+  if Length(AProject.Options.XrefLists) = 0 then
+    Exit;
+  All := TList<TDefinition>.Create;
+  Text := TStringBuilder.Create;
+  try
+    for D in AProject.Units do All.Add(D);
+    for D in AProject.Classes do All.Add(D);
+    for D in AProject.Members do
+      if TMemberDef(D).Kind <> memEnumValue then
+        All.Add(D);
+    for I := 0 to High(Cmds) do
+    begin
+      Cmd := Cmds[I];
+      if (TArray.IndexOf<string>(AProject.Options.XrefLists, Cmd) < 0) or PageExists(AProject, Cmd) then
+        Continue;
+      Text.Clear;
+      for D in All do
+      begin
+        if (D.Entry = nil) or not D.IsDocumented or not AProject.IsVisible(D) then
+          Continue;
+        Item := '';
+        M := TRegEx.Match(D.Brief + #10#10 + D.Detailed,
+          '[@\x5C]' + Cmd + '\b[ \t]*(.*?)(?=\r?\n[ \t]*\r?\n|\n[ \t]*[@\x5C]\w|\z)', [roSingleLine]);
+        if M.Success then
+          Item := Trim(M.Groups[1].Value)
+        else if (Cmd = 'deprecated') and (efDeprecated in D.Entry.Flags) then
+          Item := Trim(D.Entry.DeprecatedMsg).Trim(['''']);
+        if M.Success or ((Cmd = 'deprecated') and (efDeprecated in D.Entry.Flags)) then
+          Text.Append('\ref ').Append(D.QualifiedName).Append(#10#10).Append(Item).Append(#10#10);
+      end;
+      if Text.Length = 0 then
+        Continue;
+      E := TEntry.Create(ekPage, Cmd);
+      E.TypeText := Titles[I];
+      E.Detailed := Text.ToString;
+      AProject.Roots.Add(E);
+      P := TPageDef.Create(Cmd, E);
+      P.Title := Titles[I];
+      AProject.AddPage(P);
+    end;
+  finally
+    Text.Free;
+    All.Free;
+  end;
+end;
+
 { ------------------------------------------------------------------ validation }
 
 procedure CollectRefs(ANode: TDocNode; AList: TList<TDocNode>);
@@ -1088,6 +1154,8 @@ begin
   Lap('model: copydoc');
   AssignGroups(AProject);
   Lap('model: groups');
+  BuildXrefLists(AProject);
+  Lap('model: todo lists');
   AssignDiskNames(AProject);
   Lap('model: disk names');
   ValidateDocs(AProject);

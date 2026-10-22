@@ -239,6 +239,10 @@ begin
   Add('Remarks', 'Observações', '', 'Observaciones', 'Remarques', 'Bemerkungen');
   Add('Attention', 'Atenção', '', 'Atención', 'Attention', 'Achtung');
   Add('Important', 'Importante', '', 'Importante', 'Important', 'Wichtig');
+  Add('Todo List', 'Lista de Tarefas', 'Lista de Pendências', 'Lista de tareas pendientes', 'Liste des choses à faire', 'Todo-Liste');
+  Add('Test List', 'Lista de Testes', '', 'Lista de pruebas', 'Liste des tests', 'Testliste');
+  Add('Bug List', 'Lista de Erros', 'Lista de Bugs', 'Lista de errores', 'Liste des bogues', 'Fehlerliste');
+  Add('Deprecated List', 'Lista de Obsoletos', '', 'Lista de obsoletos', 'Liste des éléments obsolètes', 'Liste veralteter Elemente');
   Add('Todo', 'Por fazer', 'A fazer', 'Pendiente', 'À faire', 'Zu erledigen');
   Add('Test', 'Teste', '', 'Prueba', 'Test', 'Test');
   Add('Bug', 'Erro', 'Bug', 'Error', 'Bogue', 'Fehler');

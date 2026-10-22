@@ -30,6 +30,10 @@ function ReadInputFile(const AFileName: string): string;
 /// <summary>FILTER_SOURCE_FILES and FILTER_SOURCE_PATTERNS ("pattern=filter"): whether the source pages (ReadBrowseFile) use the filters.</summary>
 procedure SetSourceFilter(AEnabled: Boolean; const APatterns: TArray<string>);
 
+/// <summary>FILE_VERSION_FILTER: the command that prints the version of a file (run with the name of the file); the version is
+/// $version in WARN_FORMAT. An empty command: no version.</summary>
+procedure SetFileVersionFilter(const ACommand: string);
+
 /// <summary>The text of a file for the source pages: filtered only with FILTER_SOURCE_FILES (the patterns of FILTER_SOURCE_PATTERNS
 /// first), else the file as it is.</summary>
 function ReadBrowseFile(const AFileName: string): string;
@@ -45,6 +49,7 @@ uses
 {$ENDIF}
   System.IOUtils,
   System.Masks,
+  System.Generics.Collections,
   DoxyPas.Core.Log;
 
 type
@@ -261,6 +266,47 @@ begin
   end;
 end;
 
+var
+  VersionCache: TDictionary<string, string>;
+
+procedure SetFileVersionFilter(const ACommand: string);
+var
+  Cmd: string;
+begin
+  Cmd := Trim(ACommand);
+  FreeAndNil(VersionCache);
+  if Cmd = '' then
+  begin
+    VersionProvider := nil;
+    Exit;
+  end;
+  VersionCache := TDictionary<string, string>.Create;
+  VersionProvider :=
+    function(const AFileName: string): string
+    var
+      Tmp: string;
+    begin
+      TMonitor.Enter(VersionCache);
+      try
+        if not VersionCache.TryGetValue(AFileName, Result) then
+        begin
+          Result := '';
+          Tmp := TPath.Combine(TPath.GetTempPath, 'doxypas_' + TGuid.NewGuid.ToString.Substring(1, 8) + '.tmp');
+          try
+            if RunFilter(Cmd + ' "' + AFileName + '"', Tmp) and TFile.Exists(Tmp) then
+              Result := Trim(TFile.ReadAllText(Tmp));
+          finally
+            if TFile.Exists(Tmp) then
+              TFile.Delete(Tmp);
+          end;
+          VersionCache.Add(AFileName, Result);
+        end;
+      finally
+        TMonitor.Exit(VersionCache);
+      end;
+    end;
+end;
+
 function ReadInputFile(const AFileName: string): string;
 begin
   Result := ReadFiltered(AFileName, FilterFor(AFileName, FilterPatterns, InputFilter));
@@ -278,5 +324,6 @@ initialization
 
 finalization
   FreeOwned;
+  VersionCache.Free;
 
 end.

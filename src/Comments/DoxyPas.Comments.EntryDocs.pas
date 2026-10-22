@@ -73,6 +73,16 @@ begin
     else if Info.ProtectionOverride = 'protected' then AEntry.Protection := prProtected
     else if Info.ProtectionOverride = 'private' then AEntry.Protection := prPrivate;
   end;
+  if AEntry.BodyDoc <> '' then            // the comments in the body are more detailed description (no brief of their own)
+  begin
+    Info := ScanComment(AEntry.BodyDoc, False, AOptions, nil);
+    if Info.Detailed <> '' then
+      Info.Brief := Info.Brief + #10#10 + Info.Detailed;
+    if AEntry.Detailed = '' then
+      AEntry.Detailed := Info.Brief
+    else
+      AEntry.Detailed := AEntry.Detailed + #10#10 + Info.Brief;
+  end;
   for Child in AEntry.Children do
     ScanEntry(Child, AOptions, AWarnings);
 end;

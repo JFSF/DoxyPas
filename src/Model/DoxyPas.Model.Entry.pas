@@ -125,8 +125,10 @@ type
     FileName: string;
     Line, Col: Integer;        // start of the declaration
     EndLine, EndCol: Integer;  // position just after the declaration (0 if unknown)
+    BodyEndLine, BodyEndCol: Integer;   // the end of the body of a method of the implementation section (0 if unknown)
     Doc: string;               // documentation comment text, markers removed (empty if none)
     DocLine: Integer;
+    BodyDoc: string;           // the documentation comments inside the body of the method (HIDE_IN_BODY_DOCS = NO)
     DocIsAfter: Boolean;       // documented by a trailing comment (//<, {!< })
     MemberGroup: TMemberGroup; // the //@{ group the declaration is in (nil: none)
     Brief: string;             // set by DoxyPas.Comments.EntryDocs: brief description (Doxygen markup, HTML)

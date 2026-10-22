@@ -34,6 +34,7 @@ uses
   DoxyPas.Model.Entry,
   DoxyPas.Lang.Pascal.Parser,
   DoxyPas.Lang.Pascal.Options,
+  DoxyPas.Lang.Pascal.DocBlocks,
   DoxyPas.Lang.Pascal.Dfm,
   DoxyPas.Lang.Project,
   DoxyPas.Comments.Scanner,
@@ -266,7 +267,10 @@ var
 begin
   SetInputEncoding(AConfig.GetString('INPUT_ENCODING'), AConfig.GetList('INPUT_FILE_ENCODING'));
   SetInputFilter(AConfig.GetString('INPUT_FILTER'), AConfig.GetList('FILTER_PATTERNS'));
+  SetFileVersionFilter(AConfig.GetString('FILE_VERSION_FILTER'));
   SetSourceFilter(AConfig.GetBool('FILTER_SOURCE_FILES'), AConfig.GetList('FILTER_SOURCE_PATTERNS'));
+  DoxyPas.Lang.Pascal.DocBlocks.JavadocBanner := AConfig.GetBool('JAVADOC_BANNER');
+  DoxyPas.Lang.Pascal.DocBlocks.HideInBodyDocs := AConfig.GetBool('HIDE_IN_BODY_DOCS');
   Job := TParseJob.Create;
   try
     Job.Files := AFiles;
@@ -275,10 +279,12 @@ begin
     Job.DfmProperties := AConfig.GetBool('PASCAL_DFM_PROPERTIES');
     SetLength(Job.Parsed, Length(AFiles));
     Last := Length(AFiles) - 1;
-    if AParallel and (Last > 0) then
+    // NUM_PROC_THREADS: 0 is one thread for each processor, 1 (the default of Doxygen) parses one file after the other
+    Threads := AConfig.GetInt('NUM_PROC_THREADS');
+    if AParallel and (Last > 0) and (Threads <> 1) then
     begin
       // DOXYPAS_THREADS: how many threads parse (development: to see how the parse scales)
-      Threads := StrToIntDef(GetEnvironmentVariable('DOXYPAS_THREADS'), 0);
+      Threads := StrToIntDef(GetEnvironmentVariable('DOXYPAS_THREADS'), Threads);
       if Threads > 0 then
       begin
         Pool := TThreadPool.Create;

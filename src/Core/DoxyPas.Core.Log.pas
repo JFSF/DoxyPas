@@ -9,16 +9,25 @@ type
   TMessageKind = (mkWarning, mkError);
 
   TLogSink = reference to procedure(const AText: string);
+  TVersionProvider = reference to function(const AFileName: string): string;
 
 var
   /// <summary>Receives every formatted diagnostic; nil (default) writes to stderr (or to WARN_LOGFILE).</summary>
   LogSink: TLogSink;
+  /// <summary>The version of a file for $version of WARN_FORMAT (FILE_VERSION_FILTER); nil: empty.</summary>
+  VersionProvider: TVersionProvider;
   /// <summary>How many diagnostics were written with Warn and Error since ConfigureLog.</summary>
   MessageCount: Integer;
 
 /// <summary>WARN_FORMAT ($file, $line and $text; "" is the default "$file:$line: $text") and WARN_LOGFILE ("" is stderr, "-" is
 /// stdout, else the file that is made again). Resets MessageCount.</summary>
 procedure ConfigureLog(const AFormat, ALogFile: string);
+
+/// <summary>WARN_LINE_FORMAT ( and ; "" is "at line $line of file $file"): how a diagnostic points to a second place.</summary>
+procedure ConfigureLineFormat(const AFormat: string);
+
+/// <summary>A place in a file for the text of a diagnostic, in the format of WARN_LINE_FORMAT.</summary>
+function LineRef(const AFileName: string; ALine: Integer): string;
 
 /// <summary>Formats a diagnostic like Doxygen does: "file:line: warning: text".</summary>
 function FormatMessage(AKind: TMessageKind; const AFileName: string; ALine: Integer;
@@ -71,6 +80,30 @@ begin
     end;
 end;
 
+var
+  LineFormat: string = 'at line $line of file $file';
+
+procedure ConfigureLineFormat(const AFormat: string);
+begin
+  if Trim(AFormat) = '' then
+    LineFormat := 'at line $line of file $file'
+  else
+    LineFormat := AFormat;
+end;
+
+function LineRef(const AFileName: string; ALine: Integer): string;
+begin
+  Result := LineFormat.Replace('$file', AFileName).Replace('$line', IntToStr(ALine));
+end;
+
+function VersionFor(const AFileName: string): string;
+begin
+  if Assigned(VersionProvider) then
+    Result := VersionProvider(AFileName)
+  else
+    Result := '';
+end;
+
 // The format with its $file, $line, $text and $version replaced.
 function Apply(const AFileName: string; ALine: Integer; const AText: string): string;
 var
@@ -93,7 +126,7 @@ begin
     I := 1;
     while I <= Length(Format_) do
       if (Format_[I] <> '$') or not (Take('$file', AFileName) or Take('$line', IntToStr(ALine)) or
-        Take('$text', AText) or Take('$version', '')) then
+        Take('$text', AText) or Take('$version', VersionFor(AFileName))) then
       begin
         SB.Append(Format_[I]);
         Inc(I);

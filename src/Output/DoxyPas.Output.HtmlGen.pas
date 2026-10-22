@@ -68,8 +68,15 @@ type
     Named: string;    // shown in the expanded list of an ambiguous word
   end;
 
+  // a row of a tree index (DirRow); EndTree writes them with the arrows and the levels that are shown at first
+  TTreeRow = record
+    Level: Integer;
+    Icon, Link, Brief: string;
+  end;
+
   THtmlGenerator = class
   strict private
+    FTree_: TList<TTreeRow>;
     FProject: TProject;
     FConfig: TConfig;
     FLinks: TLinkResolver;
@@ -208,6 +215,7 @@ type
     procedure WritePage(P: TPageDef);
     // index pages
     procedure DirRow(var ARow: Integer; ALevel: Integer; const AIcon, ALink, ABrief: string);
+    procedure EndTree;
     procedure ClassTreeRows(C: TClassDef; ALevel: Integer; var ARow: Integer; ASB: TStringBuilder);
     procedure HierarchyRows(C: TClassDef; ALevel: Integer; var ARow: Integer; ASB: TStringBuilder);
     procedure GroupRows(G: TGroupDef; ALevel: Integer; var ARow: Integer; ASB: TStringBuilder);
@@ -420,6 +428,7 @@ begin
   FNav.Free;
   FDoc.Free;
   FRunner.Free;
+  FTree_.Free;
   FMemberDone.Free;
   FMemberPages.Free;
   FMenu.Free;
@@ -2909,7 +2918,7 @@ begin
     '<div class="directory">'#10'<table class="directory">'#10);
   Row := 0;
   DirTreeRows(FDirs.Root, 0, Row);
-  W('</table>'#10'</div><!-- directory -->'#10);
+  EndTree;
   EndPage;
 end;
 procedure THtmlGenerator.WriteGroup(G: TGroupDef);
@@ -3040,16 +3049,93 @@ end;
 
 procedure THtmlGenerator.DirRow(var ARow: Integer; ALevel: Integer; const AIcon, ALink, ABrief: string);
 var
-  Cls, Indent: string;
-  I: Integer;
+  R: TTreeRow;
 begin
-  if Odd(ARow) then Cls := 'odd' else Cls := 'even';
-  Indent := '';
-  for I := 0 to ALevel do
-    Indent := Indent + '<span style="width:16px;display:inline-block;">&#160;</span>';
-  W('<tr class="' + Cls + '"><td class="entry">' + Indent + AIcon + ALink + '</td><td class="desc">' + ABrief +
-    '</td></tr>'#10);
+  R.Level := ALevel;
+  R.Icon := AIcon;
+  R.Link := ALink;
+  R.Brief := ABrief;
+  if FTree_ = nil then
+    FTree_ := TList<TTreeRow>.Create;
+  FTree_.Add(R);
   Inc(ARow);
+end;
+
+// The rows of a tree index: the entries with others below them have an arrow, and the levels shown at first are the ones that
+// have at most HTML_INDEX_NUM_ENTRIES entries (0: all of them; the first level is always shown).
+procedure THtmlGenerator.EndTree;
+var
+  I, K, Deepest, ShowLevel, Seen, Max, Visible: Integer;
+  Idx: TArray<Integer>;
+  Path, Indent, Arrow, Cls, Hidden: string;
+  R: TTreeRow;
+  HasKids, Shown: Boolean;
+begin
+  if (FTree_ <> nil) and (FTree_.Count > 0) then
+  begin
+    Deepest := 0;
+    for R in FTree_ do
+      if R.Level > Deepest then
+        Deepest := R.Level;
+    Max := FConfig.GetInt('HTML_INDEX_NUM_ENTRIES');
+    ShowLevel := Deepest;
+    if Max > 0 then
+    begin
+      ShowLevel := 0;
+      for K := 0 to Deepest do
+      begin
+        Seen := 0;
+        for R in FTree_ do
+          if R.Level <= K then
+            Inc(Seen);
+        if Seen > Max then
+          Break;
+        ShowLevel := K;
+      end;
+    end;
+    if not FDynSec then
+      W('<script type="text/javascript" src="dynsections.js"></script>'#10);
+    SetLength(Idx, Deepest + 1);
+    for K := 0 to Deepest do
+      Idx[K] := -1;
+    Visible := 0;
+    for I := 0 to FTree_.Count - 1 do
+    begin
+      R := FTree_[I];
+      Inc(Idx[R.Level]);
+      for K := R.Level + 1 to Deepest do
+        Idx[K] := -1;
+      Path := '';
+      for K := 0 to R.Level do
+        Path := Path + Idx[K].ToString + '_';
+      HasKids := (I < FTree_.Count - 1) and (FTree_[I + 1].Level > R.Level);
+      Shown := R.Level <= ShowLevel;
+      Indent := '<span style="width:' + (16 * R.Level).ToString + 'px;display:inline-block;">&#160;</span>';
+      if HasKids then
+      begin
+        Arrow := '<span id="arr_' + Path + '" class="arrow"><span class="arrowhead ';
+        if R.Level < ShowLevel then Arrow := Arrow + 'opened' else Arrow := Arrow + 'closed';
+        Arrow := Arrow + '"></span></span>';
+      end
+      else
+        Arrow := '<span style="width:16px;display:inline-block;">&#160;</span>';
+      if Shown then
+      begin
+        if Odd(Visible) then Cls := 'odd' else Cls := 'even';
+        Inc(Visible);
+        Hidden := '';
+      end
+      else
+      begin
+        Cls := 'even';
+        Hidden := ' style="display:none;"';
+      end;
+      W('<tr id="row_' + Path + '" class="' + Cls + '"' + Hidden + '><td class="entry">' + Indent + Arrow + R.Icon +
+        R.Link + '</td><td class="desc">' + R.Brief + '</td></tr>'#10);
+    end;
+    FTree_.Clear;
+  end;
+  W('</table>'#10'</div><!-- directory -->'#10);
 end;
 
 procedure THtmlGenerator.ClassTreeRows(C: TClassDef; ALevel: Integer; var ARow: Integer; ASB: TStringBuilder);
@@ -3109,7 +3195,7 @@ begin
       end;
     if FConfig.GetBool('ALLEXTERNALS') then
       ExternalRows(['class', 'struct', 'interface', 'namespace'], Row);
-    W('</table>'#10'</div><!-- directory -->'#10);
+    EndTree;
     EndPage;
   finally
     SB.Free;
@@ -3213,7 +3299,7 @@ begin
         if Root then
           HierarchyRows(C, 0, Row, SB);
       end;
-    W('</table>'#10'</div><!-- directory -->'#10);
+    EndTree;
     EndPage;
   finally
     SB.Free;
@@ -3268,7 +3354,7 @@ begin
   for U in FProject.Units do
     if FLinks.IsLinkable(U) then
       DirRow(Row, 0, IconSpan('N'), FDoc.Link(U, U.Name), BriefOf(U));
-  W('</table>'#10'</div><!-- directory -->'#10);
+  EndTree;
   EndPage;
 end;
 
@@ -3320,7 +3406,7 @@ begin
         GroupRows(G, 0, Row, SB);
     if FConfig.GetBool('EXTERNAL_GROUPS') then
       ExternalRows(['group'], Row);
-    W('</table>'#10'</div><!-- directory -->'#10);
+    EndTree;
     EndPage;
   finally
     SB.Free;
@@ -3342,7 +3428,7 @@ begin
       DirRow(Row, 0, '', FDoc.Link(P, P.Title), BriefOf(P));
   if FConfig.GetBool('EXTERNAL_PAGES') then
     ExternalRows(['page'], Row);
-  W('</table>'#10'</div><!-- directory -->'#10);
+  EndTree;
   EndPage;
 end;
 
@@ -3456,8 +3542,8 @@ begin
   if FColors.Style = csToggle then
     SaveText('darkmode_toggle.js', ReplaceColorMarkers(HtmlResourceText('darkmode_toggle.js'), FColors)
       .Replace('$PROJECTID', FProjectId));
-  if FDynSec then
-    SaveText('dynsections.js', ApplyColorStyle(HtmlResourceText('dynsections.js'), FColors, FLight, FDark));
+  // (the arrows of the tree indexes need it too)
+  SaveText('dynsections.js', ApplyColorStyle(HtmlResourceText('dynsections.js'), FColors, FLight, FDark));
   if FFold then
     SaveText('codefolding.js', ApplyColorStyle(HtmlResourceText('codefolding.js'), FColors, FLight, FDark));
   if FTree then

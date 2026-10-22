@@ -477,6 +477,15 @@ begin
   ReadDirectives(E, HeadEnd);
   if ANode.HasAttribute(anAbstract) then
     Include(E.Flags, efAbstract);
+  if AImpl and (ANode is TCompoundSyntaxNode) then
+  begin
+    // the end position of DelphiAST lies on or after the ';' of the final "end;": the last code token before the next one
+    T := FSrc.IndexAt(TCompoundSyntaxNode(ANode).EndLine, TCompoundSyntaxNode(ANode).EndCol);
+    if not FSrc.IsSymbol(T, ';') then
+      T := FSrc.PrevCode(T);
+    E.BodyEndLine := FSrc.Token(T).EndLine;
+    E.BodyEndCol := FSrc.Token(T).EndCol;
+  end;
   AParent.Add(E);
 end;
 

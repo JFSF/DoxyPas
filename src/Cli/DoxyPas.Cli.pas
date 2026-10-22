@@ -191,6 +191,7 @@ var
 begin
   Quiet := AConfig.GetBool('QUIET');
   ConfigureLog(AConfig.GetString('WARN_FORMAT'), AConfig.GetString('WARN_LOGFILE'));
+  ConfigureLineFormat(AConfig.GetString('WARN_LINE_FORMAT'));
   PrependToPath(AConfig.GetList('EXTERNAL_TOOL_PATH'));        // where dot, latex... are looked for
   AsError := AConfig.GetString('WARN_AS_ERROR');
   Out_ := AConfig.GetString('OUTPUT_DIRECTORY');

@@ -37,6 +37,7 @@ type
     AutolinkIgnoreWords: TArray<string>;   // AUTOLINK_IGNORE_WORDS: no link for the words that start with one of these
     MainPageFile: string;            // USE_MDFILE_AS_MAINPAGE: a Markdown file that is the main page
     AllowUnicodeNames: Boolean;      // ALLOW_UNICODE_NAMES: non-ASCII letters stay in the file names
+    HideUndocNamespaces: Boolean;    // HIDE_UNDOC_NAMESPACES: a unit without documentation and without visible content is not shown
     CreateSubdirs: Boolean;          // CREATE_SUBDIRS: the pages of the entities in directories d0, d1... (by a hash of the name)
     CreateSubdirsLevel: Integer;     // CREATE_SUBDIRS_LEVEL: 2^(4+level) directories (two nested levels from level 0 on)
     ImplicitDirDocs: Boolean;        // IMPLICIT_DIR_DOCS: the README.md of a directory is its documentation
@@ -165,6 +166,7 @@ begin
   Result.GroupNestedCompounds := False;
   Result.ImplicitDirDocs := True;
   Result.AllowUnicodeNames := False;
+  Result.HideUndocNamespaces := True;
   Result.CreateSubdirs := False;
   Result.CreateSubdirsLevel := 8;
 end;
@@ -204,6 +206,7 @@ begin
   Result.GroupNestedCompounds := AConfig.GetBool('GROUP_NESTED_COMPOUNDS');
   Result.ImplicitDirDocs := AConfig.GetBool('IMPLICIT_DIR_DOCS');
   Result.AllowUnicodeNames := AConfig.GetBool('ALLOW_UNICODE_NAMES');
+  Result.HideUndocNamespaces := AConfig.GetBool('HIDE_UNDOC_NAMESPACES');
   Result.CreateSubdirs := AConfig.GetBool('CREATE_SUBDIRS');
   Result.CreateSubdirsLevel := AConfig.GetInt('CREATE_SUBDIRS_LEVEL');
   Result.LegendPage := AConfig.GetBool('HAVE_DOT') and AConfig.GetBool('GENERATE_LEGEND') and not AConfig.GetBool('UML_LOOK');
@@ -542,7 +545,7 @@ begin
       Exit;
   if ADef is TUnitDef then
   begin
-    if Options.ExtractAll or ADef.IsDocumented then
+    if Options.ExtractAll or ADef.IsDocumented or not Options.HideUndocNamespaces then
       Exit(True);
     for M in TUnitDef(ADef).Members do
       if IsVisible(M) then

@@ -20,6 +20,7 @@ implementation
 
 uses
   DoxyPas.Core.Timing,
+  DoxyPas.Core.Log,
   System.SysUtils,
   System.Classes,
   System.Generics.Collections,
@@ -255,8 +256,15 @@ end;
 
 procedure TBuilder.NewPage(E: TEntry);
 var
-  P: TPageDef;
+  P, Old: TPageDef;
 begin
+  for Old in FProject.Pages do
+    if SameText(Old.Name, E.Name) and (Old.Entry <> nil) then
+    begin
+      FProject.Warn(E.FileName, E.Line, Format('multiple use of page label ''%s'', (other occurrence: %s)',
+        [E.Name, LineRef(Old.Entry.FileName, Old.Entry.Line)]));
+      Break;
+    end;
   P := TPageDef.Create(E.Name, E);
   P.Title := E.TypeText;
   P.IsMainPage := SameText(E.Name, 'mainpage');

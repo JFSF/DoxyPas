@@ -16,6 +16,12 @@ uses
 /// Only entries whose FileName is AFileName are considered (entries from {$I} files are skipped).</summary>
 procedure AttachDocComments(ASource: TPasSource; ARoot: TEntry; const AFileName: string);
 
+var
+  /// <summary>JAVADOC_BANNER: {*** and (*** (a banner of stars) begin a documentation comment; else they are plain comments.</summary>
+  JavadocBanner: Boolean = False;
+  /// <summary>HIDE_IN_BODY_DOCS: documentation comments in the body of a method are dropped; else they are added to its documentation.</summary>
+  HideInBodyDocs: Boolean = False;
+
 implementation
 
 uses
@@ -196,6 +202,12 @@ begin
         M := 1
       else if Inner.StartsWith('!') then
         M := 1;
+      if (M > 0) and (Txt.StartsWith('{') and Inner.StartsWith('***') or Txt.StartsWith('(*') and Inner.StartsWith('**')) then
+        if JavadocBanner then
+          while (Length(Inner) > M) and (Inner[M + 1] = '*') do       // the stars of the banner are not text
+            Inc(M)
+        else
+          M := 0;
       if M > 0 then
       begin
         IsAfter := (Length(Inner) > M) and (Inner[M + 1] = '<');
@@ -251,6 +263,28 @@ begin
       Best := C;
   end;
   Result := Best;
+end;
+
+// The method of the implementation section whose body holds the position, or nil.
+function BodyOwner(AParent: TEntry; const ABlock: TDocBlock; const AFileName: string): TEntry;
+var
+  C: TEntry;
+begin
+  Result := nil;
+  for C in AParent.Children do
+  begin
+    if (C.Line = 0) or not SameText(C.FileName, AFileName) then
+      Continue;
+    if (C.BodyEndLine > 0) and Before(C.EndLine, C.EndCol, ABlock.Line, ABlock.Col) and
+      Before(ABlock.Line, ABlock.Col, C.BodyEndLine, C.BodyEndCol) then
+      Exit(C);
+    if C.Children.Count > 0 then
+    begin
+      Result := BodyOwner(C, ABlock, AFileName);
+      if Result <> nil then
+        Exit;
+    end;
+  end;
 end;
 
 function FindPrev(AParent: TEntry; const ABlock: TDocBlock; const AFileName: string): TEntry;
@@ -545,6 +579,16 @@ begin
           Ev.Id := Id;
           Events.Add(Ev);
         end;
+        Continue;
+      end;
+      Target := BodyOwner(ARoot, B, AFileName);
+      if Target <> nil then          // a comment in the body of a method
+      begin
+        if not HideInBodyDocs then
+          if Target.BodyDoc = '' then
+            Target.BodyDoc := B.Text
+          else
+            Target.BodyDoc := Target.BodyDoc + #10#10 + B.Text;
         Continue;
       end;
       if B.IsAfter then

@@ -84,7 +84,7 @@ type
     FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
     FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
     FBriefMemberDesc, FRepeatBrief, FInlineInfo, FShowEnumValues: Boolean;
-    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping, FHideCompoundRef, FAlwaysDetailed, FHideScope, FInlineInherited, FShowNamespaces: Boolean;
+    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping, FHideCompoundRef, FAlwaysDetailed, FHideScope, FInlineInherited, FShowNamespaces, FSourceTooltips: Boolean;
     FInlineDots: Integer;             // \dot and \dotfile graphs so far (inline_dotgraph_N)
     FAbbreviate: TArray<string>;      // ABBREVIATE_BRIEF (the defaults when it is empty)
     FTimestamp: string;            // TIMESTAMP: NO, YES / DATETIME or DATE
@@ -224,6 +224,7 @@ type
     procedure WriteSitemap;
     function InlineDot(const ADot, ACaption: string): string;
     function ScopedName(ADef: TDefinition): string;
+    function Tooltip(ADef: TDefinition): string;
     function NavJs(ANodes: TObjectList<TNavNode>; ALevel: Integer; const APath: string; var AFirst: Boolean): Boolean;
     procedure RegisterNav(ANodes: TObjectList<TNavNode>; const APath: string);
     procedure WriteNavTree;
@@ -352,6 +353,7 @@ begin
   FSubgrouping := AConfig.GetBool('SUBGROUPING');
   FHideCompoundRef := AConfig.GetBool('HIDE_COMPOUND_REFERENCE');
   FHideScope := AConfig.GetBool('HIDE_SCOPE_NAMES');
+  FSourceTooltips := AConfig.GetBool('SOURCE_TOOLTIPS');
   FShowNamespaces := AConfig.GetBool('SHOW_NAMESPACES');
   FInlineInherited := AConfig.GetBool('INLINE_INHERITED_MEMB');
   FAlwaysDetailed := AConfig.GetBool('ALWAYS_DETAILED_SEC');
@@ -2078,6 +2080,21 @@ begin
       '" class="inherit_graph"/></div>'#10'</div>'#10;
 end;
 
+// SOURCE_TOOLTIPS: what the browser shows over a link in the source: the declaration and the brief description (HTML-safe text).
+function THtmlGenerator.Tooltip(ADef: TDefinition): string;
+var
+  Brief: string;
+begin
+  Result := ADef.Name;
+  if ADef is TMemberDef then
+    Result := ADef.Name + TMemberDef(ADef).Signature;
+  Brief := TRegEx.Replace(BriefOf(ADef), '<[^>]*>', '').Trim;
+  if Brief <> '' then
+    Result := HtmlEscape(Result) + ' - ' + Brief.Replace('"', '&quot;')
+  else
+    Result := HtmlEscape(Result);
+end;
+
 // HIDE_SCOPE_NAMES: a class or unit is shown with its own name, not with the unit and the classes that hold it.
 function THtmlGenerator.ScopedName(ADef: TDefinition): string;
 begin
@@ -2497,7 +2514,11 @@ begin
         Result := '';
         T := FLinks.Resolve(AWord, AScope);
         if (T.Def <> nil) and (T.Def <> AScope) and FLinks.IsLinkable(T.Def) then
+        begin
           Result := FDoc.DefUrl(T.Def);
+          if FSourceTooltips then
+            Result := Result + #1 + Tooltip(T.Def);
+        end;
         FWordCache.Add(Key, Result);
       end;
     end;

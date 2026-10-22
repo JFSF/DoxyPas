@@ -184,7 +184,7 @@ var
   Parts: TArray<string>;
   K, Line: Integer;
   Open, Strip: Boolean;
-  Href: string;
+  Href, Tip: string;
 
   procedure StartLine;
   begin
@@ -221,7 +221,19 @@ begin
         if Assigned(ALink) and (T.Cls = '') and (Parts[K] <> '') and CharInSet(Parts[K][1], ['A'..'Z', 'a'..'z', '_']) then
           Href := ALink(Parts[K]);
         if Href <> '' then
-          SB.Append('<a class="code" href="' + HtmlEscape(Href) + '">' + HtmlEscape(Parts[K]) + '</a>')
+        begin
+          // the linker may add a tooltip after a #1: "url#1text" (the text is HTML already)
+          Tip := '';
+          if Pos(#1, Href) > 0 then
+          begin
+            Tip := Copy(Href, Pos(#1, Href) + 1, MaxInt);
+            Href := Copy(Href, 1, Pos(#1, Href) - 1);
+          end;
+          SB.Append('<a class="code" href="' + HtmlEscape(Href) + '"');
+          if Tip <> '' then
+            SB.Append(' title="' + Tip + '"');
+          SB.Append('>' + HtmlEscape(Parts[K]) + '</a>');
+        end
         else
           SB.Append(HtmlEscape(Parts[K]).Replace('  ', '&#160; '));
         if Open then

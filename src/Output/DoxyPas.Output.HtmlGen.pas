@@ -294,6 +294,7 @@ begin
   FDoc := THtmlDocWriter.Create(FLinks, FExt);
   FDoc.ObfuscateEmails := AConfig.GetBool('OBFUSCATE_EMAILS');
   FDoc.ImagePath := AConfig.GetList('IMAGE_PATH');
+  FDoc.TocHeadings := AConfig.GetInt('TOC_INCLUDE_HEADINGS');
   FDoc.ExamplePath := AConfig.GetList('EXAMPLE_PATH');
   FDoc.ExamplePatterns := AConfig.GetList('EXAMPLE_PATTERNS');
   FDoc.ExampleRecursive := AConfig.GetBool('EXAMPLE_RECURSIVE');

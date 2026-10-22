@@ -32,6 +32,7 @@ type
     [Test] procedure EscapesLatex;
     [Test] procedure QuotesSql;
     [Test] procedure TranslatesTexts;
+    [Test] procedure TableOfContentsListsSectionsAndHeadings;
   end;
 
   [TestFixture]
@@ -60,6 +61,7 @@ uses
   DoxyPas.Output.Translator,
   DoxyPas.Output.SqliteGen,
   DoxyPas.Output.HtmlCode,
+  DoxyPas.Output.HtmlDoc,
   DoxyPas.Output.LatexGen,
   DoxyPas.Model.Entry,
   DoxyPas.Lang.Pascal.Dfm,
@@ -446,6 +448,31 @@ procedure THtmlTemplateTests.QuotesSql;
 begin
   Assert.AreEqual('NULL', SqlText(''));
   Assert.AreEqual('''it''''s''', SqlText('it''s'));
+end;
+
+procedure THtmlTemplateTests.TableOfContentsListsSectionsAndHeadings;
+var
+  P: TProject;
+  L: TLinkResolver;
+  W: THtmlDocWriter;
+  H: string;
+begin
+  P := TProject.Create(TProjectOptions.Default);
+  L := TLinkResolver.Create(P);
+  W := THtmlDocWriter.Create(L, '.html');
+  try
+    W.TocHeadings := 2;
+    H := W.Render('\tableofcontents'#10#10'<h1>One</h1>'#10'<h3>Deep</h3>'#10'\section s1 Sec'#10'text', nil);
+    Assert.Contains(H, '<div class="toc">');
+    Assert.Contains(H, '<a href="#autotoc_md0">One</a>');
+    Assert.Contains(H, '<a href="#s1">Sec</a>');
+    Assert.IsFalse(H.Contains('>Deep</a></li>'), 'the headings deeper than TOC_INCLUDE_HEADINGS are not listed');
+    Assert.IsFalse(W.Render('<h1>One</h1>', nil).Contains('class="toc"'));
+  finally
+    W.Free;
+    L.Free;
+    P.Free;
+  end;
 end;
 
 procedure THtmlTemplateTests.TranslatesTexts;

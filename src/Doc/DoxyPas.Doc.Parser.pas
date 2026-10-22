@@ -45,6 +45,7 @@ type
     FText: string;
     FPos: Integer;
     FWarnings: TStrings;
+    FHasToc: Boolean;               // a \tableofcontents was read
     FOpenTags: TList<string>;
     FEndPara: Boolean;
     procedure PushTag(const ATag: string);
@@ -747,6 +748,12 @@ begin
     if AName = 'snippet' then
       N.Extra := ReadWord;          // the name of the block between the [name] markers
   end
+  else if AName = 'tableofcontents' then
+  begin
+    ReadOptions('{', '}');                // {html:2,...}: the levels are not used
+    AParent.Add(TDocNode.Create(dnToc));
+    FHasToc := True;
+  end
   else if (AName = 'line') or (AName = 'skip') or (AName = 'skipline') or (AName = 'until') then
   begin
     N := AParent.Add(TDocNode.Create(dnInclude));     // they walk the file of the last \dontinclude
@@ -1275,6 +1282,8 @@ function TDocParser.Parse: TDocNode;
 begin
   Result := TDocNode.Create(dnRoot);
   ParseBlocks(Result, '');
+  if FHasToc then
+    Result.Extra := 'toc';
 end;
 
 function ParseDoc(const AText: string; AWarnings: TStrings): TDocNode;

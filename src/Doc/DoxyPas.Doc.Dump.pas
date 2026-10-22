@@ -18,7 +18,7 @@ uses
 const
   ElementNames: array[TDocNodeKind] of string = ('doc', 'p', 'text', 'style', 'sym', 'url', 'link', 'ref', 'anchor',
     'br', 'hr', 'verbatim', 'formula', 'list', 'li', 'sect', 'params', 'param', 'section', 'h', 'table', 'tr', 'td',
-    'image', 'cite', 'quote', 'copydoc', 'include');
+    'image', 'cite', 'quote', 'copydoc', 'include', 'toc');
 
 function Esc(const S: string): string;
 begin

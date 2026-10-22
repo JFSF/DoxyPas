@@ -14,8 +14,16 @@ uses
   DoxyPas.Model.Links;
 
 type
+  /// <summary>One line of \tableofcontents.</summary>
+  TTocEntry = record
+    Depth: Integer;
+    Id, Title: string;
+  end;
+
   THtmlDocWriter = class
   strict private
+    FToc: TArray<TTocEntry>;          // of the document being rendered, when it has a \tableofcontents
+    FTocHeadings, FTocSeq: Integer;
     FObfuscateEmails, FExternalInWindow, FExampleRecursive: Boolean;
     FImagePath, FExamplePath, FExamplePatterns: TArray<string>;
     FDontLines: TArray<string>;       // the file of the last \dontinclude and the line \line, \skip... go on from
@@ -41,6 +49,8 @@ type
     function Table(ANode: TDocNode): string;
     function Fragment(ANode: TDocNode): string;
     function DontIncludeLines(ANode: TDocNode): string;
+    procedure PrepareToc(ARoot: TDocNode);
+    function TocHtml: string;
     function FindFile(const AName: string; const APaths: TArray<string>; ARecursive: Boolean; const APatterns: TArray<string>): string;
     function IncludeFragment(ANode: TDocNode): string;
     function ImageSource(const AName: string): string;
@@ -61,6 +71,8 @@ type
     property ExamplePath: TArray<string> read FExamplePath write FExamplePath;
     /// <summary>EXAMPLE_PATTERNS: the files of the EXAMPLE_PATH directories that can be used (empty: all).</summary>
     property ExamplePatterns: TArray<string> read FExamplePatterns write FExamplePatterns;
+    /// <summary>TOC_INCLUDE_HEADINGS: the Markdown headings up to this level are in the \tableofcontents.</summary>
+    property TocHeadings: Integer read FTocHeadings write FTocHeadings;
     property ExampleRecursive: Boolean read FExampleRecursive write FExampleRecursive;
     /// <summary>Formulas are images (formula_N.svg, made from FormulaTex) instead of MathJax markup.</summary>
     property ImageFormulas: Boolean read FImageFormulas write FImageFormulas;
@@ -87,6 +99,7 @@ uses
   System.StrUtils,
   System.IOUtils,
   System.Masks,
+  System.RegularExpressions,
   DoxyPas.Core.Log,
   DoxyPas.Core.SourceText,
   DoxyPas.Core.Timing,
@@ -213,7 +226,7 @@ end;
 
 function THtmlDocWriter.IsBlock(ANode: TDocNode): Boolean;
 begin
-  Result := ANode.Kind in [dnList, dnTable, dnSimpleSect, dnParamList, dnBlockQuote, dnHeading, dnHRuler];
+  Result := ANode.Kind in [dnList, dnTable, dnSimpleSect, dnParamList, dnBlockQuote, dnHeading, dnHRuler, dnToc];
   if ANode.Kind = dnVerbatim then
     Result := ANode.Name <> 'htmlonly';
 end;
@@ -640,8 +653,9 @@ begin
     dnSimpleSect: Result := SimpleSect(ANode);
     dnParamList: Result := ParamList(ANode);
     dnBlockQuote: Result := '<blockquote class="doxtable">'#10 + Paras(ANode, False) + '</blockquote>'#10;
-    dnHeading: Result := Format('<h%d>%s</h%d>'#10, [ANode.Level, InlineChildren(ANode, True).Trim, ANode.Level]);
+    dnHeading: Result := Format('<h%d>%s%s</h%d>'#10, [ANode.Level, IfThen(ANode.Id <> '', Anchor(ANode.Id)), InlineChildren(ANode, True).Trim, ANode.Level]);
     dnHRuler: Result := '<hr/>'#10;
+    dnToc: Result := TocHtml;
     dnVerbatim: Result := Fragment(ANode);
   end;
 end;
@@ -725,6 +739,91 @@ begin
       Result := Result + Section(C, ALevel + 1);
 end;
 
+// The entries of the \tableofcontents: the sections and the Markdown headings up to TOC_INCLUDE_HEADINGS (they get an anchor).
+procedure THtmlDocWriter.PrepareToc(ARoot: TDocNode);
+
+  procedure Walk(ANode: TDocNode);
+  var
+    C: TDocNode;
+    E: TTocEntry;
+  begin
+    for C in ANode.Children do
+    begin
+      E.Id := '';
+      if (C.Kind = dnSection) and (C.Name <> 'page') and (C.Name <> 'mainpage') then
+      begin
+        E.Depth := C.Level;
+        E.Id := C.Id;
+        E.Title := HtmlEscape(C.Text);
+      end
+      else if (C.Kind = dnHeading) and (C.Level <= FTocHeadings) then
+      begin
+        C.Id := 'autotoc_md' + FTocSeq.ToString;
+        Inc(FTocSeq);
+        E.Depth := C.Level;
+        E.Id := C.Id;
+        E.Title := TRegEx.Replace(InlineChildren(C, False), '<[^>]*>', '').Trim;
+      end;
+      if E.Id <> '' then
+      begin
+        SetLength(FToc, Length(FToc) + 1);
+        FToc[High(FToc)] := E;
+      end;
+      Walk(C);
+    end;
+  end;
+
+begin
+  Walk(ARoot);
+end;
+
+function THtmlDocWriter.TocHtml: string;
+var
+  E: TTocEntry;
+  SB: TStringBuilder;
+  Base, Cur, D: Integer;
+begin
+  Result := '';
+  if Length(FToc) = 0 then
+    Exit;
+  Base := FToc[0].Depth;
+  for E in FToc do
+    if E.Depth < Base then
+      Base := E.Depth;
+  SB := TStringBuilder.Create;
+  try
+    SB.Append('<div class="toc"><h3>').Append(HtmlEscape(Tr('Table of Contents'))).Append('</h3>'#10);
+    Cur := 0;
+    for E in FToc do
+    begin
+      D := E.Depth - Base + 1;
+      if D > Cur + 1 then
+        D := Cur + 1;                 // a heading that skips a level (## after nothing) goes one level down only
+      while Cur < D do
+      begin
+        SB.Append('<ul>');
+        Inc(Cur);
+      end;
+      while Cur > D do
+      begin
+        SB.Append('</ul>');
+        Dec(Cur);
+      end;
+      SB.Append('<li class="level').Append(D).Append('"><a href="#').Append(HtmlEscape(E.Id)).Append('">')
+        .Append(E.Title).Append('</a></li>'#10);
+    end;
+    while Cur > 0 do
+    begin
+      SB.Append('</ul>');
+      Dec(Cur);
+    end;
+    SB.Append('</div>'#10);
+    Result := SB.ToString;
+  finally
+    SB.Free;
+  end;
+end;
+
 function THtmlDocWriter.Prepare(const AText: string; AScope: TDefinition): TDocNode;
 var
   T0: Int64;
@@ -733,6 +832,9 @@ begin
   T0 := Tick;
   Result := ParseDoc(AText);
   Add('doc: ParseDoc', T0);
+  FToc := nil;
+  if Result.Extra = 'toc' then
+    PrepareToc(Result);
 end;
 
 function THtmlDocWriter.Render(const AText: string; AScope: TDefinition): string;

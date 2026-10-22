@@ -40,7 +40,8 @@ type
     dnCite,        // Text = citation id
     dnBlockQuote,
     dnCopyDoc,     // Name = copydoc|copybrief|copydetails|inheritdoc, Text = target
-    dnInclude);    // Name = include|dontinclude|snippet|..., Text = file
+    dnInclude,     // Name = include|dontinclude|snippet|..., Text = file
+    dnToc);        // \tableofcontents; the root has Extra = 'toc' when its text has one
 
   TDocNode = class
   strict private

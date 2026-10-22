@@ -83,7 +83,7 @@ type
     FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
     FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
     FBriefMemberDesc, FRepeatBrief, FInlineInfo, FShowEnumValues: Boolean;
-    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping, FHideCompoundRef, FAlwaysDetailed: Boolean;
+    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping, FHideCompoundRef, FAlwaysDetailed, FHideScope, FInlineInherited: Boolean;
     FInlineDots: Integer;             // \dot and \dotfile graphs so far (inline_dotgraph_N)
     FAbbreviate: TArray<string>;      // ABBREVIATE_BRIEF (the defaults when it is empty)
     FTimestamp: string;            // TIMESTAMP: NO, YES / DATETIME or DATE
@@ -221,6 +221,7 @@ type
     procedure WriteHtmlHelp;
     procedure WriteSitemap;
     function InlineDot(const ADot, ACaption: string): string;
+    function ScopedName(ADef: TDefinition): string;
     function NavJs(ANodes: TObjectList<TNavNode>; ALevel: Integer; const APath: string; var AFirst: Boolean): Boolean;
     procedure RegisterNav(ANodes: TObjectList<TNavNode>; const APath: string);
     procedure WriteNavTree;
@@ -347,6 +348,8 @@ begin
   FShowUsedFiles := AConfig.GetBool('SHOW_USED_FILES');
   FSubgrouping := AConfig.GetBool('SUBGROUPING');
   FHideCompoundRef := AConfig.GetBool('HIDE_COMPOUND_REFERENCE');
+  FHideScope := AConfig.GetBool('HIDE_SCOPE_NAMES');
+  FInlineInherited := AConfig.GetBool('INLINE_INHERITED_MEMB');
   FAlwaysDetailed := AConfig.GetBool('ALWAYS_DETAILED_SEC');
   FAbbreviate := AConfig.GetList('ABBREVIATE_BRIEF');
   if Length(FAbbreviate) = 0 then
@@ -917,9 +920,9 @@ end;
 function THtmlGenerator.ClassTitle(C: TClassDef): string;
 begin
   if FHideCompoundRef then
-    Result := C.QualifiedName
+    Result := ScopedName(C)
   else
-    Result := Format(Tr('%0:s %1:s Reference'), [C.QualifiedName, Tr(ClassKindText(C))]);
+    Result := Format(Tr('%0:s %1:s Reference'), [ScopedName(C), Tr(ClassKindText(C))]);
 end;
 
 function THtmlGenerator.UnitTitle(U: TUnitDef): string;
@@ -2069,6 +2072,15 @@ begin
       '" class="inherit_graph"/></div>'#10'</div>'#10;
 end;
 
+// HIDE_SCOPE_NAMES: a class or unit is shown with its own name, not with the unit and the classes that hold it.
+function THtmlGenerator.ScopedName(ADef: TDefinition): string;
+begin
+  if FHideScope then
+    Result := ADef.Name
+  else
+    Result := ADef.QualifiedName;
+end;
+
 // \dot and \dotfile: the graph is made with the others (FlushGraphs); nothing when dot is not there.
 function THtmlGenerator.InlineDot(const ADot, ACaption: string): string;
 var
@@ -2187,7 +2199,8 @@ end;
 
 procedure THtmlGenerator.WriteClass(C: TClassDef);
 var
-  Vis: TList<TMemberDef>;
+  Vis, Decl: TList<TMemberDef>;
+  IM: TInheritedMember;
   Rows, Summary: TStringBuilder;
   B: TBaseRef;
   D, N: TClassDef;
@@ -2207,9 +2220,25 @@ begin
       NestedTitle := E.Attr('title');
   end;
   Vis := VisibleMembers(C.Members);
+  Decl := Vis;
   Rows := TStringBuilder.Create;
   Summary := TStringBuilder.Create;
   try
+    // INLINE_INHERITED_MEMB: the inherited members are declared among the own ones (their links go to the base class)
+    if FInlineInherited then
+    begin
+      Decl := TList<TMemberDef>.Create(Vis);
+      for IM in C.AllMembers do
+        if (IM.From <> C) and FProject.IsVisible(IM.Member) and (IM.Member.Kind <> memEnumValue) and
+          FLinks.IsLinkable(IM.Member) and (IM.Member.Protection in [prPublic, prPublished, prProtected, prStrictProtected]) then
+          Decl.Add(IM.Member);
+      if FSortBrief then
+        Decl.Sort(TComparer<TMemberDef>.Construct(
+          function(const A, B: TMemberDef): Integer
+          begin
+            Result := MemberCompare(A, B);
+          end));
+    end;
     T0 := Tick;
     Detail := DetailedBlock(C, True);
     Add('class: DetailedBlock', T0);
@@ -2234,10 +2263,11 @@ begin
       Summary.Append('<a href="#nested-classes">' + HtmlEscape(NestedTitle) + '</a>');
     end;
     T0 := Tick;
-    DeclSections(Vis, False, Rows, Summary);
+    DeclSections(Decl, False, Rows, Summary);
     Add('class: DeclSections', T0);
     T0 := Tick;
-    InheritedSections(C, Rows);
+    if not FInlineInherited then
+      InheritedSections(C, Rows);
     Add('class: InheritedSections', T0);
     if Detail <> '' then
     begin
@@ -2291,6 +2321,8 @@ begin
   finally
     Summary.Free;
     Rows.Free;
+    if Decl <> Vis then
+      Decl.Free;
     Vis.Free;
   end;
 end;
@@ -2321,9 +2353,9 @@ begin
         '<td class="entry">' + FDoc.Link(IM.From, IM.From.Name) + '</td><td class="entry">' + Label_ +
         '</td></tr>'#10);
     end;
-    BeginPage(C.DiskName + '-members', Format(Tr('%s Member List'), [C.QualifiedName]), C.DiskName + '-members' + FExt);
-    PageHeader(Format(Tr('%s Member List'), [C.QualifiedName]));
-    W('<p>' + Tr('This is the complete list of members for') + ' ' + FDoc.Link(C, C.QualifiedName) +
+    BeginPage(C.DiskName + '-members', Format(Tr('%s Member List'), [ScopedName(C)]), C.DiskName + '-members' + FExt);
+    PageHeader(Format(Tr('%s Member List'), [ScopedName(C)]));
+    W('<p>' + Tr('This is the complete list of members for') + ' ' + FDoc.Link(C, ScopedName(C)) +
       ', ' + Tr('including all inherited members.') + '</p>'#10);
     W('<table class="directory">'#10 + SB.ToString + '</table>'#10);
     EndPage(NavPathOf(C));
@@ -2679,7 +2711,11 @@ begin
           Tables := Tables + DirTable(D, Pick(Title, Tr('Files')), False);
       end;
   if Tables <> '' then
-    W('<table class="memberdecls">'#10 + Tables + '</table>'#10);  EndPage(DirNavPath(D));
+    W('<table class="memberdecls">'#10 + Tables + '</table>'#10);
+  if D.Doc <> '' then
+    W('<a name="details" id="details"></a><h2 class="groupheader">' + HtmlEscape(Tr('Detailed Description')) + '</h2>'#10 +
+      '<div class="textblock">' + FDoc.Render(D.Doc, nil) + '</div>'#10);
+  EndPage(DirNavPath(D));
 end;
 
 procedure THtmlGenerator.DirTreeRows(D: TDirDef; ALevel: Integer; var ARow: Integer);
@@ -2750,7 +2786,7 @@ var
             Any := True;
           end;
           Rows.Append('<tr class="memitem:' + D.DiskName + '"><td class="memItemLeft" align="right" valign="top">&#160;</td>' +
-            '<td class="memItemRight" valign="bottom">' + FDoc.Link(D, D.QualifiedName) + '</td></tr>'#10);
+            '<td class="memItemRight" valign="bottom">' + FDoc.Link(D, ScopedName(D)) + '</td></tr>'#10);
         end;
   end;
 
@@ -2962,7 +2998,7 @@ begin
       end;
       W('<dd>' + FDoc.Link(C, C.Name));
       if (C.Scope <> nil) and (C.Scope.Name <> '') then
-        W(' (' + FDoc.Link(C.Scope, C.Scope.QualifiedName) + ')');
+        W(' (' + FDoc.Link(C.Scope, ScopedName(C.Scope)) + ')');
       W('</dd>'#10);
     end;
     if Cur <> '' then
@@ -3113,7 +3149,7 @@ begin
       W('<li>' + HtmlEscape(M.Name));
       if M.Kind = memFunction then
         W('()');
-      W('&#160;:&#160;' + FDoc.Link(M.Scope, M.Scope.QualifiedName).Replace('class="el"', 'class="el"') + '</li>'#10);
+      W('&#160;:&#160;' + FDoc.Link(M.Scope, ScopedName(M.Scope)).Replace('class="el"', 'class="el"') + '</li>'#10);
     end;
     W('</ul>'#10);
     EndPage;

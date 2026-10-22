@@ -798,6 +798,8 @@ end;
 procedure AssignGroups(AProject: TProject);
 var
   D: TDefinition;
+  C: TClassDef;
+  Changed: Boolean;
   G, P: TGroupDef;
   S: string;
   All: TList<TDefinition>;
@@ -835,6 +837,24 @@ begin
         All.Add(D);
     for D in All do
       AddTo(D);
+    // GROUP_NESTED_COMPOUNDS: a class nested in a class of a group is in the group (also the ones nested deeper)
+    if AProject.Options.GroupNestedCompounds then
+    begin
+      Changed := True;
+      while Changed do
+      begin
+        Changed := False;
+        for C in AProject.Classes do
+          if C.Scope is TClassDef then
+            for G in C.Scope.Groups do
+              if G.Members.IndexOf(C) < 0 then
+              begin
+                G.Members.Add(C);
+                C.WriteGroups.Add(G);
+                Changed := True;
+              end;
+      end;
+    end;
   finally
     All.Free;
   end;

@@ -20,6 +20,8 @@ type
     Parent: TDirDef;
     Dirs: TList<TDirDef>;        // sub-directories (not owned)
     Units: TList<TUnitDef>;      // the units whose file is directly in this directory
+    DiskDir: string;             // the directory on disk ('' when it is not known)
+    Doc: string;                 // its README.md (IMPLICIT_DIR_DOCS), as Doxygen markup
     constructor Create(const AName, APath: string; AParent: TDirDef);
     destructor Destroy; override;
   end;
@@ -49,8 +51,12 @@ implementation
 
 uses
   System.SysUtils,
+  System.IOUtils,
+  System.RegularExpressions,
   System.Generics.Defaults,
-  System.Hash;
+  System.Hash,
+  DoxyPas.Core.SourceText,
+  DoxyPas.Doc.Markdown;
 
 { TDirDef }
 
@@ -76,6 +82,22 @@ end;
 
 { TDirTree }
 
+// IMPLICIT_DIR_DOCS: README.md of the directory, unless it starts with \dir, \page or \mainpage; '' when there is none.
+function ReadReadme(const ADir: string): string;
+var
+  F: string;
+begin
+  Result := '';
+  if ADir = '' then
+    Exit;
+  F := TPath.Combine(ADir, 'README.md');
+  if not TFile.Exists(F) then
+    Exit;
+  Result := MarkdownToDoxygen(ReadSourceFile(F).Replace(#13#10, #10));
+  if TRegEx.IsMatch(Result, '^\s*[\\@](dir|page|mainpage)\b') then
+    Result := '';
+end;
+
 function TDirTree.Add(const AName, APath: string; AParent: TDirDef): TDirDef;
 begin
   Result := TDirDef.Create(AName, APath, AParent);
@@ -93,6 +115,8 @@ var
   Cur: TDirDef;
   Key, Shown: string;
   ByPath: TDictionary<string, TDirDef>;
+  Dir: TDirDef;
+  Changed: Boolean;
 begin
   inherited Create;
   FAll := TObjectList<TDirDef>.Create(True);
@@ -142,7 +166,22 @@ begin
       end;
       Cur.Units.Add(Units[I]);
       FOf.Add(Units[I], Cur);
+      if Cur.DiskDir = '' then
+        Cur.DiskDir := ExtractFilePath(Units[I].FileName);
     end;
+    // the directories without files of their own: the parent of the directory of a sub-directory
+    repeat
+      Changed := False;
+      for Dir in FAll do
+        if (Dir.DiskDir <> '') and (Dir.Parent <> nil) and (Dir.Parent.DiskDir = '') then
+        begin
+          Dir.Parent.DiskDir := ExtractFilePath(ExcludeTrailingPathDelimiter(Dir.DiskDir));
+          Changed := True;
+        end;
+    until not Changed;
+    if AProject.Options.ImplicitDirDocs then
+      for Dir in FAll do
+        Dir.Doc := ReadReadme(Dir.DiskDir);
   finally
     ByPath.Free;
     Units.Free;

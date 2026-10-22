@@ -243,6 +243,7 @@ begin
   Add('Test List', 'Lista de Testes', '', 'Lista de pruebas', 'Liste des tests', 'Testliste');
   Add('Bug List', 'Lista de Erros', 'Lista de Bugs', 'Lista de errores', 'Liste des bogues', 'Fehlerliste');
   Add('Table of Contents', 'Índice', '', 'Índice', 'Table des matières', 'Inhaltsverzeichnis');
+  Add('Graph Legend', 'Legenda dos Grafos', '', 'Leyenda de los gráficos', 'Légende du graphe', 'Graph-Legende');
   Add('Deprecated List', 'Lista de Obsoletos', '', 'Lista de obsoletos', 'Liste des éléments obsolètes', 'Liste veralteter Elemente');
   Add('Todo', 'Por fazer', 'A fazer', 'Pendiente', 'À faire', 'Zu erledigen');
   Add('Test', 'Teste', '', 'Prueba', 'Test', 'Test');

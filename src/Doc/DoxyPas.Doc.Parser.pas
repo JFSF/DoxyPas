@@ -748,6 +748,13 @@ begin
     if AName = 'snippet' then
       N.Extra := ReadWord;          // the name of the block between the [name] markers
   end
+  else if AName = 'dotfile' then
+  begin
+    N := AParent.Add(TDocNode.Create(dnInclude));
+    N.Name := AName;
+    N.Text := ReadWord;
+    N.Extra := ReadQuoted;                // the caption
+  end
   else if AName = 'tableofcontents' then
   begin
     ReadOptions('{', '}');                // {html:2,...}: the levels are not used

@@ -36,6 +36,7 @@ type
     AutolinkSupport: Boolean;        // link words that match a class or unit name
     AutolinkIgnoreWords: TArray<string>;   // AUTOLINK_IGNORE_WORDS: no link for the words that start with one of these
     MainPageFile: string;            // USE_MDFILE_AS_MAINPAGE: a Markdown file that is the main page
+    LegendPage: Boolean;             // GENERATE_LEGEND (with HAVE_DOT and without UML_LOOK): the page that explains the graphs
     XrefLists: TArray<string>;       // GENERATE_TODOLIST...: the commands that get a page (todo, test, bug, deprecated)
     class function Default: TProjectOptions; static;
     class function FromConfig(AConfig: TConfig): TProjectOptions; static;
@@ -151,6 +152,7 @@ begin
   Result.AutolinkSupport := True;
   Result.AutolinkIgnoreWords := nil;
   Result.XrefLists := nil;
+  Result.LegendPage := False;
 end;
 
 class function TProjectOptions.FromConfig(AConfig: TConfig): TProjectOptions;
@@ -185,6 +187,7 @@ begin
   Result.AutolinkSupport := AConfig.GetBool('AUTOLINK_SUPPORT');
   Result.AutolinkIgnoreWords := AConfig.GetList('AUTOLINK_IGNORE_WORDS');
   Result.MainPageFile := AConfig.GetString('USE_MDFILE_AS_MAINPAGE');
+  Result.LegendPage := AConfig.GetBool('HAVE_DOT') and AConfig.GetBool('GENERATE_LEGEND') and not AConfig.GetBool('UML_LOOK');
   Result.XrefLists := nil;
   if AConfig.GetBool('GENERATE_TODOLIST') then Result.XrefLists := Result.XrefLists + ['todo'];
   if AConfig.GetBool('GENERATE_TESTLIST') then Result.XrefLists := Result.XrefLists + ['test'];

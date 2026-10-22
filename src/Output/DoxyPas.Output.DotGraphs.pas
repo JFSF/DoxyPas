@@ -45,10 +45,12 @@ type
     FUrl: TDefUrl;
     FMaxDepth: Integer;           // MAX_DOT_GRAPH_DEPTH
     FUml: Boolean;                // UML_LOOK
+    FHideUndoc: Boolean;          // HIDE_UNDOC_RELATIONS
     FUmlDetails: string;          // DOT_UML_DETAILS: NO, YES or NONE
     FUmlLimit: Integer;           // UML_LIMIT_NUM_FIELDS
     FUmlEdgeLabels: Integer;      // UML_MAX_EDGE_LABELS
     function UrlOf(ADef: TDefinition): string;
+    function Shown(X: TClassDef): Boolean;
     function UmlLabel(C: TClassDef): string;
   public
     /// <summary>ACalls (CALL_GRAPH / CALLER_GRAPH) and AUrl may be nil.</summary>
@@ -221,6 +223,7 @@ begin
   FUrl := AUrl;
   FMaxDepth := AConfig.GetInt('MAX_DOT_GRAPH_DEPTH');
   FUml := AConfig.GetBool('UML_LOOK');
+  FHideUndoc := AConfig.GetBool('HIDE_UNDOC_RELATIONS');
   FUmlDetails := AConfig.GetString('DOT_UML_DETAILS').ToUpper;
   FUmlLimit := AConfig.GetInt('UML_LIMIT_NUM_FIELDS');
   FUmlEdgeLabels := AConfig.GetInt('UML_MAX_EDGE_LABELS');
@@ -229,6 +232,12 @@ begin
   TDotBuilder.EdgeAttr := AConfig.GetString('DOT_EDGE_ATTR');
   if AConfig.GetString('DOT_FONTPATH') <> '' then
     SetEnv('DOTFONTPATH', AConfig.GetString('DOT_FONTPATH'));
+end;
+
+// A related class is in the graph when it has pages, or always with HIDE_UNDOC_RELATIONS = NO.
+function TDotGraphs.Shown(X: TClassDef): Boolean;
+begin
+  Result := (not FHideUndoc) or FLinks.IsLinkable(X);
 end;
 
 function TDotGraphs.UrlOf(ADef: TDefinition): string;
@@ -338,7 +347,7 @@ var
     begin
       if G.Full then
         Exit;
-      if (B.ClassDef <> nil) and FLinks.IsLinkable(B.ClassDef) then
+      if (B.ClassDef <> nil) and Shown(B.ClassDef) then
       begin
         P := ClassNode(B.ClassDef, False);
         G.Edge(P, AId, Inherit);
@@ -360,7 +369,7 @@ var
     if ADepth > MaxDepth then
       Exit;
     for D in X.Derived do
-      if FLinks.IsLinkable(D) and not G.Full then
+      if Shown(D) and not G.Full then
       begin
         N := ClassNode(D, False);
         G.Edge(AId, N, Inherit);
@@ -387,7 +396,7 @@ var
           for Mt in TRegEx.Matches(M.Entry.TypeText, '[A-Za-z_][A-Za-z_0-9.]*') do
           begin
             T := FLinks.Resolve(Mt.Value, M);
-            if (T.Def is TClassDef) and (T.Def <> C) and FLinks.IsLinkable(T.Def) then
+            if (T.Def is TClassDef) and (T.Def <> C) and Shown(TClassDef(T.Def)) then
             begin
               X := TClassDef(T.Def);
               if not Labels.TryGetValue(X, S) then

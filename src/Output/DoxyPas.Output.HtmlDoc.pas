@@ -14,6 +14,9 @@ uses
   DoxyPas.Model.Links;
 
 type
+  /// <summary>Makes the image of a dot graph (\dot, \dotfile) and returns the HTML that shows it; '' when there is no dot.</summary>
+  TDotRender = reference to function(const ADot, ACaption: string): string;
+
   /// <summary>One line of \tableofcontents.</summary>
   TTocEntry = record
     Depth: Integer;
@@ -29,6 +32,8 @@ type
     FDontLines: TArray<string>;       // the file of the last \dontinclude and the line \line, \skip... go on from
     FDontPos: Integer;
     FDontPascal: Boolean;
+    FOnDot: TDotRender;
+    FDotFileDirs: TArray<string>;
     FUsedImages: TStringList;
     FLinks: TLinkResolver;
     FExt: string;
@@ -49,6 +54,8 @@ type
     function Table(ANode: TDocNode): string;
     function Fragment(ANode: TDocNode): string;
     function DontIncludeLines(ANode: TDocNode): string;
+    function DotFile(ANode: TDocNode): string;
+    function DotBlock(const ABody: string): string;
     procedure PrepareToc(ARoot: TDocNode);
     function TocHtml: string;
     function FindFile(const AName: string; const APaths: TArray<string>; ARecursive: Boolean; const APatterns: TArray<string>): string;
@@ -73,6 +80,10 @@ type
     property ExamplePatterns: TArray<string> read FExamplePatterns write FExamplePatterns;
     /// <summary>TOC_INCLUDE_HEADINGS: the Markdown headings up to this level are in the \tableofcontents.</summary>
     property TocHeadings: Integer read FTocHeadings write FTocHeadings;
+    /// <summary>DOTFILE_DIRS: where \dotfile looks for its file.</summary>
+    property DotFileDirs: TArray<string> read FDotFileDirs write FDotFileDirs;
+    /// <summary>Draws the dot graphs of \dot and \dotfile (nil: they are not shown).</summary>
+    property OnDot: TDotRender read FOnDot write FOnDot;
     property ExampleRecursive: Boolean read FExampleRecursive write FExampleRecursive;
     /// <summary>Formulas are images (formula_N.svg, made from FormulaTex) instead of MathJax markup.</summary>
     property ImageFormulas: Boolean read FImageFormulas write FImageFormulas;
@@ -226,7 +237,7 @@ end;
 
 function THtmlDocWriter.IsBlock(ANode: TDocNode): Boolean;
 begin
-  Result := ANode.Kind in [dnList, dnTable, dnSimpleSect, dnParamList, dnBlockQuote, dnHeading, dnHRuler, dnToc];
+  Result := ANode.Kind in [dnList, dnTable, dnSimpleSect, dnParamList, dnBlockQuote, dnHeading, dnHRuler, dnToc, dnInclude];
   if ANode.Kind = dnVerbatim then
     Result := ANode.Name <> 'htmlonly';
 end;
@@ -391,6 +402,45 @@ begin
   end;
 end;
 
+// \dot ["caption"] ... \enddot
+function THtmlDocWriter.DotBlock(const ABody: string): string;
+var
+  M: TMatch;
+  Caption, Dot: string;
+begin
+  Result := '';
+  if not Assigned(FOnDot) then
+    Exit;
+  Dot := ABody;
+  Caption := '';
+  M := TRegEx.Match(Dot, '^\s*"([^"]*)"');
+  if M.Success then
+  begin
+    Caption := M.Groups[1].Value;
+    Dot := Copy(Dot, M.Length + 1, MaxInt);
+  end;
+  Result := FOnDot(Trim(Dot), Caption);
+end;
+
+// \dotfile file ["caption"]: the file is looked for in DOTFILE_DIRS and as it is written.
+function THtmlDocWriter.DotFile(ANode: TDocNode): string;
+var
+  Path: string;
+begin
+  Result := '';
+  if not Assigned(FOnDot) then
+    Exit;
+  Path := FindFile(ANode.Text, FDotFileDirs, False, nil);
+  if (Path = '') and TFile.Exists(ANode.Text) then
+    Path := ANode.Text;
+  if Path = '' then
+  begin
+    Warn('', 0, 'dot file ' + ANode.Text + ' is not found. Check your DOTFILE_DIRS');
+    Exit;
+  end;
+  Result := FOnDot(ReadSourceFile(Path), ANode.Extra);
+end;
+
 // \dontinclude opens the file; \line (the next line with the pattern), \skip (go to it), \skipline (go to it and show it)
 // and \until (show the lines up to it) walk it.
 // shortcut: each command is its own code box (Doxygen joins the consecutive ones), join them if it is wanted.
@@ -456,6 +506,8 @@ begin
   Result := '';
   if MatchText(ANode.Name, ['dontinclude', 'line', 'skip', 'skipline', 'until']) then
     Exit(DontIncludeLines(ANode));
+  if ANode.Name = 'dotfile' then
+    Exit(DotFile(ANode));
   if ANode.Text = '' then
     Exit;
   Path := FindFile(ANode.Text, FExamplePath, FExampleRecursive, FExamplePatterns);
@@ -499,7 +551,9 @@ end;
 
 function THtmlDocWriter.Fragment(ANode: TDocNode): string;
 begin
-  if ANode.Name = 'code' then
+  if ANode.Name = 'dot' then
+    Result := DotBlock(ANode.Text)
+  else if ANode.Name = 'code' then
     Result := '<div class="fragment">' + HighlightPascal(ANode.Text) + '</div><!-- fragment -->'#10
   else if (ANode.Name = 'verbatim') or (ANode.Name = 'pre') then
     Result := '<pre class="fragment">' + HtmlEscape(ANode.Text) + '</pre>'#10
@@ -656,6 +710,7 @@ begin
     dnHeading: Result := Format('<h%d>%s%s</h%d>'#10, [ANode.Level, IfThen(ANode.Id <> '', Anchor(ANode.Id)), InlineChildren(ANode, True).Trim, ANode.Level]);
     dnHRuler: Result := '<hr/>'#10;
     dnToc: Result := TocHtml;
+    dnInclude: Result := IncludeFragment(ANode);
     dnVerbatim: Result := Fragment(ANode);
   end;
 end;

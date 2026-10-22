@@ -84,6 +84,7 @@ type
     FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
     FBriefMemberDesc, FRepeatBrief, FInlineInfo, FShowEnumValues: Boolean;
     FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping, FHideCompoundRef, FAlwaysDetailed: Boolean;
+    FInlineDots: Integer;             // \dot and \dotfile graphs so far (inline_dotgraph_N)
     FAbbreviate: TArray<string>;      // ABBREVIATE_BRIEF (the defaults when it is empty)
     FTimestamp: string;            // TIMESTAMP: NO, YES / DATETIME or DATE
     FMaxInitLines, FEnumPerLine: Integer;
@@ -219,6 +220,7 @@ type
     procedure BuildNav;
     procedure WriteHtmlHelp;
     procedure WriteSitemap;
+    function InlineDot(const ADot, ACaption: string): string;
     function NavJs(ANodes: TObjectList<TNavNode>; ALevel: Integer; const APath: string; var AFirst: Boolean): Boolean;
     procedure RegisterNav(ANodes: TObjectList<TNavNode>; const APath: string);
     procedure WriteNavTree;
@@ -300,6 +302,12 @@ begin
   FDoc.ObfuscateEmails := AConfig.GetBool('OBFUSCATE_EMAILS');
   FDoc.ImagePath := AConfig.GetList('IMAGE_PATH');
   FDoc.TocHeadings := AConfig.GetInt('TOC_INCLUDE_HEADINGS');
+  FDoc.DotFileDirs := AConfig.GetList('DOTFILE_DIRS');
+  FDoc.OnDot :=
+    function(const ADot, ACaption: string): string
+    begin
+      Result := InlineDot(ADot, ACaption);
+    end;
   FDoc.ExamplePath := AConfig.GetList('EXAMPLE_PATH');
   FDoc.ExamplePatterns := AConfig.GetList('EXAMPLE_PATTERNS');
   FDoc.ExampleRecursive := AConfig.GetBool('EXAMPLE_RECURSIVE');
@@ -2059,6 +2067,28 @@ begin
   else
     Result := Result + '<div class="center"><img src="' + ABase + '.' + FRunner.Extension + '" alt="' + HtmlEscape(ATitle) +
       '" class="inherit_graph"/></div>'#10'</div>'#10;
+end;
+
+// \dot and \dotfile: the graph is made with the others (FlushGraphs); nothing when dot is not there.
+function THtmlGenerator.InlineDot(const ADot, ACaption: string): string;
+var
+  Base: string;
+begin
+  Result := '';
+  if not (FDotGraphs or FRunner.Available) then
+    Exit;
+  Inc(FInlineDots);
+  Base := 'inline_dotgraph_' + FInlineDots.ToString;
+  FRunner.Queue(Base, ADot);
+  if FRunner.Extension = 'svg' then
+    Result := '<div class="dotgraph">'#10'<div class="center"><object type="image/svg+xml" data="' + Base + '.svg">' +
+      HtmlEscape(ACaption) + '</object></div>'#10
+  else
+    Result := '<div class="dotgraph">'#10'<div class="center"><img src="' + Base + '.' + FRunner.Extension + '" alt="' +
+      HtmlEscape(ACaption) + '"/></div>'#10;
+  if ACaption <> '' then
+    Result := Result + '<div class="caption">'#10 + HtmlEscape(ACaption) + '</div>'#10;
+  Result := Result + '</div>'#10;
 end;
 
 procedure THtmlGenerator.FlushGraphs;

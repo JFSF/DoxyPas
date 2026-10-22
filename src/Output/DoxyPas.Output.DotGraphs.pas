@@ -27,6 +27,8 @@ type
   public
     /// <summary>DOT_COMMON_ATTR, DOT_NODE_ATTR and DOT_EDGE_ATTR (set by TDotGraphs).</summary>
     class var CommonAttr, NodeAttr, EdgeAttr: string;
+    /// <summary>DOT_WRAP_THRESHOLD: the longest line of a node label (0: no wrapping).</summary>
+    class var WrapAt: Integer;
     constructor Create(const AName: string; AMaxNodes: Integer; const ARankDir: string);
     destructor Destroy; override;
     function Full: Boolean;
@@ -105,6 +107,7 @@ uses
   Posix.Stdlib,
 {$ENDIF}
   System.Classes,
+  System.Character,
   System.IOUtils,
   System.Math,
   System.RegularExpressions,
@@ -147,12 +150,45 @@ end;
 {$ENDIF}
 function DotQuote(const S: string): string;
 begin
-  Result := '"' + S.Replace('\', '\\').Replace('"', '\"') + '"';
+  Result := '"' + S.Replace('\', '\\').Replace('"', '\"').Replace(#10, '\n') + '"';
 end;
 
 { TDotBuilder }
 
 // Two lists of attributes as one (either may be empty).
+// DOT_WRAP_THRESHOLD: a label longer than the threshold by half is broken after a '.', '_' or ':' (else before a capital
+// that follows a small letter, else where the line is full), so that no line is longer than the threshold much.
+function WrapLabel(const S: string; AWidth: Integer): string;
+var
+  Rest: string;
+  I, Cut: Integer;
+begin
+  Result := '';
+  Rest := S;
+  while (AWidth > 0) and (Length(Rest) > AWidth + AWidth div 2) do
+  begin
+    Cut := 0;
+    for I := AWidth downto AWidth div 2 do
+      if CharInSet(Rest[I], ['.', '_', ':']) then
+      begin
+        Cut := I;
+        Break;
+      end;
+    if Cut = 0 then
+      for I := AWidth downto AWidth div 2 do
+        if (I > 1) and Rest[I].IsUpper and Rest[I - 1].IsLower then
+        begin
+          Cut := I - 1;
+          Break;
+        end;
+    if Cut = 0 then
+      Cut := AWidth;
+    Result := Result + Copy(Rest, 1, Cut) + #10;
+    Rest := Copy(Rest, Cut + 1, MaxInt);
+  end;
+  Result := Result + Rest;
+end;
+
 function Join(const A, B: string): string;
 begin
   if A = '' then Result := B
@@ -193,7 +229,7 @@ begin
     Exit;
   Result := FIds.Count;
   FIds.Add(AKey, Result);
-  FSB.Append('  n').Append(Result).Append(' [label=').Append(DotQuote(ALabel)).Append(AStyle);
+  FSB.Append('  n').Append(Result).Append(' [label=').Append(DotQuote(WrapLabel(ALabel, WrapAt))).Append(AStyle);
   if AUrl <> '' then
     FSB.Append(', URL=').Append(DotQuote(AUrl)).Append(', target="_top"');
   FSB.Append('];'#10);
@@ -227,6 +263,7 @@ begin
   FUmlDetails := AConfig.GetString('DOT_UML_DETAILS').ToUpper;
   FUmlLimit := AConfig.GetInt('UML_LIMIT_NUM_FIELDS');
   FUmlEdgeLabels := AConfig.GetInt('UML_MAX_EDGE_LABELS');
+  TDotBuilder.WrapAt := AConfig.GetInt('DOT_WRAP_THRESHOLD');
   TDotBuilder.CommonAttr := AConfig.GetString('DOT_COMMON_ATTR');
   TDotBuilder.NodeAttr := AConfig.GetString('DOT_NODE_ATTR');
   TDotBuilder.EdgeAttr := AConfig.GetString('DOT_EDGE_ATTR');

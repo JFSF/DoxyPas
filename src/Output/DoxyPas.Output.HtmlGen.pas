@@ -27,6 +27,7 @@ uses
   System.SysUtils,
   System.Classes,
   System.IOUtils,
+  System.StrUtils,
   System.Hash,
   System.Math,
   System.RegularExpressions,
@@ -3202,7 +3203,8 @@ begin
   if FClip then
     SaveText('clipboard.js', HtmlResourceText('clipboard.js').Replace('$copy_to_clipboard_text', Tr('Copy to clipboard')));
   if FTree or FSearch or (FColors.Style = csToggle) then
-    SaveText('cookie.js', HtmlResourceText('cookie.js'));
+    SaveText('cookie.js', HtmlResourceText('cookie.js').Replace('cookie_namespace: ''doxygen_''',
+      'cookie_namespace: ''' + IfThen(FConfig.GetString('HTML_PROJECT_COOKIE') <> '', FConfig.GetString('HTML_PROJECT_COOKIE'), 'doxygen') + '_'''));
   if FColors.Style = csToggle then
     SaveText('darkmode_toggle.js', ReplaceColorMarkers(HtmlResourceText('darkmode_toggle.js'), FColors)
       .Replace('$PROJECTID', FProjectId));
@@ -3297,10 +3299,14 @@ var
   var
     N: TNavNode;
     S: TGroupDef;
+    Def: TDefinition;
   begin
     N := AParent.Add(AGroup.Title, Url(AGroup.DiskName));
     for S in AGroup.Subgroups do
       AddGroup(N, S);
+    if FConfig.GetBool('TOC_EXPAND') then          // the members of the group as items of the tree and of the help contents
+      for Def in AGroup.Members do
+        N.Add(Def.Name, FDoc.DefUrl(Def));
   end;
 
   procedure AddClass(AParent: TNavNode; AClass: TClassDef);
@@ -3698,7 +3704,22 @@ begin
       Item(Idx, Pair.Key, Pair.Value);
     Idx.Append('</UL>'#10'</BODY></HTML>'#10);
     SaveText('index.hhc', Toc.ToString);
-    SaveText('index.hhk', Idx.ToString);
+    if FConfig.GetString('CHM_INDEX_ENCODING') <> '' then
+    begin
+      // the index in the encoding of CHM_INDEX_ENCODING (the other files stay UTF-8)
+      try
+        TFile.WriteAllText(TPath.Combine(FDir, 'index.hhk'), Idx.ToString, TEncoding.GetEncoding(FConfig.GetString('CHM_INDEX_ENCODING')));
+        Inc(FFiles);
+      except
+        on E: Exception do
+        begin
+          Warn('', 0, 'CHM_INDEX_ENCODING ' + FConfig.GetString('CHM_INDEX_ENCODING') + ': ' + E.Message);
+          SaveText('index.hhk', Idx.ToString);
+        end;
+      end;
+    end
+    else
+      SaveText('index.hhk', Idx.ToString);
     // every file of the output except the search data (it needs scripts that a CHM cannot run) and the help files
     for F in TDirectory.GetFiles(FDir, '*', TSearchOption.soAllDirectories) do
     begin
@@ -3710,6 +3731,7 @@ begin
     Hhp.Append('[OPTIONS]'#10'Compatibility=1.1'#10'Compiled file=' + Chm + #10'Contents file=index.hhc'#10 +
       'Default Window=main'#10'Default topic=index' + FExt + #10'Display compile progress=No'#10 +
       'Full-text search=Yes'#10'Index file=index.hhk'#10'Language=0x409 English (United States)'#10 +
+      IfThen(FConfig.GetBool('BINARY_TOC'), 'Binary TOC=Yes'#10) + IfThen(FConfig.GetBool('GENERATE_CHI'), 'Create CHI file=Yes'#10) +
       'Title=' + Title + #10#10'[WINDOWS]'#10'main="' + Title + '","index.hhc","index.hhk","index' + FExt +
       '","index' + FExt + '",,,,,0x23520,,0x387e,,,,,,,,0'#10#10'[FILES]'#10);
     for F in Files do

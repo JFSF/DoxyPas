@@ -244,6 +244,11 @@ begin
   Add('Bug List', 'Lista de Erros', 'Lista de Bugs', 'Lista de errores', 'Liste des bogues', 'Fehlerliste');
   Add('Table of Contents', 'Índice', '', 'Índice', 'Table des matières', 'Inhaltsverzeichnis');
   Add('Graph Legend', 'Legenda dos Grafos', '', 'Leyenda de los gráficos', 'Légende du graphe', 'Graph-Legende');
+  Add('Graphical Class Hierarchy', 'Hierarquia Gráfica de Classes', '', 'Jerarquía gráfica de clases', 'Hiérarchie graphique des classes', 'Grafische Klassenhierarchie');
+  Add('graphical class hierarchy', 'hierarquia gráfica de classes', '', 'jerarquía gráfica de clases', 'hiérarchie graphique des classes', 'grafische Klassenhierarchie');
+  Add('textual class hierarchy', 'hierarquia textual de classes', '', 'jerarquía textual de clases', 'hiérarchie textuelle des classes', 'textuelle Klassenhierarchie');
+  Add('Go to the', 'Ir para a', '', 'Ir a la', 'Aller à la', 'Zur');
+  Add('Group dependency graph for %s:', 'Grafo de dependências do grupo %s:', '', 'Gráfico de dependencias del grupo %s:', 'Graphe des dépendances du groupe %s:', 'Gruppenabhängigkeitsgraph für %s:');
   Add('Deprecated List', 'Lista de Obsoletos', '', 'Lista de obsoletos', 'Liste des éléments obsolètes', 'Liste veralteter Elemente');
   Add('Todo', 'Por fazer', 'A fazer', 'Pendiente', 'À faire', 'Zu erledigen');
   Add('Test', 'Teste', '', 'Prueba', 'Test', 'Test');

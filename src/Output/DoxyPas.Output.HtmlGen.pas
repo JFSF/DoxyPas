@@ -211,6 +211,7 @@ type
     procedure CopyIntoOutput(const AFile: string);
     function MemberCompare(A, B: TMemberDef): Integer;
     procedure WriteHierarchy;
+    procedure WriteInherits;
     procedure WriteUnitList;
     procedure WriteTopics;
     procedure WritePagesIndex;
@@ -2750,7 +2751,7 @@ var
   Rows, Summary: TStringBuilder;
   Mem: TList<TMemberDef>;
   D: TDefinition;
-  Detail, Brief, Key, Title: string;
+  Detail, Brief, Key, Title, Graph: string;
   MD, E: TLayoutEntry;
 
   function Pick(const AText, ADefault: string): string;
@@ -2841,6 +2842,12 @@ begin
       if (Trim(G.Detailed) <> '') and (Detail <> '') then
         W(' <a href="#details">' + Tr('More...') + '</a>');
       W('</p>'#10);
+    end;
+    if FDotGraphs and FConfig.GetBool('GROUP_GRAPHS') then
+    begin
+      Graph := FDot.GroupDot(G);
+      if Graph <> '' then
+        W(RunGraph(G.DiskName + '_graph', Format(Tr('Group dependency graph for %s:'), [HtmlEscape(G.Title)]), Graph));
     end;
     if Rows.Length > 0 then
       W('<table class="memberdecls">'#10 + Rows.ToString + '</table>'#10);
@@ -3023,7 +3030,9 @@ begin
   try
     BeginPage('hierarchy', NavTitle('hierarchy'));
     PageHeader(NavTitle('hierarchy'));
-    W('<div class="textblock">' + NavIntro('hierarchy', 'This inheritance list is sorted roughly, but not completely, alphabetically:') + '</div>'#10 +
+    W('<div class="textblock">' + IfThen(FDotGraphs and FConfig.GetBool('GRAPHICAL_HIERARCHY'),
+      Tr('Go to the') + ' <a href="inherits' + FExt + '">' + Tr('graphical class hierarchy') + '</a><br />'#10) +
+      NavIntro('hierarchy', 'This inheritance list is sorted roughly, but not completely, alphabetically:') + '</div>'#10 +
       '<div class="directory">'#10'<table class="directory">'#10);
     Row := 0;
     for C in FProject.Classes do
@@ -3041,6 +3050,41 @@ begin
   finally
     SB.Free;
   end;
+end;
+
+// GRAPHICAL_HIERARCHY: "inherits.html", a graph for every root class with all its descendants.
+procedure THtmlGenerator.WriteInherits;
+var
+  C: TClassDef;
+  B: TBaseRef;
+  Root: Boolean;
+  Base, Alt: string;
+  N: Integer;
+begin
+  BeginPage('inherits', Tr('Graphical Class Hierarchy'));
+  PageHeader(Tr('Graphical Class Hierarchy'));
+  W('<div class="textblock">' + Tr('Go to the') + ' <a href="hierarchy' + FExt + '">' + Tr('textual class hierarchy') +
+    '</a></div>'#10);
+  N := 0;
+  for C in FProject.Classes do
+    if FLinks.IsLinkable(C) then
+    begin
+      Root := True;
+      for B in C.Bases do
+        if (B.ClassDef <> nil) and FLinks.IsLinkable(B.ClassDef) then
+          Root := False;
+      if not Root then
+        Continue;
+      Inc(N);
+      Base := 'inherits_' + N.ToString;
+      Alt := HtmlEscape(C.Name);
+      FRunner.Queue(Base, FDot.HierarchyDot(C));
+      if FRunner.Extension = 'svg' then
+        W('<div class="center"><object type="image/svg+xml" data="' + Base + '.svg">' + Alt + '</object></div>'#10)
+      else
+        W('<div class="center"><img src="' + Base + '.' + FRunner.Extension + '" alt="' + Alt + '"/></div>'#10);
+    end;
+  EndPage;
 end;
 
 procedure THtmlGenerator.WriteUnitList;
@@ -4125,6 +4169,8 @@ begin
     WriteAnnotated;
     WriteClassIndex;
     WriteHierarchy;
+    if FDotGraphs and FConfig.GetBool('GRAPHICAL_HIERARCHY') then
+      WriteInherits;
     WriteFunctionsIndex;
   end;
   Lap('html: units, groups, pages, indices');

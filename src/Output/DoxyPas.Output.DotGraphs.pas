@@ -60,6 +60,10 @@ type
       const AUrl: TDefUrl);
     /// <summary>Inheritance graph; with ACollab the collaboration graph.</summary>
     function ClassDot(C: TClassDef; ACollab: Boolean): string;
+    /// <summary>The group, its parent, its sub-groups and the groups of the base classes of its classes; '' when it has no relation.</summary>
+    function GroupDot(AGroup: TGroupDef): string;
+    /// <summary>The class C and all the classes derived from it (the graphical class hierarchy).</summary>
+    function HierarchyDot(C: TClassDef): string;
     /// <summary>The units U uses; with AUsedBy the units that use U.</summary>
     function UnitDot(U: TUnitDef; AUsedBy: Boolean): string;
     /// <summary>What M calls; with ACallers the routines that call M.</summary>
@@ -476,6 +480,98 @@ begin
       Descendants(C, Root, 1);
     Result := G.Finish;
   finally
+    G.Free;
+  end;
+end;
+
+// GROUP_GRAPHS: the relations of a group (parent and sub-groups) and what its classes need from other groups (their base classes).
+function TDotGraphs.GroupDot(AGroup: TGroupDef): string;
+const
+  Nest = 'dir="back", color="midnightblue", style="solid"';
+  Needs = 'color="darkorchid3", style="dashed", arrowhead="open"';
+var
+  G: TDotBuilder;
+  Deps: TList<TGroupDef>;
+  D: TDefinition;
+  B: TBaseRef;
+  S, X: TGroupDef;
+  Root, Edges: Integer;
+
+  function GroupNode(X: TGroupDef): Integer;
+  begin
+    Result := G.Node(X.DiskName, X.Title, UrlOf(X), '');
+  end;
+
+begin
+  Result := '';
+  Deps := TList<TGroupDef>.Create;
+  G := TDotBuilder.Create(AGroup.Title, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'TB');
+  try
+    for D in AGroup.Members do
+      if D is TClassDef then
+        for B in TClassDef(D).Bases do
+          if B.ClassDef <> nil then
+            for X in B.ClassDef.Groups do
+              if (X <> AGroup) and not Deps.Contains(X) then
+                Deps.Add(X);
+    Edges := 0;
+    Root := G.Node(AGroup.DiskName, AGroup.Title, '', ', fillcolor="#bfbfbf"');
+    if AGroup.Parent <> nil then
+    begin
+      G.Edge(GroupNode(AGroup.Parent), Root, Nest);
+      Inc(Edges);
+    end;
+    for S in AGroup.Subgroups do
+      if not G.Full then
+      begin
+        G.Edge(Root, GroupNode(S), Nest);
+        Inc(Edges);
+      end;
+    for X in Deps do
+      if not G.Full then
+      begin
+        G.Edge(Root, GroupNode(X), Needs);
+        Inc(Edges);
+      end;
+    if Edges > 0 then
+      Result := G.Finish;
+  finally
+    G.Free;
+    Deps.Free;
+  end;
+end;
+
+// The graphical class hierarchy: a root class and every class derived from it, down to the last level.
+function TDotGraphs.HierarchyDot(C: TClassDef): string;
+var
+  G: TDotBuilder;
+
+  procedure Walk(X: TClassDef; AId: Integer; const ASeen: TList<TClassDef>);
+  var
+    D: TClassDef;
+    N: Integer;
+  begin
+    for D in X.Derived do
+      if FLinks.IsLinkable(D) and not ASeen.Contains(D) and not G.Full then
+      begin
+        ASeen.Add(D);
+        N := G.Node(D.DiskName, D.Name, UrlOf(D), '');
+        G.Edge(AId, N, 'dir="back", color="midnightblue", style="solid"');
+        Walk(D, N, ASeen);
+      end;
+  end;
+
+var
+  Seen: TList<TClassDef>;
+begin
+  G := TDotBuilder.Create(C.Name, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'LR');
+  Seen := TList<TClassDef>.Create;
+  try
+    Seen.Add(C);
+    Walk(C, G.Node(C.DiskName, C.Name, UrlOf(C), ''), Seen);
+    Result := G.Finish;
+  finally
+    Seen.Free;
     G.Free;
   end;
 end;

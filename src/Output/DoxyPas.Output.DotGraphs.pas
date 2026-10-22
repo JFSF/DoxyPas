@@ -44,7 +44,12 @@ type
     FCalls: TCallIndex;
     FUrl: TDefUrl;
     FMaxDepth: Integer;           // MAX_DOT_GRAPH_DEPTH
+    FUml: Boolean;                // UML_LOOK
+    FUmlDetails: string;          // DOT_UML_DETAILS: NO, YES or NONE
+    FUmlLimit: Integer;           // UML_LIMIT_NUM_FIELDS
+    FUmlEdgeLabels: Integer;      // UML_MAX_EDGE_LABELS
     function UrlOf(ADef: TDefinition): string;
+    function UmlLabel(C: TClassDef): string;
   public
     /// <summary>ACalls (CALL_GRAPH / CALLER_GRAPH) and AUrl may be nil.</summary>
     constructor Create(AProject: TProject; ALinks: TLinkResolver; AConfig: TConfig; ACalls: TCallIndex;
@@ -215,6 +220,10 @@ begin
   FCalls := ACalls;
   FUrl := AUrl;
   FMaxDepth := AConfig.GetInt('MAX_DOT_GRAPH_DEPTH');
+  FUml := AConfig.GetBool('UML_LOOK');
+  FUmlDetails := AConfig.GetString('DOT_UML_DETAILS').ToUpper;
+  FUmlLimit := AConfig.GetInt('UML_LIMIT_NUM_FIELDS');
+  FUmlEdgeLabels := AConfig.GetInt('UML_MAX_EDGE_LABELS');
   TDotBuilder.CommonAttr := AConfig.GetString('DOT_COMMON_ATTR');
   TDotBuilder.NodeAttr := AConfig.GetString('DOT_NODE_ATTR');
   TDotBuilder.EdgeAttr := AConfig.GetString('DOT_EDGE_ATTR');
@@ -230,6 +239,69 @@ begin
     Result := '';
 end;
 
+// The label of a class node in UML_LOOK: a record "{name|fields|methods}" with +/#/- for the visibility.
+function TDotGraphs.UmlLabel(C: TClassDef): string;
+
+  function Esc(const S: string): string;
+  var
+    Ch: Char;
+  begin
+    Result := '';
+    for Ch in S do
+      if CharInSet(Ch, ['\', '{', '}', '|', '<', '>', '"']) then
+        Result := Result + '\' + Ch
+      else
+        Result := Result + Ch;
+  end;
+
+  function Mark(M: TMemberDef): string;
+  begin
+    case M.Entry.Protection of
+      prProtected, prStrictProtected: Result := '#';
+      prPrivate, prStrictPrivate: Result := '-';
+    else
+      Result := '+';
+    end;
+  end;
+
+  // The lines of one compartment: up to 50 % over the limit all are shown, beyond that only the limit and "...".
+  function Section(AMethods: Boolean): string;
+  var
+    M: TMemberDef;
+    Lines: TList<string>;
+    I, Count: Integer;
+    S: string;
+  begin
+    Lines := TList<string>.Create;
+    try
+      for M in C.Members do
+        if ((M.Kind = memFunction) = AMethods) and (M.Kind in [memFunction, memVariable, memProperty]) and
+          (M.Entry <> nil) then
+        begin
+          S := Mark(M) + ' ' + M.Name;
+          if FUmlDetails = 'YES' then
+            S := S + M.Signature
+          else if M.Kind = memFunction then
+            S := S + '()';
+          Lines.Add(S);
+        end;
+      Count := Lines.Count;
+      if (FUmlLimit > 0) and (Count > FUmlLimit + FUmlLimit div 2) then
+        Count := FUmlLimit;
+      Result := '';
+      for I := 0 to Count - 1 do
+        Result := Result + Esc(Lines[I]) + '\l';
+      if Count < Lines.Count then
+        Result := Result + '...\l';
+    finally
+      Lines.Free;
+    end;
+  end;
+
+begin
+  Result := '{' + Esc(C.Name) + '\n|' + Section(False) + '|' + Section(True) + '}';
+end;
+
 // Doxygen's inheritance graph: all ancestors above the class, its descendants (three levels) below it.
 function TDotGraphs.ClassDot(C: TClassDef; ACollab: Boolean): string;
 const
@@ -237,13 +309,22 @@ const
 var
   G: TDotBuilder;
   MaxDepth: Integer;
+  Inherit: string;
 
   function ClassNode(X: TClassDef; ARoot: Boolean): Integer;
+  var
+    Style, Url: string;
   begin
+    Style := '';
+    Url := '';
     if ARoot then
-      Result := G.Node(X.DiskName, X.Name, '', ', fillcolor="#bfbfbf"')
+      Style := ', fillcolor="#bfbfbf"'
     else
-      Result := G.Node(X.DiskName, X.Name, UrlOf(X), '');
+      Url := UrlOf(X);
+    // a later label= overrides the first one; the record label has its own \l escapes
+    if FUml and (FUmlDetails <> 'NONE') then
+      Style := Style + ', shape=record, label="' + UmlLabel(X) + '"';
+    Result := G.Node(X.DiskName, X.Name, Url, Style);
   end;
 
   procedure Ancestors(X: TClassDef; AId, ADepth: Integer);
@@ -260,13 +341,13 @@ var
       if (B.ClassDef <> nil) and FLinks.IsLinkable(B.ClassDef) then
       begin
         P := ClassNode(B.ClassDef, False);
-        G.Edge(P, AId, InheritEdge);
+        G.Edge(P, AId, Inherit);
         Ancestors(B.ClassDef, P, ADepth + 1);
       end
       else
       begin
         P := G.Node('?' + B.Text, B.Text, '', '');
-        G.Edge(P, AId, InheritEdge);
+        G.Edge(P, AId, Inherit);
       end;
     end;
   end;
@@ -282,7 +363,7 @@ var
       if FLinks.IsLinkable(D) and not G.Full then
       begin
         N := ClassNode(D, False);
-        G.Edge(AId, N, InheritEdge);
+        G.Edge(AId, N, Inherit);
         Descendants(D, N, ADepth + 1);
       end;
   end;
@@ -314,7 +395,8 @@ var
                 Targets.Add(X);
                 Labels.Add(X, M.Name);
               end
-              else if not ('|' + S.Replace(#10, '|') + '|').Contains('|' + M.Name + '|') then
+              else if not ('|' + S.Replace(#10, '|') + '|').Contains('|' + M.Name + '|') and
+                ((not FUml) or (FUmlEdgeLabels <= 0) or (Length(S) - Length(S.Replace(#10, '')) + 1 < FUmlEdgeLabels)) then
                 Labels[X] := S + #10 + M.Name;
             end;
           end;
@@ -335,6 +417,9 @@ begin
   MaxDepth := 3;
   if FMaxDepth > 0 then
     MaxDepth := FMaxDepth;
+  Inherit := InheritEdge;
+  if FUml then
+    Inherit := Inherit + ', arrowtail="onormal"';
   G := TDotBuilder.Create(C.Name, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'TB');
   try
     Root := ClassNode(C, True);

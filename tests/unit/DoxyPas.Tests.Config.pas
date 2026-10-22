@@ -101,7 +101,7 @@ begin
       Assert.IsTrue(CompareStr(Names[I - 1], Names[I]) < 0, Names[I] + ' is not in order');
   end;
   Assert.IsTrue(IsImplemented('PROJECT_NAME'));
-  Assert.IsFalse(IsImplemented('UML_LOOK'));
+  Assert.IsFalse(IsImplemented('GENERATE_LEGEND'));
   Assert.IsFalse(IsImplemented('NO_SUCH_OPTION'));
 end;
 

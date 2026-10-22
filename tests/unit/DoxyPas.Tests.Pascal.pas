@@ -31,6 +31,8 @@ type
     [Test] procedure UnitDocBeforeTheKeyword;
     [Test] procedure PropertyDetails;
     [Test] procedure DocCommentStyles;
+    [Test] procedure MemberGroupsAndGroupRanges;
+    [Test] procedure DistributeGroupDocGivesTheFirstDocToTheOthers;
     [Test] procedure PlainCommentsAreNotDocumentation;
     [Test] procedure CommentAfterClassEndDocumentsTheClass;
     [Test] procedure OptionsFromConfig;
@@ -43,6 +45,8 @@ uses
   System.Generics.Collections,
   DoxyPas.Model.Entry,
   DoxyPas.Model.EntryDump,
+  DoxyPas.Comments.Scanner,
+  DoxyPas.Comments.EntryDocs,
   DoxyPas.Lang.Pascal.Source,
   DoxyPas.Lang.Pascal.Parser,
   DoxyPas.Lang.Pascal.Options,
@@ -379,6 +383,69 @@ begin
     Assert.AreEqual<Integer>(1, P.Args.Count);
     Assert.AreEqual('Integer', P.Args[0].TypeText);
     Assert.IsTrue(efDefaultProperty in P.Flags);
+  finally
+    Root.Free;
+  end;
+end;
+
+procedure TPascalParserTests.MemberGroupsAndGroupRanges;
+var
+  Err: string;
+  Root, C: TEntry;
+begin
+  Root := ParseText('unit U; interface'#10 +
+    '{** \defgroup g1 Group one'#10'  @{ }'#10 +
+    'procedure A;'#10'procedure B;'#10 +
+    '/// @}'#10 +
+    'procedure Outside;'#10 +
+    'type TC = class'#10 +
+    '  {** \name Setters'#10'  Text under it. }'#10'  //@{'#10 +
+    '  procedure SetA;'#10'  procedure SetB;'#10'  //@}'#10 +
+    '  procedure Plain;'#10 +
+    '  //@{'#10'  procedure Anon;'#10'  //@}'#10 +
+    'end;'#10 +
+    'implementation end.', TPascalParseOptions.Default, Err);
+  try
+    Assert.AreEqual('', Err);
+    // the range of \defgroup puts the two routines in the group; Outside is not
+    Assert.AreEqual('A', Root.Children[0].Name);
+    Assert.IsTrue(Root.Children[0].Groups.Contains('g1'), 'A in g1');
+    Assert.IsTrue(Root.Children[1].Groups.Contains('g1'), 'B in g1');
+    Assert.IsFalse(Root.Children[2].Groups.Contains('g1'));
+    // the \name block is a heading, not the documentation of SetA
+    C := Root.Children[3];
+    Assert.AreEqual('TC', C.Name);
+    Assert.AreEqual('', C.Children[0].Doc);
+    Assert.AreEqual('Setters', C.Children[0].MemberGroup.Title);
+    Assert.AreEqual('Text under it.', C.Children[0].MemberGroup.Doc);
+    Assert.IsTrue(C.Children[0].MemberGroup = C.Children[1].MemberGroup, 'same group');
+    Assert.IsTrue(C.Children[2].MemberGroup = nil, 'Plain has none');
+    Assert.AreEqual('', C.Children[3].MemberGroup.Title);
+  finally
+    Root.Free;
+  end;
+end;
+
+procedure TPascalParserTests.DistributeGroupDocGivesTheFirstDocToTheOthers;
+var
+  Err: string;
+  Root: TEntry;
+  Opt: TDocOptions;
+begin
+  Root := ParseText('unit U; interface'#10 +
+    'type TC = class'#10 +
+    '  //@{'#10'  /// shared'#10'  procedure A;'#10'  procedure B;'#10'  //@}'#10 +
+    '  procedure C;'#10 +
+    'end;'#10'implementation end.', TPascalParseOptions.Default, Err);
+  try
+    Opt := TDocOptions.Default;
+    Opt.JavadocAutobrief := True;
+    ScanEntryDocs(Root, Opt);
+    Assert.AreEqual('', Root.Children[0].Children[1].Brief, 'off by default');
+    Opt.DistributeGroupDoc := True;
+    ScanEntryDocs(Root, Opt);
+    Assert.AreEqual('shared', Root.Children[0].Children[1].Brief);
+    Assert.AreEqual('', Root.Children[0].Children[2].Brief, 'C is not in the group');
   finally
     Root.Free;
   end;

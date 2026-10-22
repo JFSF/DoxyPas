@@ -18,6 +18,7 @@ type
     XmlDoc: Boolean;
     InternalDocs: Boolean;
     TabSize: Integer;
+    DistributeGroupDoc: Boolean;
     Aliases: TArray<string>;
     EnabledSections: TArray<string>;
     class function Default: TDocOptions; static;
@@ -67,6 +68,7 @@ begin
   Result.XmlDoc := True;
   Result.InternalDocs := False;
   Result.TabSize := 4;
+  Result.DistributeGroupDoc := False;
   Result.Aliases := nil;
   Result.EnabledSections := nil;
 end;
@@ -79,6 +81,7 @@ begin
   Result.XmlDoc := AConfig.GetBool('PASCAL_XMLDOC');
   Result.InternalDocs := AConfig.GetBool('INTERNAL_DOCS');
   Result.TabSize := AConfig.GetInt('TAB_SIZE');
+  Result.DistributeGroupDoc := AConfig.GetBool('DISTRIBUTE_GROUP_DOC');
   Result.Aliases := AConfig.GetList('ALIASES');
   Result.EnabledSections := AConfig.GetList('ENABLED_SECTIONS');
 end;

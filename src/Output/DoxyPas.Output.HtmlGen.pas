@@ -83,7 +83,7 @@ type
     FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
     FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
     FBriefMemberDesc, FRepeatBrief, FInlineInfo, FShowEnumValues: Boolean;
-    FCtorsFirst, FSortByScope, FShowUsedFiles: Boolean;
+    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping: Boolean;
     FTimestamp: string;            // TIMESTAMP: NO, YES / DATETIME or DATE
     FMaxInitLines, FEnumPerLine: Integer;
     FPageLayout: string;      // the layout page the member tables follow when it is not the one of the kind of definition ('group')
@@ -155,7 +155,10 @@ type
     function MemberRows(M: TMemberDef; const AInheritClass: string): string;
     procedure DeclSections(AMembers: TList<TMemberDef>; AInUnit: Boolean; ARows, ASummary: TStringBuilder);
     function DirTable(D: TDirDef; const AHeading: string; ADirs: Boolean): string;
-    procedure DeclSection(AMembers: TList<TMemberDef>; AInUnit: Boolean; const AKey: string; ARows, ASummary: TStringBuilder);
+    procedure DeclSection(AMembers: TList<TMemberDef>; AInUnit: Boolean; const AKey: string; ARows, ASummary: TStringBuilder;
+      ASubgroups: Boolean = False);
+    function GroupedIn(M: TMemberDef): TMemberGroup;
+    function GroupHeading(AGroup: TMemberGroup; AHeading: Boolean): string;
     procedure InheritedSections(C: TClassDef; ARows: TStringBuilder);
     function MemberDoc(M: TMemberDef): string;
     function DocSections(AMembers: TList<TMemberDef>; AInUnit: Boolean): string;
@@ -332,6 +335,7 @@ begin
   FCtorsFirst := AConfig.GetBool('SORT_MEMBERS_CTORS_1ST');
   FSortByScope := AConfig.GetBool('SORT_BY_SCOPE_NAME');
   FShowUsedFiles := AConfig.GetBool('SHOW_USED_FILES');
+  FSubgrouping := AConfig.GetBool('SUBGROUPING');
   FTimestamp := UpperCase(AConfig.GetString('TIMESTAMP'));
   FBriefMemberDesc := AConfig.GetBool('BRIEF_MEMBER_DESC');
   FRepeatBrief := AConfig.GetBool('REPEAT_BRIEF');
@@ -1391,6 +1395,11 @@ var
   Order: TList<string>;
   Key, P, K: string;
   MD, E: TLayoutEntry;
+  Flat: TList<TMemberDef>;
+  Tops: TList<TMemberGroup>;
+  M, M2: TMemberDef;
+  G: TMemberGroup;
+  Sub: Boolean;
 begin
   Order := TList<string>.Create;
   try
@@ -1417,18 +1426,75 @@ begin
           Order.Add(Key);
       end;
     end;
-    for Key in Order do
-      DeclSection(AMembers, AInUnit, Key, ARows, ASummary);
+    // the member groups: a sub-heading of a section when all their members belong to it (SUBGROUPING), else a section
+    // of their own after the others
+    Flat := TList<TMemberDef>.Create;
+    Tops := TList<TMemberGroup>.Create;
+    try
+      for M in AMembers do
+      begin
+        G := GroupedIn(M);
+        if (G <> nil) and not Tops.Contains(G) then
+        begin
+          Sub := FSubgrouping;
+          for M2 in AMembers do
+            if (GroupedIn(M2) = G) and (SectionKey(M2, AInUnit) <> SectionKey(M, AInUnit)) then
+              Sub := False;
+          if not Sub then
+            Tops.Add(G);
+        end;
+      end;
+      for M in AMembers do
+        if not Tops.Contains(GroupedIn(M)) or (GroupedIn(M) = nil) then
+          Flat.Add(M);
+      for Key in Order do
+        DeclSection(Flat, AInUnit, Key, ARows, ASummary, True);
+      for G in Tops do
+      begin
+        ARows.Append(GroupHeading(G, True));
+        for M in AMembers do
+          if GroupedIn(M) = G then
+            ARows.Append(MemberRows(M, ''));
+      end;
+    finally
+      Tops.Free;
+      Flat.Free;
+    end;
   finally
     Order.Free;
   end;
 end;
 
 // The table of one section (AKey, see SectionKey) of the declarations of AMembers; nothing when it has no members.
-procedure THtmlGenerator.DeclSection(AMembers: TList<TMemberDef>; AInUnit: Boolean; const AKey: string; ARows, ASummary: TStringBuilder);
+// The member group (//@{ ... //@}) with a heading that M is in; nil when it is in none.
+function THtmlGenerator.GroupedIn(M: TMemberDef): TMemberGroup;
+begin
+  Result := nil;
+  if (M.Entry <> nil) and (M.Entry.MemberGroup <> nil) and (M.Entry.MemberGroup.Title <> '') then
+    Result := M.Entry.MemberGroup;
+end;
+
+// The heading of a member group in the table of declarations: a section of its own, or a sub-heading of a section.
+function THtmlGenerator.GroupHeading(AGroup: TMemberGroup; AHeading: Boolean): string;
+var
+  Text: string;
+begin
+  if AHeading then
+    Result := '<tr class="heading"><td colspan="2"><h2 class="groupheader">' + HtmlEscape(AGroup.Title) + '</h2></td></tr>'#10
+  else
+    Result := '<tr><td colspan="2"><div class="groupHeader">' + HtmlEscape(AGroup.Title) + '</div></td></tr>'#10;
+  Text := FDoc.Render(AGroup.Doc, nil).Trim;
+  if Text <> '' then
+    Result := Result + '<tr><td colspan="2"><div class="groupText">' + Text + '</div></td></tr>'#10;
+end;
+
+procedure THtmlGenerator.DeclSection(AMembers: TList<TMemberDef>; AInUnit: Boolean; const AKey: string; ARows, ASummary: TStringBuilder;
+  ASubgroups: Boolean);
 var
   Title: string;
-  M: TMemberDef;
+  M, M2: TMemberDef;
+  G: TMemberGroup;
+  Seen: TList<TMemberGroup>;
   T0: Int64;
   Any: Boolean;
   MD, E: TLayoutEntry;
@@ -1451,12 +1517,31 @@ begin
     ASummary.Append(' &#124;'#10);
   ASummary.Append('<a href="#' + AKey + '">' + HtmlEscape(Title) + '</a>');
   for M in AMembers do
-    if SectionKey(M, AInUnit) = AKey then
+    if (SectionKey(M, AInUnit) = AKey) and not (ASubgroups and (GroupedIn(M) <> nil)) then
     begin
       T0 := Tick;
       ARows.Append(MemberRows(M, ''));
       Add('decl: MemberRows', T0);
     end;
+  if not ASubgroups then
+    Exit;
+  // the member groups whose members are all of this section: sub-headings after the other members
+  Seen := TList<TMemberGroup>.Create;
+  try
+    for M in AMembers do
+    begin
+      G := GroupedIn(M);
+      if (G = nil) or (SectionKey(M, AInUnit) <> AKey) or Seen.Contains(G) then
+        Continue;
+      Seen.Add(G);
+      ARows.Append(GroupHeading(G, False));
+      for M2 in AMembers do
+        if GroupedIn(M2) = G then
+          ARows.Append(MemberRows(M2, ''));
+    end;
+  finally
+    Seen.Free;
+  end;
 end;
 
 procedure THtmlGenerator.InheritedSections(C: TClassDef; ARows: TStringBuilder);

@@ -72,6 +72,12 @@ type
     Constraints: string;    // e.g. "class, constructor" or "TFoo"
   end;
 
+  /// <summary>A member group (//@{ ... //@}): the heading (\name) and the text below it; Title is empty when the group has none.</summary>
+  TMemberGroup = class
+  public
+    Title, Doc: string;
+  end;
+
   { The lists of an entry are made when something is added to them: most entries (a field, a method without arguments)
     have none, and nine empty lists per entry were a quarter of the memory of the parse. Reading a list that does not
     exist gives a list that is shared and empty; it must not be changed (it raises): use the Write... function. }
@@ -87,6 +93,7 @@ type
     FUsesInterface: TList<string>;
     FUsesImplementation: TList<string>;
     FGroups: TList<string>;
+    FOwnedMemberGroups: TObjectList<TMemberGroup>;     // the groups made by this entry (a unit makes those of its members)
     function GetChildren: TObjectList<TEntry>;
     function GetArgs: TList<TArgument>;
     function GetTypeParams: TList<TTypeParam>;
@@ -121,6 +128,7 @@ type
     Doc: string;               // documentation comment text, markers removed (empty if none)
     DocLine: Integer;
     DocIsAfter: Boolean;       // documented by a trailing comment (//<, {!< })
+    MemberGroup: TMemberGroup; // the //@{ group the declaration is in (nil: none)
     Brief: string;             // set by DoxyPas.Comments.EntryDocs: brief description (Doxygen markup, HTML)
     Detailed: string;          // detailed description (parsed by DoxyPas.Doc.Parser when needed)
     property Args: TList<TArgument> read GetArgs;          // method / procedural type / property index parameters
@@ -140,6 +148,8 @@ type
     function WriteUsesInterface: TList<string>;
     function WriteUsesImplementation: TList<string>;
     function WriteGroups: TList<string>;
+    /// <summary>A member group that lives as long as this entry.</summary>
+    function NewMemberGroup(const ATitle, ADoc: string): TMemberGroup;
     constructor Create(AKind: TEntryKind; const AName: string);
     destructor Destroy; override;
     function Add(AChild: TEntry): TEntry;
@@ -204,6 +214,7 @@ end;
 
 destructor TEntry.Destroy;
 begin
+  FOwnedMemberGroups.Free;
   FGroups.Free;
   FUsesImplementation.Free;
   FUsesInterface.Free;
@@ -214,6 +225,16 @@ begin
   FArgs.Free;
   FChildren.Free;
   inherited;
+end;
+
+function TEntry.NewMemberGroup(const ATitle, ADoc: string): TMemberGroup;
+begin
+  if FOwnedMemberGroups = nil then
+    FOwnedMemberGroups := TObjectList<TMemberGroup>.Create(True);
+  Result := TMemberGroup.Create;
+  Result.Title := ATitle;
+  Result.Doc := ADoc;
+  FOwnedMemberGroups.Add(Result);
 end;
 
 function TEntry.GetChildren: TObjectList<TEntry>;

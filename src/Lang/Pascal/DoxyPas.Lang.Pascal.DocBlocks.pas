@@ -22,7 +22,8 @@ uses
   System.SysUtils,
   System.Classes,
   System.RegularExpressions,
-  System.Generics.Collections;
+  System.Generics.Collections,
+  System.Generics.Defaults;
 
 type
   TDocBlock = record
@@ -32,6 +33,44 @@ type
     EndLine, EndCol: Integer;
     IsAfter: Boolean;
   end;
+
+type
+  // @{ or @} (also \{ \}), at the end of a documentation block or alone in a comment
+  TMarker = record
+    Line, Col: Integer;
+    Open: Boolean;
+  end;
+
+// A "@{" or "@}" ending the text of a block is removed from it and noted in AMarkers (at the end of the block).
+procedure TakeMarker(var AText: string; ALine, ACol: Integer; AMarkers: TList<TMarker>);
+var
+  M: TMatch;
+  Mk: TMarker;
+begin
+  M := TRegEx.Match(AText, '(?:^|\s)[@\\]([{}])\s*$');
+  if not M.Success then
+    Exit;
+  Mk.Line := ALine;
+  Mk.Col := ACol;
+  Mk.Open := M.Groups[1].Value = '{';
+  AMarkers.Add(Mk);
+  AText := Copy(AText, 1, M.Index - 1).TrimRight;
+end;
+
+// A plain comment that is only "@{" or "@}": //@{   (*@{*)   {@{}
+procedure PlainMarker(const AInner: string; ALine, ACol: Integer; AMarkers: TList<TMarker>);
+var
+  S: string;
+  Mk: TMarker;
+begin
+  S := Trim(AInner);
+  if (Length(S) <> 2) or not CharInSet(S[1], ['@', '\']) or not CharInSet(S[2], ['{', '}']) then
+    Exit;
+  Mk.Line := ALine;
+  Mk.Col := ACol;
+  Mk.Open := S[2] = '{';
+  AMarkers.Add(Mk);
+end;
 
 function CleanBlockText(const AInner: string): string;
 var
@@ -84,7 +123,7 @@ begin
   end;
 end;
 
-procedure CollectBlocks(ASource: TPasSource; ABlocks: TList<TDocBlock>);
+procedure CollectBlocks(ASource: TPasSource; ABlocks: TList<TDocBlock>; AMarkers: TList<TMarker>);
 var
   I, J, M, OpenLen, CloseLen: Integer;
   T: TPasToken;
@@ -122,12 +161,15 @@ begin
           Blk.EndLine := ASource.Token(J).EndLine;
           Blk.EndCol := ASource.Token(J).EndCol;
           Blk.IsAfter := IsAfter;
+          TakeMarker(Blk.Text, Blk.EndLine, Blk.EndCol, AMarkers);
           ABlocks.Add(Blk);
           I := J;
         finally
           Lines.Free;
         end;
-      end;
+      end
+      else
+        PlainMarker(Copy(Txt, 3, MaxInt), T.Line, T.Col, AMarkers);
     end
     else if T.Kind = tkBlockComment then
     begin
@@ -167,8 +209,11 @@ begin
         Blk.EndLine := T.EndLine;
         Blk.EndCol := T.EndCol;
         Blk.IsAfter := IsAfter;
+        TakeMarker(Blk.Text, Blk.EndLine, Blk.EndCol, AMarkers);
         ABlocks.Add(Blk);
-      end;
+      end
+      else
+        PlainMarker(Inner, T.Line, T.Col, AMarkers);
     end;
     Inc(I);
   end;
@@ -263,7 +308,7 @@ end;
 
 { Blocks that start with \page, \mainpage, \defgroup, \addtogroup or \file are not attached to a declaration:
   they become page/group entries below the unit (\file documents the unit itself). }
-function AddStandalone(ARoot: TEntry; const B: TDocBlock; const AFileName: string): Boolean;
+function AddStandalone(ARoot: TEntry; const B: TDocBlock; const AFileName: string; out ACmd, AId: string): Boolean;
 var
   M: TMatch;
   E: TEntry;
@@ -273,9 +318,12 @@ begin
   M := TRegEx.Match(B.Text, '^[\\@](page|mainpage|defgroup|addtogroup|weakgroup|file)\b[ \t]*([^\n]*)(?:\n(.*))?$',
     [roSingleLine]);
   Result := M.Success;
+  ACmd := '';
+  AId := '';
   if not Result then
     Exit;
   Cmd := M.Groups[1].Value;
+  ACmd := Cmd;
   LineRest := Trim(M.Groups[2].Value);
   if M.Groups.Count > 3 then
     Rest := Trim(M.Groups[3].Value)
@@ -312,6 +360,7 @@ begin
     E := TEntry.Create(ekPage, Id)
   else
     E := TEntry.Create(ekGroup, Id);
+  AId := Id;
   E.TypeText := LineRest;
   E.Doc := Rest;
   E.DocLine := B.Line;
@@ -323,21 +372,181 @@ begin
   ARoot.Add(E);
 end;
 
+type
+  TGroupEventKind = (geCmd, geOpen, geClose);
+
+  // What the @{ ... @} ranges are made of, in the order of the file: the \defgroup/\name before a @{, the @{ and the @}.
+  TGroupEvent = record
+    Kind: TGroupEventKind;
+    Line, Col: Integer;
+    IsName: Boolean;            // geCmd: \name (a member group) and not \defgroup, \addtogroup or \weakgroup
+    Id, Title, Doc: string;
+  end;
+
+// "\name Title" and the text under it: the heading of a member group, not the documentation of a declaration.
+function IsNameBlock(const B: TDocBlock; out ATitle, ADoc: string): Boolean;
+var
+  M: TMatch;
+begin
+  M := TRegEx.Match(B.Text, '^[\\@]name\b[ \t]*([^\n]*)(?:\n(.*))?$', [roSingleLine]);
+  Result := M.Success;
+  ATitle := '';
+  ADoc := '';
+  if not Result then
+    Exit;
+  ATitle := Trim(M.Groups[1].Value);
+  if M.Groups.Count > 2 then
+    ADoc := Trim(M.Groups[2].Value);
+end;
+
+// The @{ ... @} ranges: the declarations inside a \defgroup/\addtogroup range are in that group; those inside a \name (or
+// unnamed) range in a class or unit are a member group.
+procedure ApplyRanges(ARoot: TEntry; const AFileName: string; AEvents: TList<TGroupEvent>);
+type
+  TOpenRange = record
+    Line, Col: Integer;
+    HasCmd: Boolean;
+    Cmd: TGroupEvent;
+  end;
+var
+  Stack: TStack<TOpenRange>;
+  Pending: TGroupEvent;
+  HasPending: Boolean;
+  E: TGroupEvent;
+  O: TOpenRange;
+  Probe: TDocBlock;
+  Next: TEntry;
+
+  procedure Apply(const ARange: TOpenRange; AEndLine, AEndCol: Integer);
+  var
+    G: TMemberGroup;
+
+    function Inside(C: TEntry): Boolean;
+    begin
+      Result := Before(ARange.Line, ARange.Col, C.Line, C.Col) and Before(C.Line, C.Col, AEndLine, AEndCol);
+    end;
+
+    procedure Walk(AParent: TEntry);
+    var
+      C: TEntry;
+    begin
+      for C in AParent.Children do
+      begin
+        if (C.Line = 0) or not SameText(C.FileName, AFileName) then
+          Continue;
+        if Inside(C) then
+        begin
+          if ARange.HasCmd and not ARange.Cmd.IsName then
+          begin
+            // an explicit \ingroup of the declaration wins
+            if (not TRegEx.IsMatch(C.Doc, '[\\@]ingroup\b')) and (not C.Groups.Contains(ARange.Cmd.Id)) then
+              C.WriteGroups.Add(ARange.Cmd.Id);
+          end
+          else if C.MemberGroup = nil then
+          begin
+            if G = nil then
+              if ARange.HasCmd then
+                G := ARoot.NewMemberGroup(ARange.Cmd.Title, ARange.Cmd.Doc)
+              else
+                G := ARoot.NewMemberGroup('', '');
+            C.MemberGroup := G;
+          end;
+        end
+        else if (C.EndLine > 0) and Encloses(C, ARange.Line, ARange.Col) then
+          Walk(C);
+      end;
+    end;
+
+  begin
+    G := nil;
+    Walk(ARoot);
+  end;
+
+begin
+  Stack := TStack<TOpenRange>.Create;
+  try
+    HasPending := False;
+    for E in AEvents do
+      case E.Kind of
+        geCmd:
+          begin
+            Pending := E;
+            HasPending := True;
+          end;
+        geOpen:
+          begin
+            O.Line := E.Line;
+            O.Col := E.Col;
+            O.HasCmd := False;
+            O.Cmd := Default(TGroupEvent);
+            if HasPending then
+            begin
+              // the command belongs to this @{ only when no declaration lies between them
+              Probe := Default(TDocBlock);
+              Probe.Line := Pending.Line;
+              Probe.Col := Pending.Col + 1;      // after the entry that \defgroup itself made at that position
+              Next := FindNext(ARoot, Probe, AFileName);
+              if (Next = nil) or not Before(Next.Line, Next.Col, E.Line, E.Col) then
+              begin
+                O.HasCmd := True;
+                O.Cmd := Pending;
+              end;
+            end;
+            HasPending := False;
+            Stack.Push(O);
+          end;
+        geClose:
+          if Stack.Count > 0 then
+            Apply(Stack.Pop, E.Line, E.Col);
+      end;
+    while Stack.Count > 0 do
+      Apply(Stack.Pop, MaxInt, 0);       // not closed: up to the end of the file
+  finally
+    Stack.Free;
+  end;
+end;
+
 procedure AttachDocComments(ASource: TPasSource; ARoot: TEntry; const AFileName: string);
 var
   Blocks: TList<TDocBlock>;
+  Markers: TList<TMarker>;
+  Events: TList<TGroupEvent>;
   B: TDocBlock;
+  Mk: TMarker;
+  Ev: TGroupEvent;
   Target: TEntry;
+  Cmd, Id, Title, Doc: string;
 begin
   Blocks := TList<TDocBlock>.Create;
+  Markers := TList<TMarker>.Create;
+  Events := TList<TGroupEvent>.Create;
   try
-    CollectBlocks(ASource, Blocks);
+    CollectBlocks(ASource, Blocks, Markers);
     for B in Blocks do
     begin
       if B.Text = '' then
         Continue;
-      if (not B.IsAfter) and AddStandalone(ARoot, B, AFileName) then
+      Ev := Default(TGroupEvent);
+      Ev.Kind := geCmd;
+      Ev.Line := B.Line;
+      Ev.Col := B.Col;
+      if (not B.IsAfter) and IsNameBlock(B, Title, Doc) then
+      begin
+        Ev.IsName := True;
+        Ev.Title := Title;
+        Ev.Doc := Doc;
+        Events.Add(Ev);
         Continue;
+      end;
+      if (not B.IsAfter) and AddStandalone(ARoot, B, AFileName, Cmd, Id) then
+      begin
+        if (Cmd = 'defgroup') or (Cmd = 'addtogroup') or (Cmd = 'weakgroup') then
+        begin
+          Ev.Id := Id;
+          Events.Add(Ev);
+        end;
+        Continue;
+      end;
       if B.IsAfter then
         Target := FindPrev(ARoot, B, AFileName)
       else if (ARoot.Line > 0) and SameText(ARoot.FileName, AFileName) and Before(B.Line, B.Col, ARoot.Line, ARoot.Col) then
@@ -359,7 +568,29 @@ begin
       else
         Target.Doc := Target.Doc + #10 + #10 + B.Text;
     end;
+    for Mk in Markers do
+    begin
+      Ev := Default(TGroupEvent);
+      if Mk.Open then Ev.Kind := geOpen else Ev.Kind := geClose;
+      Ev.Line := Mk.Line;
+      Ev.Col := Mk.Col;
+      Events.Add(Ev);
+    end;
+    if Markers.Count > 0 then
+    begin
+      Events.Sort(TComparer<TGroupEvent>.Construct(
+        function(const L, R: TGroupEvent): Integer
+        begin
+          if L.Line <> R.Line then
+            Result := L.Line - R.Line
+          else
+            Result := L.Col - R.Col;
+        end));
+      ApplyRanges(ARoot, AFileName, Events);
+    end;
   finally
+    Events.Free;
+    Markers.Free;
     Blocks.Free;
   end;
 end;

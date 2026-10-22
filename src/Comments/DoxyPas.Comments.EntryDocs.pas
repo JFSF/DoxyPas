@@ -15,7 +15,30 @@ procedure ScanEntryDocs(ARoot: TEntry; const AOptions: TDocOptions; AWarnings: T
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils,
+  System.Generics.Collections;
+
+// DISTRIBUTE_GROUP_DOC: the members of a //@{ group that have no documentation get that of the first member of the group.
+procedure DistributeGroupDocs(AParent: TEntry);
+var
+  First: TDictionary<TMemberGroup, TEntry>;
+  C, F: TEntry;
+begin
+  First := TDictionary<TMemberGroup, TEntry>.Create;
+  try
+    for C in AParent.Children do
+      if C.MemberGroup <> nil then
+        if not First.TryGetValue(C.MemberGroup, F) then
+          First.Add(C.MemberGroup, C)
+        else if (C.Doc = '') and (F.Doc <> '') then
+        begin
+          C.Doc := F.Doc;
+          C.DocLine := F.DocLine;
+        end;
+  finally
+    First.Free;
+  end;
+end;
 
 procedure ScanEntry(AEntry: TEntry; const AOptions: TDocOptions; AWarnings: TStrings);
 var
@@ -24,6 +47,8 @@ var
   Msg: string;
   Child: TEntry;
 begin
+  if AOptions.DistributeGroupDoc then
+    DistributeGroupDocs(AEntry);
   if AEntry.Doc <> '' then
   begin
     W := TStringList.Create;

@@ -34,6 +34,9 @@ type
     function Full: Boolean;
     function Node(const AKey, ALabel, AUrl, AStyle: string): Integer;
     procedure Edge(AFrom, ATo: Integer; const AAttrs: string);
+    /// <summary>The nodes made until CloseCluster are drawn inside a box that has ALabel.</summary>
+    procedure OpenCluster(const AKey, ALabel: string);
+    procedure CloseCluster;
     function Finish: string;
   end;
 
@@ -84,6 +87,8 @@ type
     /// <summary>DOT_BATCH_SIZE: the graphs of each run of dot; DOT_NUM_THREADS: the runs at the same time (0: one for each processor).</summary>
     BatchSize: Integer;
     Threads: Integer;
+    /// <summary>INTERACTIVE_SVG: the SVG images get a script (svgpan.js, next to them) that pans and zooms them.</summary>
+    Interactive: Boolean;
     /// <summary>The extension of the images (svg, png, ...).</summary>
     property Extension: string read FExt;
     /// <summary>ADotPath: DOT_PATH; AFormat: svg, pdf, png...</summary>
@@ -238,6 +243,17 @@ begin
   if AUrl <> '' then
     FSB.Append(', URL=').Append(DotQuote(AUrl)).Append(', target="_top"');
   FSB.Append('];'#10);
+end;
+
+procedure TDotBuilder.OpenCluster(const AKey, ALabel: string);
+begin
+  FSB.Append('  subgraph ').Append(DotQuote('cluster_' + AKey)).Append(' {'#10'    label=').Append(DotQuote(ALabel)).
+    Append(';'#10'    style=filled; fillcolor="#f0f0f0"; color="gray40";'#10);
+end;
+
+procedure TDotBuilder.CloseCluster;
+begin
+  FSB.Append('  }'#10);
 end;
 
 procedure TDotBuilder.Edge(AFrom, ATo: Integer; const AAttrs: string);
@@ -749,6 +765,20 @@ begin
 end;
 
 // dot -T<format> -O writes <name>.dot.<extension> for every file it is given; they are renamed to <name>.<extension>.
+// The script goes in at the end of the SVG file (all the graph is there when it runs).
+procedure MakeInteractive(const AFile: string);
+var
+  Text: string;
+  P: Integer;
+begin
+  Text := TFile.ReadAllText(AFile, TEncoding.UTF8);
+  P := Text.LastIndexOf('</svg>');
+  if P < 0 then
+    Exit;
+  TFile.WriteAllText(AFile, Text.Substring(0, P) + '<script type="text/javascript" xlink:href="svgpan.js"/>'#10 +
+    Text.Substring(P), TUTF8Encoding.Create(False));
+end;
+
 function TDotRunner.Flush: Integer;
 var
   I, J, N: Integer;
@@ -806,7 +836,8 @@ begin
       if TFile.Exists(Target) then
         TFile.Delete(Target);
       TFile.Move(Img, Target);
-      Inc(Result);
+      if Interactive and (FExt = 'svg') then
+        MakeInteractive(Target);
     end;
     if FCleanup then
       TFile.Delete(Dot);

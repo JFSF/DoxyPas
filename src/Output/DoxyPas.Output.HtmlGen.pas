@@ -226,6 +226,7 @@ type
     procedure WriteSitemap;
     function InlineDot(const ADot, ACaption: string): string;
     function ScopedName(ADef: TDefinition): string;
+    function DirDotDeep(D: TDirDef; ADepth: Integer): string;
     function Tooltip(ADef: TDefinition): string;
     function NavJs(ANodes: TObjectList<TNavNode>; ALevel: Integer; const APath: string; var AFirst: Boolean): Boolean;
     procedure RegisterNav(ANodes: TObjectList<TNavNode>; const APath: string);
@@ -337,6 +338,8 @@ begin
     AConfig.GetBool('DOT_CLEANUP'));
   FRunner.BatchSize := AConfig.GetInt('DOT_BATCH_SIZE');
   FRunner.Threads := AConfig.GetInt('DOT_NUM_THREADS');
+  // INTERACTIVE_SVG: not with the cairo renderer (its SVG has no groups to move)
+  FRunner.Interactive := AConfig.GetBool('INTERACTIVE_SVG') and not AConfig.GetString('DOT_IMAGE_FORMAT').Contains('cairo');
   FColors := THtmlColors.Parse(AConfig.GetString('HTML_COLORSTYLE'), AConfig.GetInt('HTML_COLORSTYLE_HUE'),
     AConfig.GetInt('HTML_COLORSTYLE_SAT'), AConfig.GetInt('HTML_COLORSTYLE_GAMMA'));
   FLight := HtmlResourceText('lightmode_settings.css');
@@ -2654,12 +2657,77 @@ end;
 
 // The directory dependency graph: the directory, the ones its units use and the ones that use it; the edges say how
 // many units are involved.
+// DIR_GRAPH_MAX_DEPTH > 1: the directory is a box with its sub-directories (up to that many levels) in boxes inside it, and the
+// dependencies among all of them and with the directories outside. A box that has files of its own has a node "." for them.
+function THtmlGenerator.DirDotDeep(D: TDirDef; ADepth: Integer): string;
+const
+  Dep = 'color="midnightblue", arrowhead="open", label=';
+var
+  G: TDotBuilder;
+  Inside: TList<TDirDef>;          // the directories that have a node
+  Sub, Other: TDirDef;
+  Info: TDirDependency;
+
+  procedure Emit(X: TDirDef; ALevel: Integer);
+  var
+    C: TDirDef;
+  begin
+    if (X.Dirs.Count > 0) and (ALevel < ADepth) then
+    begin
+      G.OpenCluster(X.DiskName, X.Name);
+      if (X.Units.Count > 0) or (X = D) then
+      begin
+        G.Node(X.DiskName, '.', X.DiskName + FExt, '');
+        Inside.Add(X);
+      end;
+      for C in X.Dirs do
+        Emit(C, ALevel + 1);
+      G.CloseCluster;
+    end
+    else
+    begin
+      G.Node(X.DiskName, X.Name, X.DiskName + FExt, '');
+      Inside.Add(X);
+    end;
+  end;
+
+  function NodeOf(X: TDirDef): Integer;
+  begin
+    Result := G.Node(X.DiskName, X.Name, X.DiskName + FExt, '');
+  end;
+
+begin
+  G := TDotBuilder.Create(D.Path, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'TB');
+  Inside := TList<TDirDef>.Create;
+  try
+    Emit(D, 1);
+    for Sub in Inside.ToArray do
+    begin
+      for Info in FDirs.Dependencies(Sub, False) do
+        if not G.Full then
+          G.Edge(NodeOf(Sub), NodeOf(Info.Dir), Dep + DotQuote(IntToStr(Info.Count)));
+      for Info in FDirs.Dependencies(Sub, True) do
+      begin
+        Other := Info.Dir;
+        if (not Inside.Contains(Other)) and not G.Full then       // from outside; the ones inside were drawn above
+          G.Edge(NodeOf(Other), NodeOf(Sub), Dep + DotQuote(IntToStr(Info.Count)));
+      end;
+    end;
+    Result := G.Finish;
+  finally
+    Inside.Free;
+    G.Free;
+  end;
+end;
+
 function THtmlGenerator.DirDot(D: TDirDef): string;
 var
   G: TDotBuilder;
   Root: Integer;
   Dep: TDirDependency;
 begin
+  if (FConfig.GetInt('DIR_GRAPH_MAX_DEPTH') > 1) and (D.Dirs.Count > 0) then
+    Exit(DirDotDeep(D, FConfig.GetInt('DIR_GRAPH_MAX_DEPTH')));
   G := TDotBuilder.Create(D.Path, FConfig.GetInt('DOT_GRAPH_MAX_NODES'), 'TB');
   try
     Root := G.Node(D.DiskName, D.Name, '', ', fillcolor="#bfbfbf"');
@@ -3314,6 +3382,8 @@ begin
   SaveText('navtree.css', ApplyColorStyle(HtmlResourceText('navtree.css'), FColors, FLight, FDark));
   if FDynMenus and not FNoIndex then
     SaveText('menu.js', HtmlResourceText('menu.js'));
+  if FRunner.Interactive and (FRunner.Extension = 'svg') then
+    SaveText('svgpan.js', HtmlResourceText('svgpan.js'));
   if FClip then
     SaveText('clipboard.js', HtmlResourceText('clipboard.js').Replace('$copy_to_clipboard_text', Tr('Copy to clipboard')));
   if FTree or FSearch or (FColors.Style = csToggle) then

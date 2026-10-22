@@ -36,6 +36,7 @@ type
     AutolinkSupport: Boolean;        // link words that match a class or unit name
     AutolinkIgnoreWords: TArray<string>;   // AUTOLINK_IGNORE_WORDS: no link for the words that start with one of these
     MainPageFile: string;            // USE_MDFILE_AS_MAINPAGE: a Markdown file that is the main page
+    AllowUnicodeNames: Boolean;      // ALLOW_UNICODE_NAMES: non-ASCII letters stay in the file names
     ImplicitDirDocs: Boolean;        // IMPLICIT_DIR_DOCS: the README.md of a directory is its documentation
     GroupNestedCompounds: Boolean;   // GROUP_NESTED_COMPOUNDS: the classes nested in a class of a group are in it too
     LegendPage: Boolean;             // GENERATE_LEGEND (with HAVE_DOT and without UML_LOOK): the page that explains the graphs
@@ -157,6 +158,7 @@ begin
   Result.LegendPage := False;
   Result.GroupNestedCompounds := False;
   Result.ImplicitDirDocs := True;
+  Result.AllowUnicodeNames := False;
 end;
 
 class function TProjectOptions.FromConfig(AConfig: TConfig): TProjectOptions;
@@ -193,6 +195,7 @@ begin
   Result.MainPageFile := AConfig.GetString('USE_MDFILE_AS_MAINPAGE');
   Result.GroupNestedCompounds := AConfig.GetBool('GROUP_NESTED_COMPOUNDS');
   Result.ImplicitDirDocs := AConfig.GetBool('IMPLICIT_DIR_DOCS');
+  Result.AllowUnicodeNames := AConfig.GetBool('ALLOW_UNICODE_NAMES');
   Result.LegendPage := AConfig.GetBool('HAVE_DOT') and AConfig.GetBool('GENERATE_LEGEND') and not AConfig.GetBool('UML_LOOK');
   Result.XrefLists := nil;
   if AConfig.GetBool('GENERATE_TODOLIST') then Result.XrefLists := Result.XrefLists + ['todo'];

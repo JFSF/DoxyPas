@@ -25,6 +25,7 @@ type
 
   THtmlDocWriter = class
   strict private
+    FGithubIds: Boolean;              // MARKDOWN_ID_STYLE = GITHUB
     FToc: TArray<TTocEntry>;          // of the document being rendered, when it has a \tableofcontents
     FTocHeadings, FTocSeq: Integer;
     FObfuscateEmails, FExternalInWindow, FExampleRecursive: Boolean;
@@ -80,6 +81,8 @@ type
     property ExamplePatterns: TArray<string> read FExamplePatterns write FExamplePatterns;
     /// <summary>TOC_INCLUDE_HEADINGS: the Markdown headings up to this level are in the \tableofcontents.</summary>
     property TocHeadings: Integer read FTocHeadings write FTocHeadings;
+    /// <summary>MARKDOWN_ID_STYLE = GITHUB: the identifiers of the headings come from their titles.</summary>
+    property GithubIds: Boolean read FGithubIds write FGithubIds;
     /// <summary>DOTFILE_DIRS: where \dotfile looks for its file.</summary>
     property DotFileDirs: TArray<string> read FDotFileDirs write FDotFileDirs;
     /// <summary>Draws the dot graphs of \dot and \dotfile (nil: they are not shown).</summary>
@@ -108,6 +111,7 @@ implementation
 
 uses
   System.StrUtils,
+  System.Character,
   System.IOUtils,
   System.Masks,
   System.RegularExpressions,
@@ -794,6 +798,39 @@ begin
       Result := Result + Section(C, ALevel + 1);
 end;
 
+// MARKDOWN_ID_STYLE = GITHUB: the title in lower case, spaces as '-', punctuation removed; "-1", "-2"... when it is taken.
+function GithubSlug(const ATitle: string; const AUsed: TArray<TTocEntry>): string;
+var
+  C: Char;
+  Base: string;
+  N: Integer;
+
+  function Taken(const AId: string): Boolean;
+  var
+    E: TTocEntry;
+  begin
+    for E in AUsed do
+      if E.Id = AId then
+        Exit(True);
+    Result := False;
+  end;
+
+begin
+  Base := '';
+  for C in LowerCase(Trim(ATitle)) do
+    if C.IsLetterOrDigit or (C = '_') or (C = '-') then
+      Base := Base + C
+    else if C = ' ' then
+      Base := Base + '-';
+  Result := Base;
+  N := 0;
+  while Taken(Result) do
+  begin
+    Inc(N);
+    Result := Base + '-' + N.ToString;
+  end;
+end;
+
 // The entries of the \tableofcontents: the sections and the Markdown headings up to TOC_INCLUDE_HEADINGS (they get an anchor).
 procedure THtmlDocWriter.PrepareToc(ARoot: TDocNode);
 
@@ -813,7 +850,10 @@ procedure THtmlDocWriter.PrepareToc(ARoot: TDocNode);
       end
       else if (C.Kind = dnHeading) and (C.Level <= FTocHeadings) then
       begin
-        C.Id := 'autotoc_md' + FTocSeq.ToString;
+        if FGithubIds then
+          C.Id := GithubSlug(C.PlainText, FToc)
+        else
+          C.Id := 'autotoc_md' + FTocSeq.ToString;
         Inc(FTocSeq);
         E.Depth := C.Level;
         E.Id := C.Id;

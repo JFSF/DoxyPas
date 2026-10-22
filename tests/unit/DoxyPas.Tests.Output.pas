@@ -468,6 +468,10 @@ begin
     Assert.Contains(H, '<a href="#s1">Sec</a>');
     Assert.IsFalse(H.Contains('>Deep</a></li>'), 'the headings deeper than TOC_INCLUDE_HEADINGS are not listed');
     Assert.IsFalse(W.Render('<h1>One</h1>', nil).Contains('class="toc"'));
+    W.GithubIds := True;
+    H := W.Render('\tableofcontents'#10#10'<h1>Hello, World!</h1>'#10'<h2>Hello, World!</h2>', nil);
+    Assert.Contains(H, 'href="#hello-world"');
+    Assert.Contains(H, 'href="#hello-world-1"');
   finally
     W.Free;
     L.Free;

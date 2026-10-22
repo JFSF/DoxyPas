@@ -53,6 +53,9 @@ begin
     Result := Result + NormType(A.Modifier) + ':' + NormType(A.TypeText) + ',';
 end;
 
+var
+  AllowUnicodeNames: Boolean;          // ALLOW_UNICODE_NAMES (set by AssignDiskNames)
+
 function ConvertNameToFile(const AName: string; ACaseSense, AAllowDots, AAllowUnderscore: Boolean): string;
 var
   SB: TStringBuilder;
@@ -96,7 +99,9 @@ begin
         ';': SB.Append('_0k');
         '`': SB.Append('_0l');
       else
-        if Ord(C) > 127 then
+        if (Ord(C) > 127) and AllowUnicodeNames and C.IsLetterOrDigit then
+          SB.Append(C)
+        else if Ord(C) > 127 then
           SB.Append('_x').Append(IntToHex(Ord(C), 2).ToLower)
         else if (not ACaseSense) and (C >= 'A') and (C <= 'Z') then
           SB.Append('_').Append(LowerCase(C))
@@ -908,6 +913,7 @@ var
   end;
 
 begin
+  AllowUnicodeNames := AProject.Options.AllowUnicodeNames;
   Cs := AProject.Options.CaseSenseNames;
   for U in AProject.Units do
     U.DiskName := ConvertNameToFile('unit' + U.Name, Cs);

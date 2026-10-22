@@ -84,7 +84,7 @@ type
     FAlphabeticalIndex: Boolean;   // ALPHABETICAL_INDEX: the class index
     FIgnorePrefix: TArray<string>; // IGNORE_PREFIX
     FBriefMemberDesc, FRepeatBrief, FInlineInfo, FShowEnumValues: Boolean;
-    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping, FHideCompoundRef, FAlwaysDetailed, FHideScope, FInlineInherited: Boolean;
+    FCtorsFirst, FSortByScope, FShowUsedFiles, FSubgrouping, FHideCompoundRef, FAlwaysDetailed, FHideScope, FInlineInherited, FShowNamespaces: Boolean;
     FInlineDots: Integer;             // \dot and \dotfile graphs so far (inline_dotgraph_N)
     FAbbreviate: TArray<string>;      // ABBREVIATE_BRIEF (the defaults when it is empty)
     FTimestamp: string;            // TIMESTAMP: NO, YES / DATETIME or DATE
@@ -305,6 +305,7 @@ begin
   FDoc.ObfuscateEmails := AConfig.GetBool('OBFUSCATE_EMAILS');
   FDoc.ImagePath := AConfig.GetList('IMAGE_PATH');
   FDoc.TocHeadings := AConfig.GetInt('TOC_INCLUDE_HEADINGS');
+  FDoc.GithubIds := SameText(AConfig.GetString('MARKDOWN_ID_STYLE'), 'GITHUB');
   FDoc.DotFileDirs := AConfig.GetList('DOTFILE_DIRS');
   FDoc.OnDot :=
     function(const ADot, ACaption: string): string
@@ -351,6 +352,7 @@ begin
   FSubgrouping := AConfig.GetBool('SUBGROUPING');
   FHideCompoundRef := AConfig.GetBool('HIDE_COMPOUND_REFERENCE');
   FHideScope := AConfig.GetBool('HIDE_SCOPE_NAMES');
+  FShowNamespaces := AConfig.GetBool('SHOW_NAMESPACES');
   FInlineInherited := AConfig.GetBool('INLINE_INHERITED_MEMB');
   FAlwaysDetailed := AConfig.GetBool('ALWAYS_DETAILED_SEC');
   FAbbreviate := AConfig.GetList('ABBREVIATE_BRIEF');
@@ -626,7 +628,7 @@ begin
   if AType = 'mainpage' then Result := 'index'
   else if AType = 'pages' then begin Result := 'pages'; AAvailable := FHasPages; end
   else if AType = 'topics' then begin Result := 'topics'; AAvailable := FHasGroups; end
-  else if (AType = 'namespaces') or (AType = 'namespacelist') then begin Result := 'namespaces'; AAvailable := FHasUnits; end
+  else if (AType = 'namespaces') or (AType = 'namespacelist') then begin Result := 'namespaces'; AAvailable := FHasUnits and FShowNamespaces; end
   else if (AType = 'classes') or (AType = 'classlist') then begin Result := 'annotated'; AAvailable := FHasClasses; end
   else if AType = 'classindex' then begin Result := 'classes'; AAvailable := FHasClasses and FAlphabeticalIndex; end
   else if AType = 'hierarchy' then begin Result := 'hierarchy'; AAvailable := FHasClasses; end
@@ -722,13 +724,15 @@ begin
     FMenu.Add(NavTitle('pages'), 'pages');
   if FHasGroups then
     FMenu.Add(NavTitle('topics'), 'topics');
-  if FHasUnits then
+  if FHasUnits and FShowNamespaces then
   begin
     N := FMenu.Add(NavTitle('namespaces'), 'namespaces');
     N.Add(NavTitle('namespacelist'), 'namespaces');
     if FDirs <> nil then
       N.Add(NavTitle('filelist'), 'dirs');
-  end;
+  end
+  else if FDirs <> nil then
+    FMenu.Add(NavTitle('filelist'), 'dirs');           // SHOW_NAMESPACES = NO: no list of units
   if FHasClasses then
   begin
     N := FMenu.Add(NavTitle('classes'), 'annotated');
@@ -3463,7 +3467,7 @@ begin
       if G.Parent = nil then
         AddGroup(Topics, G);
   end;
-  if FHasUnits then
+  if FHasUnits and FShowNamespaces then
   begin
     Units := TNavNode.Create(NavTitle('namespaces'), Url('namespaces'));
     FNav.Add(Units);
@@ -4156,7 +4160,7 @@ begin
     WritePagesIndex;
   if FHasGroups then
     WriteTopics;
-  if FHasUnits then
+  if FHasUnits and FShowNamespaces then
     WriteUnitList;
   if FDirs <> nil then
   begin

@@ -107,6 +107,7 @@ type
     FProjectId: string;
     FPage: TStringBuilder;
     FPageFile, FPageTitle: string;
+    FTreeAt: Integer;         // where the rows of the tree being written start in FPage
     FSepMembers: Boolean;     // SEPARATE_MEMBER_PAGES
     FMemberPages: TList<TMemberDef>;     // the pages still to write (they are made after the page of the scope)
     FMemberDone: TDictionary<TMemberDef, Boolean>;
@@ -3057,6 +3058,8 @@ begin
   R.Brief := ABrief;
   if FTree_ = nil then
     FTree_ := TList<TTreeRow>.Create;
+  if FTree_.Count = 0 then
+    FTreeAt := FPage.Length;  // just after '<table class="directory">': EndTree puts the levels bar before it
   FTree_.Add(R);
   Inc(ARow);
 end;
@@ -3067,7 +3070,7 @@ procedure THtmlGenerator.EndTree;
 var
   I, K, Deepest, ShowLevel, Seen, Max, Visible: Integer;
   Idx: TArray<Integer>;
-  Path, Indent, Arrow, Cls, Hidden: string;
+  Path, Indent, Arrow, Cls, Hidden, Bar: string;
   R: TTreeRow;
   HasKids, Shown: Boolean;
 begin
@@ -3095,6 +3098,13 @@ begin
     end;
     if not FDynSec then
       W('<script type="text/javascript" src="dynsections.js"></script>'#10);
+    if Deepest > 0 then
+    begin
+      Bar := '<div class="levels">[detail level ';
+      for K := 1 to Deepest + 1 do
+        Bar := Bar + '<span class="dyn-level-' + K.ToString + '">' + K.ToString + '</span>';
+      FPage.Insert(FTreeAt - Length('<table class="directory">'#10), Bar + ']</div>'#10);
+    end;
     SetLength(Idx, Deepest + 1);
     for K := 0 to Deepest do
       Idx[K] := -1;

@@ -19,6 +19,7 @@ type
     InternalDocs: Boolean;
     TabSize: Integer;
     DistributeGroupDoc: Boolean;
+    MarkdownStrict: Boolean;
     Aliases: TArray<string>;
     EnabledSections: TArray<string>;
     class function Default: TDocOptions; static;
@@ -69,6 +70,7 @@ begin
   Result.InternalDocs := False;
   Result.TabSize := 4;
   Result.DistributeGroupDoc := False;
+  Result.MarkdownStrict := True;
   Result.Aliases := nil;
   Result.EnabledSections := nil;
 end;
@@ -82,6 +84,7 @@ begin
   Result.InternalDocs := AConfig.GetBool('INTERNAL_DOCS');
   Result.TabSize := AConfig.GetInt('TAB_SIZE');
   Result.DistributeGroupDoc := AConfig.GetBool('DISTRIBUTE_GROUP_DOC');
+  Result.MarkdownStrict := AConfig.GetBool('MARKDOWN_STRICT');
   Result.Aliases := AConfig.GetList('ALIASES');
   Result.EnabledSections := AConfig.GetList('ENABLED_SECTIONS');
 end;
@@ -667,7 +670,7 @@ begin
     T := ConvertXmlDoc(T);
   T := ApplyConditionals(T, AOptions.EnabledSections, AWarnings);
   if AOptions.Markdown then
-    T := MarkdownToDoxygen(T, AOptions.TabSize);
+    T := MarkdownToDoxygen(T, AOptions.TabSize, AOptions.MarkdownStrict);
   ExtractEntryCommands(T, Result, AOptions);
   SplitBrief(T, AIsAfter, AOptions, Brief, Detailed);
   Result.Brief := Brief;

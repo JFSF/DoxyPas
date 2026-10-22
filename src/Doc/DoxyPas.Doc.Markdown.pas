@@ -8,7 +8,8 @@
 interface
 
 /// <summary>Converts Markdown in AText; ATabSize is Doxygen's TAB_SIZE.</summary>
-function MarkdownToDoxygen(const AText: string; ATabSize: Integer = 4): string;
+/// <summary>AStrict (MARKDOWN_STRICT = NO: Doxygen's own markup): a single backtick may also be closed by a single quote.</summary>
+function MarkdownToDoxygen(const AText: string; ATabSize: Integer = 4; AStrict: Boolean = True): string;
 
 implementation
 
@@ -19,6 +20,9 @@ uses
   System.Classes,
   System.Generics.Collections,
   System.RegularExpressions;
+
+var
+  NativeQuotes: Boolean;               // MARKDOWN_STRICT = NO, for the conversion that is running
 
 const
   // commands whose body must not be touched, with the command that ends them
@@ -77,7 +81,7 @@ function ConvertInline(const S: string): string;
 
 var
   SB: TStringBuilder;
-  I, J, K, N: Integer;
+  I, J, K, N, Q: Integer;
   C: Char;
   Delim, Inner, Url, Title, Alt: string;
   M: TMatch;
@@ -109,6 +113,17 @@ begin
         K := Pos(Delim, S, J);
         while (K > 0) and (K + N <= Length(S)) and (S[K + N] = '`') do
           K := Pos(Delim, S, K + N + 1);
+        if NativeQuotes and (N = 1) then
+        begin
+          // `text' : the first single quote ends the text when it comes before the closing backtick
+          Q := Pos('''', S, J);
+          if (Q > 0) and ((K = 0) or (Q < K)) then
+          begin
+            SB.Append('<code>').Append(EscapeCode(Copy(S, J, Q - J).Trim)).Append('</code>');
+            I := Q + 1;
+            Continue;
+          end;
+        end;
         if K = 0 then
         begin
           SB.Append(Delim);
@@ -607,11 +622,12 @@ begin
   end;
 end;
 
-function MarkdownToDoxygen(const AText: string; ATabSize: Integer): string;
+function MarkdownToDoxygen(const AText: string; ATabSize: Integer; AStrict: Boolean): string;
 var
   Lines: TArray<string>;
   I: Integer;
 begin
+  NativeQuotes := not AStrict;
   Lines := AText.Replace(#13#10, #10).Replace(#13, #10).Split([#10]);
   for I := 0 to High(Lines) do
     Lines[I] := Lines[I].Replace(#9, StringOfChar(' ', ATabSize)).TrimRight([#13]);

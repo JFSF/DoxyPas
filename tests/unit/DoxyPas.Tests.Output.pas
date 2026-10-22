@@ -33,6 +33,7 @@ type
     [Test] procedure QuotesSql;
     [Test] procedure TranslatesTexts;
     [Test] procedure TableOfContentsListsSectionsAndHeadings;
+    [Test] procedure NativeQuotesEndABacktickWhenMarkdownIsNotStrict;
   end;
 
   [TestFixture]
@@ -62,6 +63,7 @@ uses
   DoxyPas.Output.SqliteGen,
   DoxyPas.Output.HtmlCode,
   DoxyPas.Output.HtmlDoc,
+  DoxyPas.Doc.Markdown,
   DoxyPas.Output.LatexGen,
   DoxyPas.Model.Entry,
   DoxyPas.Lang.Pascal.Dfm,
@@ -448,6 +450,12 @@ procedure THtmlTemplateTests.QuotesSql;
 begin
   Assert.AreEqual('NULL', SqlText(''));
   Assert.AreEqual('''it''''s''', SqlText('it''s'));
+end;
+
+procedure THtmlTemplateTests.NativeQuotesEndABacktickWhenMarkdownIsNotStrict;
+begin
+  Assert.AreEqual('<code>a'' and b</code>', MarkdownToDoxygen('`a'' and b`'), 'strict: only a backtick ends it');
+  Assert.AreEqual('<code>a</code> and b`', MarkdownToDoxygen('`a'' and b`', 4, False));
 end;
 
 procedure THtmlTemplateTests.TableOfContentsListsSectionsAndHeadings;

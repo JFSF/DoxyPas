@@ -893,7 +893,13 @@ procedure THtmlGenerator.EndPage(const ANavPath: string);
 begin
   W('</div><!-- contents -->'#10);
   if FTree then
+  begin
     W('</div><!-- doc-content -->'#10);
+    if FConfig.GetBool('PAGE_OUTLINE_PANEL') then        // the outline of the page, at the right (navtree.js fills it)
+      W('<div id="page-nav" class="page-nav-panel">'#10'  <div id="page-nav-resize-handle"></div>'#10 +
+        '  <div id="page-nav-tree">'#10'    <div id="page-nav-contents">'#10'    </div><!-- page-nav-contents -->'#10 +
+        '  </div><!-- page-nav-tree -->'#10'</div><!-- page-nav -->'#10);
+  end;
   W(Template(FFooter, FPageTitle, ANavPath));
   SaveText(FPageFile + FExt, FPage.ToString);
   FreeAndNil(FPage);

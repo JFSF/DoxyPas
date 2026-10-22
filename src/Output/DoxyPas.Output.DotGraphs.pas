@@ -48,6 +48,7 @@ type
     FMaxDepth: Integer;           // MAX_DOT_GRAPH_DEPTH
     FUml: Boolean;                // UML_LOOK
     FHideUndoc: Boolean;          // HIDE_UNDOC_RELATIONS
+    FTemplateRel: Boolean;        // TEMPLATE_RELATIONS
     FUmlDetails: string;          // DOT_UML_DETAILS: NO, YES or NONE
     FUmlLimit: Integer;           // UML_LIMIT_NUM_FIELDS
     FUmlEdgeLabels: Integer;      // UML_MAX_EDGE_LABELS
@@ -264,6 +265,7 @@ begin
   FMaxDepth := AConfig.GetInt('MAX_DOT_GRAPH_DEPTH');
   FUml := AConfig.GetBool('UML_LOOK');
   FHideUndoc := AConfig.GetBool('HIDE_UNDOC_RELATIONS');
+  FTemplateRel := AConfig.GetBool('TEMPLATE_RELATIONS');
   FUmlDetails := AConfig.GetString('DOT_UML_DETAILS').ToUpper;
   FUmlLimit := AConfig.GetInt('UML_LIMIT_NUM_FIELDS');
   FUmlEdgeLabels := AConfig.GetInt('UML_MAX_EDGE_LABELS');
@@ -361,6 +363,12 @@ var
   MaxDepth: Integer;
   Inherit: string;
 
+  // the edge from a template to an instance of it: dashed, labelled with the arguments (<Integer>)
+  function TemplateEdge(const AInstance: string): string;
+  begin
+    Result := 'color="orange", style="dashed", arrowhead="open", label=' + DotQuote(Copy(AInstance, Pos('<', AInstance), MaxInt));
+  end;
+
   function ClassNode(X: TClassDef; ARoot: Boolean): Integer;
   var
     Style, Url: string;
@@ -380,7 +388,7 @@ var
   procedure Ancestors(X: TClassDef; AId, ADepth: Integer);
   var
     B: TBaseRef;
-    P: Integer;
+    P, Inst: Integer;
   begin
     if (FMaxDepth > 0) and (ADepth > FMaxDepth) then
       Exit;
@@ -391,7 +399,15 @@ var
       if (B.ClassDef <> nil) and Shown(B.ClassDef) then
       begin
         P := ClassNode(B.ClassDef, False);
-        G.Edge(P, AId, Inherit);
+        if FTemplateRel and (Pos('<', B.Text) > 0) then
+        begin
+          // TEMPLATE_RELATIONS: template -> its instance (the base as it is written) -> the class
+          Inst := G.Node('?' + B.Text, B.Text, '', '');
+          G.Edge(P, Inst, TemplateEdge(B.Text));
+          G.Edge(Inst, AId, Inherit);
+        end
+        else
+          G.Edge(P, AId, Inherit);
         Ancestors(B.ClassDef, P, ADepth + 1);
       end
       else
@@ -405,7 +421,9 @@ var
   procedure Descendants(X: TClassDef; AId, ADepth: Integer);
   var
     D: TClassDef;
-    N: Integer;
+    B: TBaseRef;
+    N, I: Integer;
+    Inst: string;
   begin
     if ADepth > MaxDepth then
       Exit;
@@ -413,7 +431,19 @@ var
       if Shown(D) and not G.Full then
       begin
         N := ClassNode(D, False);
-        G.Edge(AId, N, Inherit);
+        Inst := '';
+        if FTemplateRel then
+          for B in D.Bases do
+            if (B.ClassDef = X) and (Pos('<', B.Text) > 0) then
+              Inst := B.Text;
+        if Inst <> '' then
+        begin
+          I := G.Node('?' + Inst, Inst, '', '');
+          G.Edge(AId, I, TemplateEdge(Inst));
+          G.Edge(I, N, Inherit);
+        end
+        else
+          G.Edge(AId, N, Inherit);
         Descendants(D, N, ADepth + 1);
       end;
   end;

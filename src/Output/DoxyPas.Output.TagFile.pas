@@ -291,6 +291,7 @@ begin
     R.Url := ALocation;
     R.FileName := WithHtml(CFile);
     R.TagName := Tag;
+    R.Title := ChildText(C, 'title');
     if (CName <> '') and (CKind <> 'file') and (CKind <> 'dir') then
     begin
       AProject.AddExternal(R);
@@ -303,6 +304,7 @@ begin
       begin
         MKind := VarToStr(M.Attributes['kind']);
         R.Kind := MKind;
+        R.Title := '';
         R.FileName := WithHtml(ChildText(M, 'anchorfile'));
         R.Anchor := ChildText(M, 'anchor');
         if (CKind = 'class') or (CKind = 'struct') or (CKind = 'interface') or (CKind = 'namespace') then

@@ -663,6 +663,27 @@ begin
     end;
 end;
 
+// An ancestor as written, with the type arguments of a generic one: TBase<Integer>.
+function BaseText(ANode: TSyntaxNode): string;
+var
+  Args, A: TSyntaxNode;
+begin
+  Result := ANode.GetAttribute(anName);
+  Args := ANode.FindNode(ntTypeArgs);
+  if Args = nil then
+    Exit;
+  for A in Args.ChildNodes do
+    if A.Typ = ntType then
+    begin
+      if Pos('<', Result) = 0 then
+        Result := Result + '<' + BaseText(A)
+      else
+        Result := Result + ',' + BaseText(A);
+    end;
+  if Pos('<', Result) > 0 then
+    Result := Result + '>';
+end;
+
 procedure TEntryBuilder.DoClassBody(AEntry: TEntry; ATypeNode: TSyntaxNode);
 var
   N: TSyntaxNode;
@@ -672,7 +693,7 @@ begin
   begin
     case N.Typ of
       ntType:
-        AEntry.WriteBases.Add(N.GetAttribute(anName));
+        AEntry.WriteBases.Add(BaseText(N));
       ntHelper:
         if N.FindNode(ntType) <> nil then
           AEntry.HelperFor := N.FindNode(ntType).GetAttribute(anName);

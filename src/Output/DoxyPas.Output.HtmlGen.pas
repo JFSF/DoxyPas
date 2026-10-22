@@ -214,6 +214,8 @@ type
     procedure WriteInherits;
     procedure WriteUnitList;
     procedure WriteTopics;
+    procedure ExternalRows(const AKinds: array of string; var ARow: Integer);
+    function HasExternals(const AKinds: array of string): Boolean;
     procedure WritePagesIndex;
     procedure WriteFunctionsIndex;
     // data
@@ -2973,6 +2975,8 @@ begin
           if FLinks.IsLinkable(C) and (C.Scope = U) then
             ClassTreeRows(C, 1, Row, SB);
       end;
+    if FConfig.GetBool('ALLEXTERNALS') then
+      ExternalRows(['class', 'struct', 'interface', 'namespace'], Row);
     W('</table>'#10'</div><!-- directory -->'#10);
     EndPage;
   finally
@@ -3136,6 +3140,36 @@ begin
   EndPage;
 end;
 
+// The rows of the compounds that the tag files describe (EXTERNAL_GROUPS, EXTERNAL_PAGES, ALLEXTERNALS) of these kinds.
+procedure THtmlGenerator.ExternalRows(const AKinds: array of string; var ARow: Integer);
+var
+  R: TExternalRef;
+  Href, Text: string;
+begin
+  for R in FProject.ExternalRefs do
+    if (R.Anchor = '') and MatchText(R.Kind, AKinds) then
+    begin
+      Href := R.Url;
+      if (Href <> '') and not Href.EndsWith('/') then
+        Href := Href + '/';
+      Href := Href + R.FileName;
+      Text := R.Title;
+      if Text = '' then
+        Text := R.Name;
+      DirRow(ARow, 0, '', '<a class="el" href="' + HtmlEscape(Href) + '">' + HtmlEscape(Text) + '</a>', '');
+    end;
+end;
+
+function THtmlGenerator.HasExternals(const AKinds: array of string): Boolean;
+var
+  R: TExternalRef;
+begin
+  for R in FProject.ExternalRefs do
+    if (R.Anchor = '') and MatchText(R.Kind, AKinds) then
+      Exit(True);
+  Result := False;
+end;
+
 procedure THtmlGenerator.WriteTopics;
 var
   G: TGroupDef;
@@ -3152,6 +3186,8 @@ begin
     for G in FProject.Groups do
       if G.Parent = nil then
         GroupRows(G, 0, Row, SB);
+    if FConfig.GetBool('EXTERNAL_GROUPS') then
+      ExternalRows(['group'], Row);
     W('</table>'#10'</div><!-- directory -->'#10);
     EndPage;
   finally
@@ -3172,6 +3208,8 @@ begin
   for P in FProject.Pages do
     if not P.IsMainPage then
       DirRow(Row, 0, '', FDoc.Link(P, P.Title), BriefOf(P));
+  if FConfig.GetBool('EXTERNAL_PAGES') then
+    ExternalRows(['page'], Row);
   W('</table>'#10'</div><!-- directory -->'#10);
   EndPage;
 end;
@@ -4137,10 +4175,12 @@ begin
   for U in FProject.Units do
     if FLinks.IsLinkable(U) then
       FHasUnits := True;
-  FHasGroups := FProject.Groups.Count > 0;
+  FHasGroups := (FProject.Groups.Count > 0) or (FConfig.GetBool('EXTERNAL_GROUPS') and HasExternals(['group']));
   for P in FProject.Pages do
     if not P.IsMainPage then
       FHasPages := True;
+  if FConfig.GetBool('EXTERNAL_PAGES') and HasExternals(['page']) then
+    FHasPages := True;
   if FHasUnits and FConfig.GetBool('SHOW_FILES') then
   begin
     FDirs := TDirTree.Create(FProject, FLinks);

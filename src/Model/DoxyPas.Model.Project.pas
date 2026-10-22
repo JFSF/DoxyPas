@@ -53,12 +53,14 @@ type
     FileName: string;    // e.g. "classTFoo.html"
     Anchor: string;
     TagName: string;
+    Title: string;       // groups and pages: the title in the tag file
   end;
 
   TProject = class
   strict private
     FOwned: TObjectList<TDefinition>;
     FExternals: TDictionary<string, TExternalRef>;
+    FExternalList: TList<TExternalRef>;          // each one once, in the order of the tag files
     FUnitByName: TDictionary<string, TUnitDef>;
     FGlobal: TDictionary<string, TDefinition>;   // GlobalSymbol: the first symbol of every name in any unit
     FGlobalVersion: Integer;
@@ -92,6 +94,8 @@ type
     procedure Warn(const AFile: string; ALine: Integer; const AMsg: string);
     /// <summary>Registers a symbol of another project; it is found by its full name and by its last name part.</summary>
     procedure AddExternal(const ARef: TExternalRef);
+    /// <summary>What the tag files describe, once each (EXTERNAL_GROUPS, EXTERNAL_PAGES, ALLEXTERNALS).</summary>
+    function ExternalRefs: TArray<TExternalRef>;
     function FindExternal(const AName: string; out ARef: TExternalRef): Boolean;
     /// <summary>File name as written in the output: relative to STRIP_FROM_PATH, '/' separators.</summary>
     function OutputPath(const AFileName: string): string;
@@ -214,6 +218,7 @@ begin
   FUnitByName := TDictionary<string, TUnitDef>.Create;
   FGroupByName := TDictionary<string, TGroupDef>.Create;
   FExternals := TDictionary<string, TExternalRef>.Create;
+  FExternalList := TList<TExternalRef>.Create;
   Roots := TObjectList<TEntry>.Create(True);
   Units := TList<TUnitDef>.Create;
   Classes := TList<TClassDef>.Create;
@@ -232,6 +237,7 @@ begin
   Members.Free;
   Classes.Free;
   Units.Free;
+  FExternalList.Free;
   FExternals.Free;
   FGroupByName.Free;
   FUnitByName.Free;
@@ -336,6 +342,7 @@ var
   P: Integer;
 begin
   Plain := LowerCase(PlainName(ARef.Name)).Replace('::', '.');
+  FExternalList.Add(ARef);
   FExternals.AddOrSetValue(Plain, ARef);
   // every trailing part of the qualified name finds it too: "ns.foo.bar", "foo.bar", "bar"
   P := Pos('.', Plain);
@@ -346,6 +353,11 @@ begin
       FExternals.Add(Plain, ARef);
     P := Pos('.', Plain);
   end;
+end;
+
+function TProject.ExternalRefs: TArray<TExternalRef>;
+begin
+  Result := FExternalList.ToArray;
 end;
 
 function TProject.FindExternal(const AName: string; out ARef: TExternalRef): Boolean;

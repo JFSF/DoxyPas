@@ -29,6 +29,8 @@ uses
   DoxyPas.Model.Links,
   DoxyPas.Output.XmlWriter,
   DoxyPas.Output.XmlDoc,
+  DoxyPas.Output.HtmlCode,
+  DoxyPas.Core.SourceText,
   DoxyPas.Resources.Xml;
 
 const
@@ -77,6 +79,7 @@ type
     procedure WriteSections(AMembers: TList<TMemberDef>; AInUnit: Boolean);
     procedure WriteClass(C: TClassDef);
     procedure WriteUnit(U: TUnitDef);
+    procedure WriteProgramListing(U: TUnitDef);
     procedure WriteGroup(G: TGroupDef);
     procedure WritePage(P: TPageDef);
     procedure WriteIndex;
@@ -543,6 +546,36 @@ begin
   Finish(C.DiskName);
 end;
 
+// XML_PROGRAMLISTING: the text of the file of the unit, a <codeline> for each line with its coloured pieces.
+procedure TXmlGenerator.WriteProgramListing(U: TUnitDef);
+var
+  Lines: TArray<TArray<TCodeSpan>>;
+  Line: TArray<TCodeSpan>;
+  Sp: TCodeSpan;
+  N: Integer;
+begin
+  if (U.FileName = '') or not TFile.Exists(U.FileName) then
+    Exit;
+  Lines := CodeLines(ReadBrowseFile(U.FileName));
+  FW.NewLine;
+  FW.Open('programlisting', []);
+  N := 0;
+  for Line in Lines do
+  begin
+    Inc(N);
+    FW.NewLine;
+    FW.Open('codeline', ['lineno', N.ToString]);
+    for Sp in Line do
+      if Sp.Cls = '' then
+        FW.Leaf('highlight', Sp.Text, ['class', 'normal'])
+      else
+        FW.Leaf('highlight', Sp.Text, ['class', Sp.Cls]);
+    FW.Close('codeline');
+  end;
+  FW.NewLine;
+  FW.Close('programlisting');
+end;
+
 procedure TXmlGenerator.WriteUnit(U: TUnitDef);
 var
   C: TClassDef;
@@ -587,6 +620,8 @@ begin
   FDoc.Description('briefdescription', U.Brief, U);
   FW.NewLine;
   FDoc.Description('detaileddescription', U.Detailed, U);
+  if FConfig.GetBool('XML_PROGRAMLISTING') then
+    WriteProgramListing(U);
   WriteLocation(U.Entry, nil);
   FW.NewLine;
   FW.Close('compounddef');

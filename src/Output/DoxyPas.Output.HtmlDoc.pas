@@ -42,6 +42,7 @@ type
     FFormulas: Integer;
     FFormulaTex: TList<string>;
     FImageFormulas: Boolean;
+    FFormulaExt: string;
     function IsBlock(ANode: TDocNode): Boolean;
     function Inline_(ANode: TDocNode; AAutoLink: Boolean): string;
     function InlineChildren(ANode: TDocNode; AAutoLink: Boolean): string;
@@ -90,6 +91,8 @@ type
     property ExampleRecursive: Boolean read FExampleRecursive write FExampleRecursive;
     /// <summary>Formulas are images (formula_N.svg, made from FormulaTex) instead of MathJax markup.</summary>
     property ImageFormulas: Boolean read FImageFormulas write FImageFormulas;
+    /// <summary>The extension of those images: png or svg (HTML_FORMULA_FORMAT).</summary>
+    property FormulaExt: string read FFormulaExt write FFormulaExt;
     /// <summary>The TeX of the formulas written so far, in the order of their numbers: 'i' + TeX for an inline formula,
     /// 'd' + TeX for a display formula.</summary>
     property FormulaTex: TList<string> read FFormulaTex;
@@ -330,7 +333,7 @@ begin
           else
             FFormulaTex.Add('d' + ANode.Text);
           Result := '<img class="formulaInl" alt="' + HtmlEscape(ANode.Text) + '" src="formula_' + FFormulas.ToString +
-            '.svg" style="vertical-align:middle"/>';
+            '.' + FFormulaExt + '" style="vertical-align:middle"/>';
           if ANode.Name <> 'inline' then
             Result := '<p class="formulaDsp">' + Result + '</p>';
         end

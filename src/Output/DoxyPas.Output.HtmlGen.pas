@@ -2062,7 +2062,8 @@ begin
   end;
   // dvisvgm names the pages formula_1.svg ... (%p is the page number)
   if RunTool('latex -interaction=batchmode formulas.tex', FDir) and
-    RunTool('dvisvgm --no-fonts -p1- -o formula_%p.svg formulas.dvi', FDir) then
+    ((FDoc.FormulaExt = 'png') and RunTool('dvipng -T tight -D 110 -bg Transparent -o formula_%d.png formulas.dvi', FDir) or
+     (FDoc.FormulaExt <> 'png') and RunTool('dvisvgm --no-fonts -p1- -o formula_%p.svg formulas.dvi', FDir)) then
     Inc(FFiles, FDoc.FormulaTex.Count)
   else
     Warn('', 0, 'formulas: latex or dvisvgm failed, see formulas.log in the HTML directory');
@@ -4149,12 +4150,21 @@ begin
   // formulas: MathJax (USE_MATHJAX) or SVG images from latex + dvisvgm, MathJax when they are not available
   if FConfig.GetBool('USE_MATHJAX') then
     FMathJax := MathJaxScript
-  else if RunTool('latex --version', FDir) and RunTool('dvisvgm --version', FDir) then
-    FDoc.ImageFormulas := True
+  else if RunTool('latex --version', FDir) and
+    ((SameText(FConfig.GetString('HTML_FORMULA_FORMAT'), 'png') and RunTool('dvipng --version', FDir)) or
+     RunTool('dvisvgm --version', FDir)) then
+  begin
+    FDoc.ImageFormulas := True;
+    // HTML_FORMULA_FORMAT: png (dvipng) or svg (dvisvgm); the other when the tool is not there
+    if SameText(FConfig.GetString('HTML_FORMULA_FORMAT'), 'png') and RunTool('dvipng --version', FDir) then
+      FDoc.FormulaExt := 'png'
+    else
+      FDoc.FormulaExt := 'svg';
+  end
   else
   begin
     FMathJax := MathJaxScript;
-    Warn('', 0, 'latex or dvisvgm not found: the formulas are shown with MathJax (set USE_MATHJAX = YES to silence this)');
+    Warn('', 0, 'latex and dvipng/dvisvgm not found: the formulas are shown with MathJax (set USE_MATHJAX = YES to silence this)');
   end;
   BuildPageMenu;
   WriteStatic;

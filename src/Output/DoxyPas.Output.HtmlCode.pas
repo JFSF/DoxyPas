@@ -17,6 +17,16 @@ type
 function HighlightSource(const ACode: string; ALineNumbers: Boolean; const ALink: TWordLinker;
   AFirstLine: Integer = 1; AStripDocComments: Boolean = False): string;
 
+type
+  /// <summary>A piece of a line of code with its colour class ('' for plain text).</summary>
+  TCodeSpan = record
+    Cls: string;
+    Text: string;
+  end;
+
+/// <summary>The lines of ACode as lists of coloured pieces (for the program listing of the XML output).</summary>
+function CodeLines(const ACode: string): TArray<TArray<TCodeSpan>>;
+
 /// <summary>&lt;span class="keyword"&gt;AWord&lt;/span&gt;</summary>
 function KeywordSpan(const AWord: string): string;
 
@@ -244,6 +254,53 @@ begin
     Result := SB.ToString;
   finally
     SB.Free;
+  end;
+end;
+
+function CodeLines(const ACode: string): TArray<TArray<TCodeSpan>>;
+var
+  T: TTok;
+  Parts: TArray<string>;
+  K: Integer;
+  Cur: TList<TCodeSpan>;
+  Lines: TList<TArray<TCodeSpan>>;
+  S: TCodeSpan;
+begin
+  Lines := TList<TArray<TCodeSpan>>.Create;
+  Cur := TList<TCodeSpan>.Create;
+  try
+    for T in Tokenize(ACode.Replace(#13#10, #10)) do
+    begin
+      Parts := T.Text.Split([#10]);
+      for K := 0 to High(Parts) do
+      begin
+        if K > 0 then
+        begin
+          Lines.Add(Cur.ToArray);
+          Cur.Clear;
+        end;
+        if Parts[K] <> '' then
+        begin
+          if (T.Cls = '') and (Cur.Count > 0) and (Cur.Last.Cls = '') then
+          begin
+            S := Cur.Last;                       // neighbouring plain pieces are one
+            S.Text := S.Text + Parts[K];
+            Cur[Cur.Count - 1] := S;
+          end
+          else
+          begin
+            S.Cls := T.Cls;
+            S.Text := Parts[K];
+            Cur.Add(S);
+          end;
+        end;
+      end;
+    end;
+    Lines.Add(Cur.ToArray);
+    Result := Lines.ToArray;
+  finally
+    Cur.Free;
+    Lines.Free;
   end;
 end;
 

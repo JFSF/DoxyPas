@@ -9,6 +9,40 @@
       </briefdescription>
     <detaileddescription>
       </detaileddescription>
+    <programlisting>
+      <codeline lineno="1"><highlight class="keyword">unit</highlight><highlight class="normal"> Circles;</highlight></codeline>
+      <codeline lineno="2"></codeline>
+      <codeline lineno="3"><highlight class="keyword">interface</highlight></codeline>
+      <codeline lineno="4"></codeline>
+      <codeline lineno="5"><highlight class="keyword">uses</highlight></codeline>
+      <codeline lineno="6"><highlight class="normal">  Shapes;</highlight></codeline>
+      <codeline lineno="7"></codeline>
+      <codeline lineno="8"><highlight class="keyword">type</highlight></codeline>
+      <codeline lineno="9"><highlight class="normal">  </highlight><highlight class="comment">/// A circle.</highlight></codeline>
+      <codeline lineno="10"><highlight class="normal">  TCircle = </highlight><highlight class="keyword">class</highlight><highlight class="normal">(TShape, IDrawable)</highlight></codeline>
+      <codeline lineno="11"><highlight class="normal">  </highlight><highlight class="keyword">private</highlight></codeline>
+      <codeline lineno="12"><highlight class="normal">    FRadius: </highlight><highlight class="keywordtype">Double</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="13"><highlight class="normal">    </highlight><highlight class="keyword">function</highlight><highlight class="normal"> GetDiameter: </highlight><highlight class="keywordtype">Double</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="14"><highlight class="normal">  </highlight><highlight class="keyword">public</highlight></codeline>
+      <codeline lineno="15"><highlight class="normal">    </highlight><highlight class="keyword">constructor</highlight><highlight class="normal"> Create(</highlight><highlight class="keyword">const</highlight><highlight class="normal"> AName: </highlight><highlight class="keywordtype">string</highlight><highlight class="normal">; ARadius: </highlight><highlight class="keywordtype">Double</highlight><highlight class="normal">);</highlight></codeline>
+      <codeline lineno="16"><highlight class="normal">    </highlight><highlight class="keyword">function</highlight><highlight class="normal"> Area: </highlight><highlight class="keywordtype">Double</highlight><highlight class="normal">; </highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="17"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Draw;</highlight></codeline>
+      <codeline lineno="18"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Move(DX, DY: </highlight><highlight class="keywordtype">Integer</highlight><highlight class="normal">); </highlight><highlight class="keyword">reintroduce</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="19"><highlight class="normal">    </highlight><highlight class="keyword">property</highlight><highlight class="normal"> Radius: </highlight><highlight class="keywordtype">Double</highlight><highlight class="normal"> </highlight><highlight class="keyword">read</highlight><highlight class="normal"> FRadius </highlight><highlight class="keyword">write</highlight><highlight class="normal"> FRadius;</highlight></codeline>
+      <codeline lineno="20"><highlight class="normal">    </highlight><highlight class="comment">/// Twice the radius.</highlight></codeline>
+      <codeline lineno="21"><highlight class="normal">    </highlight><highlight class="keyword">property</highlight><highlight class="normal"> Diameter: </highlight><highlight class="keywordtype">Double</highlight><highlight class="normal"> </highlight><highlight class="keyword">read</highlight><highlight class="normal"> GetDiameter;</highlight></codeline>
+      <codeline lineno="22"><highlight class="normal">  </highlight><highlight class="keywordflow">end</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="23"></codeline>
+      <codeline lineno="24"><highlight class="normal">  TUnitCircle = </highlight><highlight class="keyword">class</highlight><highlight class="normal">(TCircle)</highlight></codeline>
+      <codeline lineno="25"><highlight class="normal">  </highlight><highlight class="keyword">public</highlight></codeline>
+      <codeline lineno="26"><highlight class="normal">    </highlight><highlight class="keyword">function</highlight><highlight class="normal"> Area: </highlight><highlight class="keywordtype">Double</highlight><highlight class="normal">; </highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="27"><highlight class="normal">  </highlight><highlight class="keywordflow">end</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="28"></codeline>
+      <codeline lineno="29"><highlight class="keyword">implementation</highlight></codeline>
+      <codeline lineno="30"></codeline>
+      <codeline lineno="31"><highlight class="keywordflow">end</highlight><highlight class="normal">.</highlight></codeline>
+      <codeline lineno="32"></codeline>
+      </programlisting>
     <location file="inherit/Circles.pas" line="1" column="1"/>
     </compounddef>
   </doxygen>

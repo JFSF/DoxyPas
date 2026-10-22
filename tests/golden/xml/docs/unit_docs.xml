@@ -9,6 +9,48 @@
       </briefdescription>
     <detaileddescription>
       </detaileddescription>
+    <programlisting>
+      <codeline lineno="1"><highlight class="comment">{** \file Docs.pas</highlight></codeline>
+      <codeline lineno="2"><highlight class="comment">    The unit documentation. }</highlight></codeline>
+      <codeline lineno="3"><highlight class="keyword">unit</highlight><highlight class="normal"> Docs;</highlight></codeline>
+      <codeline lineno="4"></codeline>
+      <codeline lineno="5"><highlight class="comment">{** \defgroup core Core</highlight></codeline>
+      <codeline lineno="6"><highlight class="comment">    Core routines. }</highlight></codeline>
+      <codeline lineno="7"></codeline>
+      <codeline lineno="8"><highlight class="comment">{** \mainpage Docs Project</highlight></codeline>
+      <codeline lineno="9"><highlight class="comment">    See \ref TBase and \ref Missing and \ref core. }</highlight></codeline>
+      <codeline lineno="10"></codeline>
+      <codeline lineno="11"><highlight class="keyword">interface</highlight></codeline>
+      <codeline lineno="12"></codeline>
+      <codeline lineno="13"><highlight class="keyword">type</highlight></codeline>
+      <codeline lineno="14"><highlight class="normal">  </highlight><highlight class="comment">/// Base with docs.</highlight></codeline>
+      <codeline lineno="15"><highlight class="normal">  TBase = </highlight><highlight class="keyword">class</highlight></codeline>
+      <codeline lineno="16"><highlight class="normal">  </highlight><highlight class="keyword">public</highlight></codeline>
+      <codeline lineno="17"><highlight class="normal">    </highlight><highlight class="comment">/// Does the work.</highlight></codeline>
+      <codeline lineno="18"><highlight class="normal">    </highlight><highlight class="comment">/// \param A the first value</highlight></codeline>
+      <codeline lineno="19"><highlight class="normal">    </highlight><highlight class="comment">/// \param Wrong not an argument</highlight></codeline>
+      <codeline lineno="20"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Work(A: </highlight><highlight class="keywordtype">Integer</highlight><highlight class="normal">); </highlight><highlight class="keyword">virtual</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="21"><highlight class="normal">    </highlight><highlight class="comment">/// Brief of Other. \ingroup core</highlight></codeline>
+      <codeline lineno="22"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Other;</highlight></codeline>
+      <codeline lineno="23"><highlight class="normal">  </highlight><highlight class="keywordflow">end</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="24"></codeline>
+      <codeline lineno="25"><highlight class="normal">  TDerived = </highlight><highlight class="keyword">class</highlight><highlight class="normal">(TBase)</highlight></codeline>
+      <codeline lineno="26"><highlight class="normal">  </highlight><highlight class="keyword">public</highlight></codeline>
+      <codeline lineno="27"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Work(A: </highlight><highlight class="keywordtype">Integer</highlight><highlight class="normal">); </highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="28"><highlight class="normal">    </highlight><highlight class="comment">/// \copydoc TBase::Other</highlight></codeline>
+      <codeline lineno="29"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Copy1;</highlight></codeline>
+      <codeline lineno="30"><highlight class="normal">    </highlight><highlight class="comment">/// \inheritdoc</highlight></codeline>
+      <codeline lineno="31"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Copy2;</highlight></codeline>
+      <codeline lineno="32"><highlight class="normal">    </highlight><highlight class="comment">/// \copybrief TBase.Work</highlight></codeline>
+      <codeline lineno="33"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Copy3;</highlight></codeline>
+      <codeline lineno="34"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Nothing;</highlight></codeline>
+      <codeline lineno="35"><highlight class="normal">  </highlight><highlight class="keywordflow">end</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="36"></codeline>
+      <codeline lineno="37"><highlight class="keyword">implementation</highlight></codeline>
+      <codeline lineno="38"></codeline>
+      <codeline lineno="39"><highlight class="keywordflow">end</highlight><highlight class="normal">.</highlight></codeline>
+      <codeline lineno="40"></codeline>
+      </programlisting>
     <location file="docs/Docs.pas" line="3" column="1"/>
     </compounddef>
   </doxygen>

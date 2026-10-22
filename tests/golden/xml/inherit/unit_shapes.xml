@@ -9,6 +9,42 @@
       </briefdescription>
     <detaileddescription>
       </detaileddescription>
+    <programlisting>
+      <codeline lineno="1"><highlight class="keyword">unit</highlight><highlight class="normal"> Shapes;</highlight></codeline>
+      <codeline lineno="2"></codeline>
+      <codeline lineno="3"><highlight class="keyword">interface</highlight></codeline>
+      <codeline lineno="4"></codeline>
+      <codeline lineno="5"><highlight class="keyword">type</highlight></codeline>
+      <codeline lineno="6"><highlight class="normal">  </highlight><highlight class="comment">/// Something that can be drawn.</highlight></codeline>
+      <codeline lineno="7"><highlight class="normal">  IDrawable = </highlight><highlight class="keyword">interface</highlight></codeline>
+      <codeline lineno="8"><highlight class="normal">    [</highlight><highlight class="stringliteral">'{11111111-2222-3333-4444-555555555555}'</highlight><highlight class="normal">]</highlight></codeline>
+      <codeline lineno="9"><highlight class="normal">    </highlight><highlight class="comment">/// Draws the object.</highlight></codeline>
+      <codeline lineno="10"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Draw;</highlight></codeline>
+      <codeline lineno="11"><highlight class="normal">  </highlight><highlight class="keywordflow">end</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="12"></codeline>
+      <codeline lineno="13"><highlight class="normal">  </highlight><highlight class="comment">/// Base class of all shapes.</highlight></codeline>
+      <codeline lineno="14"><highlight class="normal">  TShape = </highlight><highlight class="keyword">class</highlight><highlight class="normal">(</highlight><highlight class="keywordtype">TObject</highlight><highlight class="normal">)</highlight></codeline>
+      <codeline lineno="15"><highlight class="normal">  </highlight><highlight class="keyword">private</highlight></codeline>
+      <codeline lineno="16"><highlight class="normal">    FName: </highlight><highlight class="keywordtype">string</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="17"><highlight class="normal">  </highlight><highlight class="keyword">protected</highlight></codeline>
+      <codeline lineno="18"><highlight class="normal">    </highlight><highlight class="comment">/// Called before drawing.</highlight></codeline>
+      <codeline lineno="19"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Prepare; </highlight><highlight class="keyword">virtual</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="20"><highlight class="normal">  </highlight><highlight class="keyword">public</highlight></codeline>
+      <codeline lineno="21"><highlight class="normal">    </highlight><highlight class="comment">/// Creates a shape.</highlight></codeline>
+      <codeline lineno="22"><highlight class="normal">    </highlight><highlight class="keyword">constructor</highlight><highlight class="normal"> Create(</highlight><highlight class="keyword">const</highlight><highlight class="normal"> AName: </highlight><highlight class="keywordtype">string</highlight><highlight class="normal">);</highlight></codeline>
+      <codeline lineno="23"><highlight class="normal">    </highlight><highlight class="comment">/// Area of the shape.</highlight></codeline>
+      <codeline lineno="24"><highlight class="normal">    </highlight><highlight class="keyword">function</highlight><highlight class="normal"> Area: </highlight><highlight class="keywordtype">Double</highlight><highlight class="normal">; </highlight><highlight class="keyword">virtual</highlight><highlight class="normal">; </highlight><highlight class="keyword">abstract</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="25"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Move(DX, DY: </highlight><highlight class="keywordtype">Integer</highlight><highlight class="normal">); </highlight><highlight class="keyword">overload</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="26"><highlight class="normal">    </highlight><highlight class="keyword">procedure</highlight><highlight class="normal"> Move(</highlight><highlight class="keyword">const</highlight><highlight class="normal"> P: </highlight><highlight class="keywordtype">TObject</highlight><highlight class="normal">); </highlight><highlight class="keyword">overload</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="27"><highlight class="normal">    </highlight><highlight class="comment">/// The shape name.</highlight></codeline>
+      <codeline lineno="28"><highlight class="normal">    </highlight><highlight class="keyword">property</highlight><highlight class="normal"> </highlight><highlight class="keyword">Name</highlight><highlight class="normal">: </highlight><highlight class="keywordtype">string</highlight><highlight class="normal"> </highlight><highlight class="keyword">read</highlight><highlight class="normal"> FName </highlight><highlight class="keyword">write</highlight><highlight class="normal"> FName;</highlight></codeline>
+      <codeline lineno="29"><highlight class="normal">  </highlight><highlight class="keywordflow">end</highlight><highlight class="normal">;</highlight></codeline>
+      <codeline lineno="30"></codeline>
+      <codeline lineno="31"><highlight class="keyword">implementation</highlight></codeline>
+      <codeline lineno="32"></codeline>
+      <codeline lineno="33"><highlight class="keywordflow">end</highlight><highlight class="normal">.</highlight></codeline>
+      <codeline lineno="34"></codeline>
+      </programlisting>
     <location file="inherit/Shapes.pas" line="1" column="1"/>
     </compounddef>
   </doxygen>

@@ -1,13 +1,17 @@
 name: build
 
-# Delphi is commercial software: GitHub's hosted runners do not have it. The Delphi jobs run on a self-hosted
+# Delphi is commercial software: GitHub's hosted runners do not have it. The Delphi job runs on a self-hosted
 # Windows runner that has RAD Studio 13 installed (labels: self-hosted, windows, delphi13); see docs/CI.md.
-# Pull requests from forks are NOT run on that machine (they would execute foreign code on it).
+# It only runs for trusted code: pushes to main, manual runs of main, and pull requests from this same repository
+# (never from forks: they would execute foreign code on that machine). The token is read-only and is not left in the workspace.
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   docs:
@@ -15,13 +19,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - run: python tools/docs/check_links.py
 
   delphi:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: [self-hosted, windows, delphi13]
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: true
       - name: Build (Win32, Win64, Linux64 if the SDK is registered, GUI)
         shell: cmd
         run: build.bat

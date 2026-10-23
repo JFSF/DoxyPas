@@ -10,7 +10,7 @@ GitHub's hosted runners do not have Delphi, so the workflows in `.github/workflo
 
 To set the runner up: in the repository, *Settings > Actions > Runners > New self-hosted runner* (Windows x64), install it on a
 machine with RAD Studio 13 (and optionally the Linux64 SDK and Graphviz) and add the label `delphi13` when it asks for labels.
-Pull requests from forks are not run on that machine on purpose.
+Pull requests from forks are not run on that machine on purpose. The workflows give that machine a read-only token that is not left in the workspace; only the hosted `publish` job of `release.yml` can write to the repository. Prefer an ephemeral or dedicated machine for the runner.
 
 **Making a release:** set `DoxyPasVersion` (`src/Core/DoxyPas.Core.Version.pas`), the version in `src/DoxyPas.rc`,
 `src/Gui/Styles.rc`, the `.dproj` files and `boss.json`, write the notes in `CHANGELOG.md`, then
@@ -34,7 +34,7 @@ Os *runners* alojados do GitHub não têm Delphi, por isso os fluxos de `.github
 
 Para configurar o *runner*: no repositório, *Settings > Actions > Runners > New self-hosted runner* (Windows x64), instale-o
 numa máquina com o RAD Studio 13 (e, se quiser, o SDK de Linux64 e o Graphviz) e acrescente a etiqueta `delphi13`. Os *pull
-requests* de forks não correm nessa máquina, de propósito.
+requests* de forks não correm nessa máquina, de propósito. Os fluxos dão a essa máquina um *token* só de leitura que não fica no espaço de trabalho; só a tarefa `publish` de `release.yml`, num *runner* do GitHub, pode escrever no repositório. Prefira uma máquina dedicada ou efémera para o *runner*.
 
 **Fazer uma release:** atualize `DoxyPasVersion` (`src/Core/DoxyPas.Core.Version.pas`), a versão em `src/DoxyPas.rc`,
 `src/Gui/Styles.rc`, nos `.dproj` e no `boss.json`, escreva as notas no `CHANGELOG.md` e depois

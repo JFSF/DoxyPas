@@ -1,19 +1,23 @@
 name: release
 
-# Push a tag "vX.Y.Z" (it must match DoxyPasVersion in src/Core/DoxyPas.Core.Version.pas): the zip is built, tested and
-# attached to a GitHub release. Runs on the self-hosted Delphi runner (see build.yml and docs/CI.md).
+# Push a tag "vX.Y.Z" (it must match DoxyPasVersion in src/Core/DoxyPas.Core.Version.pas): the zip is built and tested on the
+# self-hosted Delphi runner with a read-only token, then a GitHub-hosted job (the only one with write access) attaches it to a
+# release. See build.yml and docs/CI.md.
 on:
   push:
     tags: ['v*']
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
+  build:
     runs-on: [self-hosted, windows, delphi13]
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: true
       - name: The tag matches the version of the program
         shell: pwsh
         run: |
@@ -27,11 +31,31 @@ jobs:
       - name: Zip
         shell: pwsh
         run: tools/release/make_zip.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DoxyPas-zip
+          path: build/release/*.zip
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: DoxyPas-zip
+          path: dist
       - name: Release
-        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $zip = (Get-ChildItem build/release/*.zip).FullName
-          if (gh release view $env:GITHUB_REF_NAME 2>$null) { gh release upload $env:GITHUB_REF_NAME $zip --clobber }
-          else { gh release create $env:GITHUB_REF_NAME $zip --title "DoxyPas $env:GITHUB_REF_NAME" --notes-file CHANGELOG.md }
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.zip --title "DoxyPas $GITHUB_REF_NAME" --notes-file CHANGELOG.md
+          fi

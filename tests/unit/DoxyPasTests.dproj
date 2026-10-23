@@ -49,7 +49,7 @@
         <DCC_ExeOutput>..\..\build\tests_$(Platform)</DCC_ExeOutput>
         <DCC_DcuOutput>..\..\build\$(Platform)\dcu_tests_ide</DCC_DcuOutput>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>FileDescription=DoxyPas unit tests (DUnitX);ProductName=DoxyPas;ProductVersion=0.1.0.0;FileVersion=0.1.0.0</VerInfo_Keys>
+        <VerInfo_Keys>FileDescription=DoxyPas unit tests (DUnitX);ProductName=DoxyPas;ProductVersion=1.0.0.0;FileVersion=1.0.0.0</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;$(DCC_Namespace)</DCC_Namespace>

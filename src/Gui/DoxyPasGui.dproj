@@ -48,7 +48,7 @@
         <DCC_ExeOutput>..\..\build\$(Platform)</DCC_ExeOutput>
         <DCC_DcuOutput>..\..\build\$(Platform)\dcu_gui_ide</DCC_DcuOutput>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=DoxyPas contributors;FileDescription=DoxyPas GUI - edits a Doxyfile and runs DoxyPas;FileVersion=0.1.0.0;InternalName=DoxyPasGui;LegalCopyright=Copyright (C) 2026 DoxyPas contributors. GPL-2.0. Based on Doxygen (C) Dimitri van Heesch;LegalTrademarks=;OriginalFilename=DoxyPasGui.exe;ProductName=DoxyPas;ProductVersion=0.1.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=João Ferreira;FileDescription=DoxyPas GUI - edits a Doxyfile and runs DoxyPas;FileVersion=1.0.0.0;InternalName=DoxyPasGui;LegalCopyright=Copyright (C) 2026 João Ferreira. GPL-2.0. Based on Doxygen (C) Dimitri van Heesch;LegalTrademarks=;OriginalFilename=DoxyPasGui.exe;ProductName=DoxyPas;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <Icon_MainIcon>..\..\resources\icon\doxypas.ico</Icon_MainIcon>
         <Manifest_File>None</Manifest_File>
         <PreBuildEvent>"$(MSBuildProjectDirectory)\prebuild.bat"</PreBuildEvent>

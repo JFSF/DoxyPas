@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="0.1.0" xml:lang="en-US">
+<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="1.0.0" xml:lang="en-US">
   <compound refid="class_impl_1_1_t_worker" kind="class">
     <name>Impl.TWorker</name>
     <member refid="class_impl_1_1_t_worker_1a7a8a70aaf6131c01dcc2ec08c4a40c4e" kind="function"><name>Run</name></member>

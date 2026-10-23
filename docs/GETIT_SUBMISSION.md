@@ -46,20 +46,20 @@ mantido alto. Isto **não é** uma garantia de aceitação.
 | 1 | Decidir (a)/(b) do §2.1 e implementar a integração no IDE se for (b). | Você | médio |
 | 2 | ✅ **Feito.** Os `.vsf` já não estão no repositório: `src/Gui/prebuild.bat` copia-os de `%BDS%\Redist\styles\vcl` ao compilar. | — | — |
 | 3 | ✅ **Feito.** `DoxyPas.groupproj`, `src/Gui/DoxyPasGui.dproj` e `tests/unit/DoxyPasTests.dproj`; o `src/DoxyPas.dproj` ganhou caminhos de pesquisa e de saída. Verificado com `msbuild` (Release, Win32 e Win64) e com `build.bat`. Por verificar: abrir o `.groupproj` no IDE. | — | — |
-| 4 | ✅ **Feito.** Ícone novo (`resources/icon/doxypas.ico`) e informação de versão `0.1.0.0` nos dois `.exe`, via `src/DoxyPas.rc` e `src/Gui/Styles.rc` (compilados pelo `brcc32`). A empresa é "DoxyPas contributors": **troque pelo seu nome ou da sua empresa** nos `.rc` e `.dproj` se quiser. O número está em três sítios (`Core.Version.pas` e os dois `.rc`). | — | — |
+| 4 | ✅ **Feito.** Ícone novo (`resources/icon/doxypas.ico`) e informação de versão `1.0.0.0` nos dois `.exe`, via `src/DoxyPas.rc` e `src/Gui/Styles.rc` (compilados pelo `brcc32`). Empresa/direitos: João Ferreira. O número está em três sítios (`Core.Version.pas` e os dois `.rc`) mais o `boss.json`. | — | — |
 | 5 | ✅ **Feito.** Usa `%BDS%` se já estiver definido (linha de comandos do RAD Studio), senão `DELPHI_VER` (omissão `37.0`). | — | — |
 | 6 | ✅ **Feito:** 0 avisos (restam 38 dicas, de variáveis por usar). O `SimpleParser.Lexer.pas` do DelphiAST foi tocado (`TCharacter` → `TCharHelper`) e está registado em `third_party/DelphiAST/PATCHES.md`. | — | — |
-| 7 | Integração contínua (GitHub Actions num *runner* com Delphi, ou pelo menos um script local) que compile e corra os testes, para cumprir os "30 dias" após uma versão nova. | Você | médio |
-| 8 | Publicar uma *release* no GitHub com o zip de `tools\release\make_zip.ps1` (já criado) e uma etiqueta `v0.1.0`; o GetIt pede um ficheiro/URL estável para descarregar. | Você | pequeno |
-| 9 | Assinar os executáveis (§2.4). | Você | depende |
+| 7 | 🔶 **Preparado.** `.github/workflows/build.yml` e `release.yml`, `docs/CI.md`. O GitHub não tem Delphi: os passos de compilação precisam de um *runner* próprio com o RAD Studio 13 (etiqueta `delphi13`) que **ainda tem de ser registado por si**. A verificação das ligações da documentação corre já nos *runners* do GitHub. | Você | pequeno |
+| 8 | 🔶 **Preparado.** Versão 1.0.0, `CHANGELOG.md` e um rascunho (*draft*) de release `v1.0.0` com o zip. Para publicar: `gh release edit v1.0.0 --draft=false` (cria a etiqueta). | Você | pequeno |
+| 9 | ⏳ Sem assinatura por agora (decisão sua). Os `.exe` ficam sem assinar; antivírus/SmartScreen podem avisar. | Você | depende |
 | 10 | Testar a instalação numa máquina limpa (sem Delphi, sem Graphviz) e com o Delphi 13 em Windows 11. | Você | pequeno |
-| 11 | Subir a versão para **1.0.0** quando as tarefas 1–6 estiverem feitas (um `0.1.0` dá má impressão num catálogo). | Você | — |
+| 11 | ✅ **Feito:** versão 1.0.0. | — | — |
 | 12 | Preencher o formulário (rascunho em §4). | Você | pequeno |
 
 **Decisão tomada (2026-10-23):** submeter como ferramenta autónoma (opção (a) do §2.1); a integração no IDE fica para uma versão posterior.
 
 Já feito nesta preparação: documentação em inglês e português com imagens (`docs/`), `README.pt.md`,
-`THIRD_PARTY_NOTICES.md`, o script do pacote `tools/release/make_zip.ps1` (gera `build/release/DoxyPas-0.1.0.zip`, 8,7 MB: executáveis
+`THIRD_PARTY_NOTICES.md`, o script do pacote `tools/release/make_zip.ps1` (gera `build/release/DoxyPas-1.0.0.zip`, 8,7 MB: executáveis
 Win32/Win64 da CLI e da GUI, licenças e documentação) e esta análise. Verificado: `build.bat` compila Win32, Win64, Linux64 e a GUI
 sem erros; `build.bat test` — 111 testes, 0 falhas.
 

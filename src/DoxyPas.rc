@@ -3,8 +3,8 @@
 MAINICON ICON "../resources/icon/doxypas.ico"
 
 1 VERSIONINFO
-FILEVERSION 0, 1, 0, 0
-PRODUCTVERSION 0, 1, 0, 0
+FILEVERSION 1, 0, 0, 0
+PRODUCTVERSION 1, 0, 0, 0
 FILEOS 0x4
 FILETYPE 0x1
 {
@@ -12,14 +12,14 @@ FILETYPE 0x1
   {
     BLOCK "040904B0"
     {
-      VALUE "CompanyName", "DoxyPas contributors\0"
+      VALUE "CompanyName", "Jo\343o Ferreira\0"
       VALUE "FileDescription", "DoxyPas - documentation generator for Object Pascal\0"
-      VALUE "FileVersion", "0.1.0.0\0"
+      VALUE "FileVersion", "1.0.0.0\0"
       VALUE "InternalName", "DoxyPas\0"
-      VALUE "LegalCopyright", "Copyright (C) 2026 DoxyPas contributors. GPL-2.0. Based on Doxygen (C) Dimitri van Heesch\0"
+      VALUE "LegalCopyright", "Copyright (C) 2026 Jo\343o Ferreira. GPL-2.0. Based on Doxygen (C) Dimitri van Heesch\0"
       VALUE "OriginalFilename", "DoxyPas.exe\0"
       VALUE "ProductName", "DoxyPas\0"
-      VALUE "ProductVersion", "0.1.0.0\0"
+      VALUE "ProductVersion", "1.0.0.0\0"
     }
   }
   BLOCK "VarFileInfo"

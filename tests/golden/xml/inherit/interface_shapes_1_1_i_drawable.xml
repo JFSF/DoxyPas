@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.0.0" xml:lang="en-US">
   <compounddef id="interface_shapes_1_1_i_drawable" kind="interface" language="Pascal" prot="public">
     <compoundname>Shapes.IDrawable</compoundname>
     <derivedcompoundref refid="class_circles_1_1_t_circle" prot="public" virt="non-virtual">TCircle</derivedcompoundref>

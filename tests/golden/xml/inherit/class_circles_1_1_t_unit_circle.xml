@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.0.0" xml:lang="en-US">
   <compounddef id="class_circles_1_1_t_unit_circle" kind="class" language="Pascal" prot="public">
     <compoundname>Circles.TUnitCircle</compoundname>
     <basecompoundref refid="class_circles_1_1_t_circle" prot="public" virt="non-virtual">TCircle</basecompoundref>

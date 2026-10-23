@@ -1,7 +1,7 @@
 {
   "name": "doxypas",
   "description": "Doxygen-style documentation generator for Object Pascal, written in Delphi",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "homepage": "https://github.com/JFSF/DoxyPas",
   "mainsrc": "src/",
   "projects": [],

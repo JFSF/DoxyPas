@@ -1,0 +1,37 @@
+name: release
+
+# Push a tag "vX.Y.Z" (it must match DoxyPasVersion in src/Core/DoxyPas.Core.Version.pas): the zip is built, tested and
+# attached to a GitHub release. Runs on the self-hosted Delphi runner (see build.yml and docs/CI.md).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: [self-hosted, windows, delphi13]
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag matches the version of the program
+        shell: pwsh
+        run: |
+          $v = [regex]::Match((Get-Content src/Core/DoxyPas.Core.Version.pas -Raw), "DoxyPasVersion = '([^']+)'").Groups[1].Value
+          if ("v$v" -ne $env:GITHUB_REF_NAME) { throw "tag $env:GITHUB_REF_NAME but DoxyPasVersion is $v" }
+      - name: Build and test
+        shell: cmd
+        run: |
+          build.bat
+          build.bat test
+      - name: Zip
+        shell: pwsh
+        run: tools/release/make_zip.ps1
+      - name: Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $zip = (Get-ChildItem build/release/*.zip).FullName
+          if (gh release view $env:GITHUB_REF_NAME 2>$null) { gh release upload $env:GITHUB_REF_NAME $zip --clobber }
+          else { gh release create $env:GITHUB_REF_NAME $zip --title "DoxyPas $env:GITHUB_REF_NAME" --notes-file CHANGELOG.md }

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="0.1.0" xml:lang="en-US">
+<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="1.0.0" xml:lang="en-US">
   <compound refid="class_docs_1_1_t_base" kind="class">
     <name>Docs.TBase</name>
     <member refid="class_docs_1_1_t_base_1a3451827278b178043fbb6ba49d2a3e8e" kind="function"><name>Work</name></member>

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="0.1.0" xml:lang="en-US">
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.0.0" xml:lang="en-US">
   <compounddef id="unit_docs" kind="namespace" language="Pascal" prot="public">
     <compoundname>Docs</compoundname>
     <innerclass refid="class_docs_1_1_t_base" prot="public">Docs.TBase</innerclass>

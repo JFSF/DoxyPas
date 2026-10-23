@@ -1,0 +1,11 @@
+digraph doxyfile {
+  rankdir=TB; fontname="Helvetica"; node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef3fb", color="#3d5a99"]; edge [color="#3d5a99"];
+  dox [label="Doxyfile", shape=note, fillcolor="#fff7d6", color="#b08900"];
+  g1 [label="Project\nname, output, language,\nbrief/detailed, Markdown"]; g2 [label="Build\nwhat to extract, hide,\nsort, to-do lists"];
+  g3 [label="Messages\nwarnings and log"]; g4 [label="Input\nfiles, patterns, filters"];
+  g5 [label="Source Browser\nsource listing, references"]; g6 [label="Index\nalphabetical index"];
+  g7 [label="HTML\nlook, tree view, search,\nformulas, CHM"]; g8 [label="LaTeX\npaper, packages, PDF"];
+  g9 [label="XML / SQLite\nmachine readable output"]; g10 [label="Preprocessor\nINCLUDE_PATH, PREDEFINED"];
+  g11 [label="External\ntag files"]; g12 [label="Dot\ngraphs"]; g13 [label="Pascal\ndialect, platform,\nforms, projects"];
+  dox -> {g1 g2 g3 g4 g5 g6 g7 g8 g9 g10 g11 g12 g13};
+}

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="420" viewBox="0 0 560 420" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+<rect width="560" height="420" fill="#ffffff" rx="8"/>
+<text x="16" y="28" font-size="15" font-weight="bold" fill="#222">Options per group / Opções por grupo</text>
+<text x="16" y="62" fill="#333">Project</text>
+<rect x="190" y="48" width="240.0" height="18" fill="#3d5a99" rx="3"/>
+<text x="436.0" y="62" fill="#333">36</text>
+<text x="16" y="88" fill="#333">Build</text>
+<rect x="190" y="74" width="213.3" height="18" fill="#3d5a99" rx="3"/>
+<text x="409.3" y="88" fill="#333">32</text>
+<text x="16" y="114" fill="#333">Messages</text>
+<rect x="190" y="100" width="80.0" height="18" fill="#3d5a99" rx="3"/>
+<text x="276.0" y="114" fill="#333">12</text>
+<text x="16" y="140" fill="#333">Input</text>
+<rect x="190" y="126" width="126.7" height="18" fill="#3d5a99" rx="3"/>
+<text x="322.7" y="140" fill="#333">19</text>
+<text x="16" y="166" fill="#333">Source browser</text>
+<rect x="190" y="152" width="46.7" height="18" fill="#3d5a99" rx="3"/>
+<text x="242.7" y="166" fill="#333">7</text>
+<text x="16" y="192" fill="#333">Index</text>
+<rect x="190" y="178" width="13.3" height="18" fill="#3d5a99" rx="3"/>
+<text x="209.3" y="192" fill="#333">2</text>
+<text x="16" y="218" fill="#333">HTML output</text>
+<rect x="190" y="204" width="300.0" height="18" fill="#3d5a99" rx="3"/>
+<text x="496.0" y="218" fill="#333">45</text>
+<text x="16" y="244" fill="#333">LaTeX output</text>
+<rect x="190" y="230" width="113.3" height="18" fill="#3d5a99" rx="3"/>
+<text x="309.3" y="244" fill="#333">17</text>
+<text x="16" y="270" fill="#333">XML output</text>
+<rect x="190" y="256" width="20.0" height="18" fill="#3d5a99" rx="3"/>
+<text x="216.0" y="270" fill="#333">3</text>
+<text x="16" y="296" fill="#333">SQLite output</text>
+<rect x="190" y="282" width="13.3" height="18" fill="#3d5a99" rx="3"/>
+<text x="209.3" y="296" fill="#333">2</text>
+<text x="16" y="322" fill="#333">Preprocessor</text>
+<rect x="190" y="308" width="13.3" height="18" fill="#3d5a99" rx="3"/>
+<text x="209.3" y="322" fill="#333">2</text>
+<text x="16" y="348" fill="#333">External documentation</text>
+<rect x="190" y="334" width="33.3" height="18" fill="#3d5a99" rx="3"/>
+<text x="229.3" y="348" fill="#333">5</text>
+<text x="16" y="374" fill="#333">Graphs (Graphviz dot)</text>
+<rect x="190" y="360" width="213.3" height="18" fill="#3d5a99" rx="3"/>
+<text x="409.3" y="374" fill="#333">32</text>
+<text x="16" y="400" fill="#333">Object Pascal</text>
+<rect x="190" y="386" width="46.7" height="18" fill="#3d5a99" rx="3"/>
+<text x="242.7" y="400" fill="#333">7</text>
+</svg>

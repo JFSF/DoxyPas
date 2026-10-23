@@ -1,0 +1,13 @@
+# Doxyfile of the example; the images of the documentation were generated with it.
+PROJECT_NAME      = "Geometry"
+PROJECT_NUMBER    = 1.0
+PROJECT_BRIEF     = "Shapes and measures"
+INPUT             = src
+USE_MDFILE_AS_MAINPAGE = README.md
+OUTPUT_DIRECTORY  = out
+GENERATE_LATEX    = NO
+HAVE_DOT          = YES
+CLASS_GRAPH       = YES
+COLLABORATION_GRAPH = YES
+INCLUDE_GRAPH     = YES
+SOURCE_BROWSER    = YES

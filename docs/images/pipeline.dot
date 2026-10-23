@@ -1,0 +1,20 @@
+digraph pipeline {
+  rankdir=LR; fontname="Helvetica"; node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef3fb", color="#3d5a99"]; edge [color="#3d5a99", fontname="Helvetica", fontsize=9];
+  doxyfile [label="Doxyfile\n(options)", shape=note, fillcolor="#fff7d6", color="#b08900"];
+  src [label="Source files\n.pas .dpr .dpk .pp .lpr\n.dfm .fmx\n.dproj .lpi", shape=folder, fillcolor="#fff7d6", color="#b08900"];
+  config [label="Config\nreads and validates\nthe options"];
+  pre [label="Pascal front-end\nconditional defines\nparser (units, types,\nroutines, properties)\nform reader (.dfm/.fmx)"];
+  comments [label="Comments\nscanner for ///, {** *}, (** *)\nXMLDoc <summary>"];
+  model [label="Semantic model\nunits, classes, members,\ngroups, pages, directories,\ninheritance, calls, links"];
+  docs [label="Documentation parser\nMarkdown + commands\n@brief @param @ref ..."];
+  html [label="HTML\nsearch, tree view,\nsource browser", fillcolor="#e6f6e6", color="#2e7d32"];
+  latex [label="LaTeX / PDF", fillcolor="#e6f6e6", color="#2e7d32"];
+  xml [label="XML", fillcolor="#e6f6e6", color="#2e7d32"];
+  sqlite [label="SQLite", fillcolor="#e6f6e6", color="#2e7d32"];
+  tag [label="Tag file\nCHM files", fillcolor="#e6f6e6", color="#2e7d32"];
+  dot [label="Graphviz dot\nclass, collaboration, uses,\ncall and directory graphs", shape=component, fillcolor="#f3e8fb", color="#6a1b9a"];
+  doxyfile -> config; src -> pre; config -> pre [label="PASCAL_*, PREDEFINED,\nINPUT, FILE_PATTERNS"];
+  pre -> comments -> model; model -> docs;
+  docs -> html; docs -> latex; docs -> xml; model -> sqlite; model -> tag;
+  model -> dot [style=dashed, label="HAVE_DOT"]; dot -> html [style=dashed]; dot -> latex [style=dashed];
+}

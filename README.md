@@ -49,3 +49,9 @@ Output goes to `build\<platform>\`.
 defaults of Pascal); `build.bat gen` regenerates `src\Config\DoxyPas.Config.Options.pas` from it and from
 `config_pascal.xml` (the options of DoxyPas: `PASCAL_*`, `DELPHI_PROJECT`). The options that were removed are obsolete:
 a Doxyfile that has them gets a warning and `doxypas -u` takes them out.
+
+## Documentation
+
+* User guide: [English](docs/en/USER_GUIDE.md) · [Português](docs/pt/GUIA_DO_UTILIZADOR.md)
+* Reference of the 221 options: [English](docs/en/OPTIONS.md) · [Português](docs/pt/OPCOES.md)
+* Example project used for the images: [`docs/example`](docs/example). Português: [README.pt.md](README.pt.md).

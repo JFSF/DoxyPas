@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="186" viewBox="0 0 560 186" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+<rect width="560" height="186" fill="#ffffff" rx="8"/>
+<text x="16" y="28" font-size="15" font-weight="bold" fill="#222">Options per type / Opções por tipo</text>
+<text x="16" y="62" fill="#333">bool</text>
+<rect x="190" y="48" width="300.0" height="18" fill="#2e7d32" rx="3"/>
+<text x="496.0" y="62" fill="#333">111</text>
+<text x="16" y="88" fill="#333">string</text>
+<rect x="190" y="74" width="116.2" height="18" fill="#2e7d32" rx="3"/>
+<text x="312.2" y="88" fill="#333">43</text>
+<text x="16" y="114" fill="#333">list</text>
+<rect x="190" y="100" width="83.8" height="18" fill="#2e7d32" rx="3"/>
+<text x="279.8" y="114" fill="#333">31</text>
+<text x="16" y="140" fill="#333">int</text>
+<rect x="190" y="126" width="54.1" height="18" fill="#2e7d32" rx="3"/>
+<text x="250.1" y="140" fill="#333">20</text>
+<text x="16" y="166" fill="#333">enum</text>
+<rect x="190" y="152" width="43.2" height="18" fill="#2e7d32" rx="3"/>
+<text x="239.2" y="166" fill="#333">16</text>
+</svg>

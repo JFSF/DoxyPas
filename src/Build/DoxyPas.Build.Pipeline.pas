@@ -91,8 +91,10 @@ begin
   P := TPath.GetFullPath(AFile);
   while (P <> '') and (Length(P) > Length(R)) do
   begin
+{$WARN SYMBOL_PLATFORM OFF} // faSymLink exists on Windows and POSIX alike; the warning is about the enum
     if TFileAttribute.faSymLink in TFile.GetAttributes(P) then
       Exit(True);
+{$WARN SYMBOL_PLATFORM ON}
     P := ExtractFileDir(P);
   end;
   Result := False;

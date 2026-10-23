@@ -488,6 +488,7 @@ var
   Visited: TList<TDefinition>;
 begin
   Result := nil;
+  I := 0;
   Name := PlainName(AName);
   if Name = '' then
     Exit;

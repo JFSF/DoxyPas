@@ -431,6 +431,10 @@ build.bat test       # builds and runs the DUnitX tests
 build.bat gen        # regenerates the options and the resources
 ```
 
+`build.bat` uses the `BDS` of a RAD Studio command prompt or, if it is not set, `DELPHI_VER` (default `37.0`). To work in the IDE
+open `DoxyPas.groupproj` (the command line tool, the GUI and the tests). The VCL styles of the GUI are not in the repository:
+the build copies them from the RAD Studio installation (`src\Gui\prebuild.bat`).
+
 The documentation in this folder is made by two scripts, so that it can be refreshed after a change:
 
 ```

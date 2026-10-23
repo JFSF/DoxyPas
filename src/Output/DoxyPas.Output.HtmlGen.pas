@@ -3221,7 +3221,7 @@ var
 begin
   for P in FIgnorePrefix do
     if (P <> '') and (Length(AName) > Length(P)) and AName.StartsWith(P) then
-      if (Length(P) > 1) or TCharacter.IsUpper(AName[Length(P) + 1]) then
+      if (Length(P) > 1) or AName[Length(P) + 1].IsUpper then
         Exit(Copy(AName, Length(P) + 1, MaxInt));
   Result := AName;
 end;

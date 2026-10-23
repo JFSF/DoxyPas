@@ -1,0 +1,60 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{A4C1E7D3-92B0-4F65-B3D8-1E5F7A06C2B9}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="src\DoxyPas.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="src\Gui\DoxyPasGui.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="tests\unit\DoxyPasTests.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="DoxyPas">
+        <MSBuild Projects="src\DoxyPas.dproj"/>
+    </Target>
+    <Target Name="DoxyPas:Clean">
+        <MSBuild Projects="src\DoxyPas.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DoxyPas:Make">
+        <MSBuild Projects="src\DoxyPas.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DoxyPasGui">
+        <MSBuild Projects="src\Gui\DoxyPasGui.dproj"/>
+    </Target>
+    <Target Name="DoxyPasGui:Clean">
+        <MSBuild Projects="src\Gui\DoxyPasGui.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DoxyPasGui:Make">
+        <MSBuild Projects="src\Gui\DoxyPasGui.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DoxyPasTests">
+        <MSBuild Projects="tests\unit\DoxyPasTests.dproj"/>
+    </Target>
+    <Target Name="DoxyPasTests:Clean">
+        <MSBuild Projects="tests\unit\DoxyPasTests.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DoxyPasTests:Make">
+        <MSBuild Projects="tests\unit\DoxyPasTests.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="DoxyPas;DoxyPasGui;DoxyPasTests"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="DoxyPas:Clean;DoxyPasGui:Clean;DoxyPasTests:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="DoxyPas:Make;DoxyPasGui:Make;DoxyPasTests:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

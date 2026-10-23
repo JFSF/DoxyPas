@@ -57,6 +57,10 @@ uses
   DoxyPas.Build.Pipeline in 'Build\DoxyPas.Build.Pipeline.pas',
   DoxyPas.Cli in 'Cli\DoxyPas.Cli.pas';
 
+{$IFDEF MSWINDOWS}
+{$R DoxyPas.RES} // icon and version information: built from DoxyPas.rc by build.bat / the pre-build event of the .dproj
+{$ENDIF}
+
 var
   Args: TArray<string>;
   I: Integer;

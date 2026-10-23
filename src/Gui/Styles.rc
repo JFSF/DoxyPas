@@ -1,3 +1,31 @@
+// Manifest, VCL styles, icon and version information of DoxyPasGui.exe. Compiled by prebuild.bat (brcc32).
 1 24 "DoxyPasGui.manifest"
-WINDOWSMODERN VCLSTYLE "../../resources/gui/WindowsModern.vsf"
-WINDOWSMODERNDARK VCLSTYLE "../../resources/gui/WindowsModernDark.vsf"
+WINDOWSMODERN VCLSTYLE "../../build/styles/WindowsModern.vsf"
+WINDOWSMODERNDARK VCLSTYLE "../../build/styles/WindowsModernDark.vsf"
+MAINICON ICON "../../resources/icon/doxypas.ico"
+
+1 VERSIONINFO
+FILEVERSION 0, 1, 0, 0
+PRODUCTVERSION 0, 1, 0, 0
+FILEOS 0x4
+FILETYPE 0x1
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904B0"
+    {
+      VALUE "CompanyName", "DoxyPas contributors\0"
+      VALUE "FileDescription", "DoxyPas GUI - edits a Doxyfile and runs DoxyPas\0"
+      VALUE "FileVersion", "0.1.0.0\0"
+      VALUE "InternalName", "DoxyPasGui\0"
+      VALUE "LegalCopyright", "Copyright (C) 2026 DoxyPas contributors. GPL-2.0. Based on Doxygen (C) Dimitri van Heesch\0"
+      VALUE "OriginalFilename", "DoxyPasGui.exe\0"
+      VALUE "ProductName", "DoxyPas\0"
+      VALUE "ProductVersion", "0.1.0.0\0"
+    }
+  }
+  BLOCK "VarFileInfo"
+  {
+    VALUE "Translation", 0x0409, 0x04B0
+  }
+}

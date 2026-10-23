@@ -8,3 +8,4 @@ when it is not DoxyPas-specific.
 |---|---|---|---|
 | 1 | `Source/DelphiAST.pas` (`SetCurrentCompoundNodesEndPosition`) | Removed `Temp.FileName := Lexer.FileName;` | The end position is taken after the lexer looked ahead, so a `{$I}` include right after a declaration changed the *start* file of the node. DoxyPas maps node positions to source files and needs the file where the node begins. |
 | 2 | `Source/SimpleParser/*.rsj` | Not vendored | Resource file not needed to build. |
+| 3 | `Source/SimpleParser/SimpleParser.Lexer.pas` (`IsIdentifierChar`-like function near line 1910) | `TCharacter.IsX(AChar)` replaced by the `TCharHelper` form `AChar.IsX` | Delphi 13 marks the class form deprecated (W1000); same behavior. |

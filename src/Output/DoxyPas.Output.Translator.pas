@@ -328,16 +328,27 @@ begin
     Result := Tr(AKind) + ' (' + Tr(AProtection) + ')';
 end;
 
+procedure CreateTables;
 var
   L: TLang;
-
-initialization
+begin
   for L := Low(TLang) to High(TLang) do
     Tables[L] := TDictionary<string, string>.Create;
+end;
+
+procedure FreeTables;
+var
+  L: TLang;
+begin
+  for L := Low(TLang) to High(TLang) do
+    Tables[L].Free;
+end;
+
+initialization
+  CreateTables;
   Fill;
 
 finalization
-  for L := Low(TLang) to High(TLang) do
-    Tables[L].Free;
+  FreeTables;
 
 end.

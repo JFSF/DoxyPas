@@ -61,11 +61,17 @@
         <DCC_N>false</DCC_N>
         <DCC_S>false</DCC_S>
         <DCC_ImageBase>00400000</DCC_ImageBase>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <PreBuildEvent>"$(BDS)\bin\brcc32.exe" -fo"$(MSBuildProjectDirectory)\DoxyPas.RES" "$(MSBuildProjectDirectory)\DoxyPas.rc"</PreBuildEvent>
+        <DCC_UnitSearchPath>..\third_party\DelphiAST\Source;..\third_party\DelphiAST\Source\SimpleParser;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_IncludePath>..\third_party\DelphiAST\Source\SimpleParser;$(DCC_IncludePath)</DCC_IncludePath>
+        <DCC_ExeOutput>..\build\$(Platform)</DCC_ExeOutput>
+        <DCC_DcuOutput>..\build\$(Platform)\dcu_ide</DCC_DcuOutput>
         <SanitizedProjectName>DoxyPas</SanitizedProjectName>
         <VerInfo_Locale>2070</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=;CFBundleName=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=DoxyPas contributors;FileDescription=DoxyPas - documentation generator for Object Pascal;FileVersion=0.1.0.0;InternalName=DoxyPas;LegalCopyright=Copyright (C) 2026 DoxyPas contributors. GPL-2.0. Based on Doxygen (C) Dimitri van Heesch;LegalTrademarks=;OriginalFilename=DoxyPas.exe;ProductName=DoxyPas;ProductVersion=0.1.0.0;Comments=</VerInfo_Keys>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
+        <Icon_MainIcon>..\resources\icon\doxypas.ico</Icon_MainIcon>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Android)'!=''">
@@ -124,7 +130,7 @@
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=DoxyPas contributors;FileDescription=DoxyPas - documentation generator for Object Pascal;FileVersion=0.1.0.0;InternalName=DoxyPas;LegalCopyright=Copyright (C) 2026 DoxyPas contributors. GPL-2.0. Based on Doxygen (C) Dimitri van Heesch;LegalTrademarks=;OriginalFilename=DoxyPas.exe;ProductName=DoxyPas;ProductVersion=0.1.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">

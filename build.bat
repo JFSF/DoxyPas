@@ -1,7 +1,11 @@
 @echo off
 setlocal
-rem Command-line build with dcc (no .dproj yet). Usage: build.bat [test]
-call "C:\Program Files (x86)\Embarcadero\Studio\37.0\bin\rsvars.bat" || exit /b 1
+rem Command-line build with dcc. Usage: build.bat [test|gen]
+rem RAD Studio command prompt: BDS is already set. Otherwise the rsvars.bat of DELPHI_VER (default 37.0 = Delphi 13) is used.
+if defined BDS goto :havebds
+if not defined DELPHI_VER set DELPHI_VER=37.0
+call "%ProgramFiles(x86)%\Embarcadero\Studio\%DELPHI_VER%\bin\rsvars.bat" || exit /b 1
+:havebds
 set ROOT=%~dp0
 set DUNITX=%BDS%\source\DUnitX
 set DAST=%ROOT%third_party\DelphiAST\Source;%ROOT%third_party\DelphiAST\Source\SimpleParser
@@ -12,14 +16,16 @@ if /i "%1"=="test" goto :tests
 if /i "%1"=="gen" goto :gen
 
 pushd "%ROOT%src"
+rem DoxyPas.RES (icon and version information)
+"%BDS%\bin\brcc32.exe" DoxyPas.rc >nul || exit /b 1
 for %%P in (32 64) do (
   if not exist "%ROOT%build\Win%%P\dcu" mkdir "%ROOT%build\Win%%P\dcu"
   "%BDS%\bin\dcc%%P.exe" %OPTS% -E"%ROOT%build\Win%%P" -N0"%ROOT%build\Win%%P\dcu" DoxyPas.dpr || exit /b 1
 )
 rem GUI (VCL, Windows only), next to DoxyPas.exe
 pushd "%ROOT%src\Gui"
-rem the VCL styles of the GUI (Styles.rc -> Styles.RES)
-"%BDS%\bin\brcc32.exe" Styles.rc >nul || exit /b 1
+rem Styles.RES (manifest + the VCL styles that are copied from the RAD Studio installation)
+call "%ROOT%src\Gui\prebuild.bat" || exit /b 1
 for %%P in (32 64) do (
   if not exist "%ROOT%build\Win%%P\dcu_gui" mkdir "%ROOT%build\Win%%P\dcu_gui"
   "%BDS%\bin\dcc%%P.exe" -Q -B -W+ -NSSystem;System.Win;Winapi;Vcl;Vcl.Imaging -E"%ROOT%build\Win%%P" -N0"%ROOT%build\Win%%P\dcu_gui" DoxyPasGui.dpr || exit /b 1

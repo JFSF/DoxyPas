@@ -29,6 +29,7 @@ type
     [Test] procedure ClassMembersKeepVisibilityAndFlags;
     [Test] procedure ClassConstantsAndNestedTypes;
     [Test] procedure UnitDocBeforeTheKeyword;
+    [Test] procedure FileHeaderTagsDocumentTheUnit;
     [Test] procedure PropertyDetails;
     [Test] procedure DocCommentStyles;
     [Test] procedure MemberGroupsAndGroupRanges;
@@ -336,6 +337,22 @@ begin
   try
     Assert.AreEqual('Brief of the unit.', Root.Doc);
     Assert.AreEqual('A proc.', Root.Children[0].Doc);
+  finally
+    Root.Free;
+  end;
+end;
+
+procedure TPascalParserTests.FileHeaderTagsDocumentTheUnit;
+var
+  Err: string;
+  Root: TEntry;
+begin
+  Root := ParseText('{'#10' @projectgroup(Grp)'#10' @projectname(Prj)'#10' @filename(U)'#10' @description(Brief text.)'#10 +
+    ' @details(Has ''quotes'' (and parens).)'#10' @author(Ana)'#10' @created(1/2/2026)'#10' @lastmod(3/4/2026)'#10 +
+    ' @version(3.0.0.0)'#10'}'#10'unit U; interface implementation end.', TPascalParseOptions.Default, Err);
+  try
+    Assert.AreEqual('\brief Brief text.'#10#10'Has ''quotes'' (and parens).'#10#10'\par Project'#10'Prj (Grp)'#10#10 +
+      '\author Ana'#10#10'\date 1/2/2026'#10#10'\par Last modified'#10'3/4/2026'#10#10'\version 3.0.0.0', Root.Doc);
   finally
     Root.Free;
   end;

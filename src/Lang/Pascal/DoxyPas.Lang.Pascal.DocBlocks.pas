@@ -540,6 +540,102 @@ begin
   end;
 end;
 
+// File header: a plain comment before the unit keyword made of tags such as @description(...) @author(...) @version(...).
+// Its tags become the documentation of the unit, written as the equivalent Doxygen commands. @filename is not used:
+// the unit already has its name. Other tags are ignored.
+// shortcut: a ')' inside a value must be balanced by a '(' (no escaping), when that matters add one.
+procedure AttachFileHeader(ASource: TPasSource; ARoot: TEntry; const AFileName: string);
+var
+  KeyTok, I, J, Depth: Integer;
+  Txt, Inner, Name, Value, Group, Prj, Brief, Details, Rest: string;
+  M: TMatch;
+  Tags: TRegEx;
+  Found: Boolean;
+  FirstLine: Integer;
+begin
+  if (ARoot.Line = 0) or not SameText(ARoot.FileName, AFileName) then
+    Exit;
+  Tags := TRegEx.Create('[@\\](projectgroup|projectname|description|details|author|created|lastmod|version)\(',
+    [roIgnoreCase]);
+  KeyTok := ASource.IndexAt(ARoot.Line, ARoot.Col);
+  Found := False;
+  FirstLine := 0;
+  Group := '';
+  Prj := '';
+  Brief := '';
+  Details := '';
+  Rest := '';
+  for I := 0 to KeyTok - 1 do
+  begin
+    if ASource.Token(I).Kind <> tkBlockComment then
+      Continue;
+    Txt := ASource.TokenText(I);
+    if Txt.StartsWith('{') then
+      Inner := Copy(Txt, 2, MaxInt)
+    else
+      Inner := Copy(Txt, 3, MaxInt);
+    if (Inner = '') or CharInSet(Inner[1], ['*', '!']) then      // a documentation comment: handled as such
+      Continue;
+    M := Tags.Match(Inner);
+    while M.Success do
+    begin
+      Name := LowerCase(M.Groups[1].Value);
+      J := M.Index + M.Length;                // 1-based, first character of the value
+      Depth := 1;
+      while (J <= Length(Inner)) and (Depth > 0) do
+      begin
+        if Inner[J] = '(' then
+          Inc(Depth)
+        else if Inner[J] = ')' then
+          Dec(Depth);
+        Inc(J);
+      end;
+      if Depth = 0 then
+      begin
+        Value := TRegEx.Replace(Copy(Inner, M.Index + M.Length, J - 1 - (M.Index + M.Length)), '\s+', ' ').Trim;
+        if Value <> '' then
+        begin
+          if not Found then
+            FirstLine := ASource.Token(I).Line;
+          Found := True;
+          if Name = 'projectgroup' then Group := Value
+          else if Name = 'projectname' then Prj := Value
+          else if Name = 'description' then Brief := Value
+          else if Name = 'details' then Details := Value
+          else if Name = 'author' then Rest := Rest + #10#10'\author ' + Value
+          else if Name = 'version' then Rest := Rest + #10#10'\version ' + Value
+          else if Name = 'created' then Rest := Rest + #10#10'\date ' + Value
+          else Rest := Rest + #10#10'\par Last modified'#10 + Value;
+        end;
+      end;
+      M := Tags.Match(Inner, J);
+    end;
+  end;
+  if not Found then
+    Exit;
+  if (Prj <> '') or (Group <> '') then
+  begin
+    if (Prj <> '') and (Group <> '') then
+      Value := Prj + ' (' + Group + ')'
+    else
+      Value := Prj + Group;
+    Rest := #10#10'\par Project'#10 + Value + Rest;
+  end;
+  Value := '';
+  if Brief <> '' then
+    Value := '\brief ' + Brief;
+  if Details <> '' then
+    Value := Value + #10#10 + Details;
+  Value := Trim(Value + Rest);
+  if ARoot.Doc = '' then
+  begin
+    ARoot.Doc := Value;
+    ARoot.DocLine := FirstLine;
+  end
+  else
+    ARoot.Doc := ARoot.Doc + #10#10 + Value;
+end;
+
 procedure AttachDocComments(ASource: TPasSource; ARoot: TEntry; const AFileName: string);
 var
   Blocks: TList<TDocBlock>;
@@ -556,6 +652,7 @@ begin
   Events := TList<TGroupEvent>.Create;
   try
     CollectBlocks(ASource, Blocks, Markers);
+    AttachFileHeader(ASource, ARoot, AFileName);
     for B in Blocks do
     begin
       if B.Text = '' then

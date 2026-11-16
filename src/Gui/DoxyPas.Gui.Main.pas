@@ -79,6 +79,7 @@ type
     procedure RunProcess(const ACommand, ADir: string);
     procedure ProcessEnded;
     function CliPath: string;
+    procedure CreateParams(var AParams: TCreateParams); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -206,6 +207,15 @@ begin
   BuildUi;
   ScaleForPPI(Screen.PixelsPerInch);
   ShowOptions;
+end;
+
+// The handle is created inside the constructor, before the VCL knows this is the MainForm, so MainFormOnTaskbar would not
+// apply: the form would be owned by the hidden application window and vanish from the taskbar when minimized.
+procedure TMainForm.CreateParams(var AParams: TCreateParams);
+begin
+  inherited;
+  AParams.WndParent := 0;
+  AParams.ExStyle := AParams.ExStyle or WS_EX_APPWINDOW;
 end;
 
 destructor TMainForm.Destroy;
